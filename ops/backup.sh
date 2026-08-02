@@ -24,9 +24,20 @@ echo "=== capstone backup $(date -Is) ==="
 SOURCES=("$HOME/code/capstone" /data/embeddings /data/checkpoints)
 KEEP=(--keep-daily 7 --keep-weekly 4 --keep-monthly 6)
 
+# restic does not read .gitignore, so its scratch entries are mirrored here —
+# and only those. Deliberately NOT excluded: .git (full history — the only
+# copy anywhere until the GitHub push) and stimuli/ (tier 1, irreplaceable).
+EXCLUDES=(
+  --exclude '**/__pycache__'
+  --exclude '**/.ipynb_checkpoints'
+  --exclude "$HOME/code/capstone/.venv"
+  --exclude "$HOME/code/capstone/outputs"
+  --exclude "$HOME/code/capstone/wandb"
+)
+
 run_leg() {
   echo "--- leg: $1"
-  restic -r "$1" backup "${SOURCES[@]}" || return 1
+  restic -r "$1" backup "${EXCLUDES[@]}" "${SOURCES[@]}" || return 1
   restic -r "$1" forget --prune "${KEEP[@]}" || return 1
   # Metadata-only check: unlike the vault, this repo is too big for a nightly
   # --read-data (it would re-download the entire B2 repo every night).
