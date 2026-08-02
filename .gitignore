@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.ipynb_checkpoints/
+
+# Experiment scratch — anything worth keeping gets promoted into results/
+outputs/
+wandb/
+
+# Secrets stay out of the repo; recovery chain is documented in the vault
+.env
+*.env
+
+# Data never lives in the repo — it mounts at /data (see README).
+# Audio is blanket-ignored, then stimuli/ is re-included: self-recorded
+# stimuli are irreplaceable and the repo is their offsite backup.
+data/
+*.wav
+*.mp3
+*.flac
+!stimuli/**/*.wav
+!stimuli/*.wav

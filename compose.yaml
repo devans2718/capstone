@@ -1,0 +1,19 @@
+# Dev workflow: `docker compose run --rm dev` from the repo root.
+# Cloud runs use the exact same image; only the volume sources change.
+services:
+  dev:
+    build: .
+    image: capstone:dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace     # live code shadows the baked-in copy during dev
+      - /data:/data      # corpora / embeddings / checkpoints (see README)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true

@@ -1,0 +1,11 @@
+# Local dev: RTX 3060, 12 GB VRAM. cloud.yaml must differ from this file
+# only in values, never in structure — that invariant is what makes
+# "scale up = change a config" true.
+data_root: /data
+corpora_dir: /data/corpora
+embeddings_dir: /data/embeddings
+checkpoints_dir: /data/checkpoints
+
+device: cuda
+batch_size: 4        # conservative for 12 GB with a frozen encoder
+num_workers: 4

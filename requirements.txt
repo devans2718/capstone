@@ -1,0 +1,13 @@
+# Deliberately unpinned until Task 1 verifies WavJEPA + fairseq2 together on
+# the base image's torch. Once verified, freeze exact versions here so local
+# and cloud builds are byte-identical. Watch: fairseq2 may try to pull its own
+# torch — if it does, pin fairseq2 to the variant matching the base image.
+fairseq2
+transformers
+soundfile
+librosa
+numpy
+scikit-learn
+umap-learn
+matplotlib
+pyyaml

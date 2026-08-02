@@ -1,0 +1,11 @@
+# Rented cloud GPU (Lambda / Vast / RunPod). Same structure as local.yaml —
+# values only. Paths are identical because /data is mounted at the same
+# place on the instance.
+data_root: /data
+corpora_dir: /data/corpora
+embeddings_dir: /data/embeddings
+checkpoints_dir: /data/checkpoints
+
+device: cuda
+batch_size: 32       # revisit per rented card's VRAM
+num_workers: 8
