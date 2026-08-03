@@ -1,12 +1,31 @@
-# Deliberately unpinned until Task 1 verifies WavJEPA + fairseq2 together on
-# the base image's torch. Once verified, freeze exact versions here so local
-# and cloud builds are byte-identical. Watch: fairseq2 may try to pull its own
-# torch — if it does, pin fairseq2 to the variant matching the base image.
-fairseq2
-transformers
-soundfile
+# Phase 1 pins (2026-08-02): top-level versions matched to WavJEPA upstream.
+# Phase 2 is a full `pip freeze` written back here once smoke_wavjepa.py passes,
+# so local and cloud builds resolve byte-identically. Until then transitive deps
+# float and a rebuild months from now may not reproduce this one.
+#
+# fairseq2 was removed: WavJEPA does NOT depend on it. Upstream's requirements
+# list neither fairseq2 nor fairseq — the model ships as a stock transformers
+# model loaded with trust_remote_code=True. The old note here was inherited from
+# the A-JEPA-era plan and cost us a version-matrix problem that never existed.
+
+# Provided by the base image (pytorch/pytorch:2.7.0-cuda12.6-cudnn9-runtime).
+# Listed anyway so a base-image bump that moves torch fails loudly at build time
+# rather than silently at run time. Versions match WavJEPA upstream exactly.
+torch==2.7.0
+torchaudio==2.7.0
+
+# WavJEPA's HF checkpoint is loaded via trust_remote_code, so the remote modeling
+# code runs against whatever transformers we install. Its config.json was written
+# by 4.53.2 — pinned to that, because remote code is not covered by transformers'
+# deprecation policy and a minor bump can break it without warning.
+transformers==4.53.2
+
+numpy==2.2.6        # upstream pin; torch 2.7 is numpy-2 clean
+einops==0.8.1       # required by WavJEPA's remote modeling code
+soundfile==0.13.1   # upstream pin
+
+# Ours, not upstream's: corpus prep, probing, and figures.
 librosa
-numpy
 scikit-learn
 umap-learn
 matplotlib
