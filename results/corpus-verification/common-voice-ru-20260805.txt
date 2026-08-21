@@ -1,0 +1,63 @@
+Common Voice verification
+  root: /data/corpora/common-voice
+  date: 2026-08-05T19:43:17Z
+
+=== archive ===
+/data/corpora/common-voice/common-voice-scripted-speech-26-0-russian.tar.gz
+  7060217902 bytes
+50ff59822c863ed75a7f53d3018d56b9f693eada685852d4ed6d0956b717a7d6  common-voice-scripted-speech-26-0-russian.tar.gz
+
+=== layout (top 3 levels) ===
+/data/corpora/common-voice
+/data/corpora/common-voice/cv-corpus-26.0-ru
+/data/corpora/common-voice/cv-corpus-26.0-ru/cv-corpus-26.0-2026-06-12
+/data/corpora/common-voice/cv-corpus-26.0-ru/cv-corpus-26.0-2026-06-12/ru
+
+=== clips ===
+  mp3 files on disk : 202634
+  vault claim       : 1138688
+  ratio to claim    : 0.178
+
+=== TSV manifests ===
+  clip_durations.tsv               202634 rows
+  dev.tsv                           10310 rows
+  invalidated.tsv                   10893 rows
+  other.tsv                         15439 rows
+  reported.tsv                        577 rows
+  test.tsv                          10311 rows
+  train.tsv                         27116 rows
+  unvalidated_sentences.tsv           287 rows
+  validated.tsv                    176302 rows
+  validated_sentences.tsv           47852 rows
+
+=== total duration (from clip_durations.tsv, exact) ===
+  clips: 202634
+  total: 291.6 hours
+  vault claim: 1643 validated hours / 1845 total
+
+=== audio properties (sample of 50) ===
+  sample rates:
+     25     48000 Hz
+     25     32000 Hz
+  channels:
+     50     1
+  bitrate (bits/sec):
+     25     64 kbps
+     25     48 kbps
+
+  mean clip duration : 4.907 s   (vault claim: 5.203 s)
+  mean bitrate       : 56.0 kbps
+
+  INTERPRETATION:
+    >= 32 kbps  -> codec is not a concern for RQ1; earlier assessment holds.
+    ~16-24 kbps -> voicing and duration cues intact; note the lowpass as a
+                   limitation for any spectral measure above ~7 kHz.
+    <= 12 kbps  -> check the effective lowpass before trusting burst or
+                   frication features. Closure voicing and vowel duration
+                   still survive, so RQ1 is workable, but say so explicitly.
+
+=== speakers ===
+  distinct client_id in validated.tsv: 3286
+  vault claim: 36393 speakers
+
+report written to: /home/daniel/code/capstone/results/corpus-verification/common-voice-ru-20260805.txt
