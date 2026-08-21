@@ -47,13 +47,25 @@ set -euo pipefail
 DATASET_ID="cmqinj9g500vsnr07qf4hmr3j"
 API_BASE="https://mozilladatacollective.com/api/datasets"
 
+# Constants, not parameters. Making the locale a real parameter is the separate
+# task that the English pull falls out of; these two exist so the paths below
+# stop hardcoding the release layout in string literals.
+RELEASE="cv-corpus-26.0-2026-06-12"
+LOCALE="ru"
+
 DEST="${DEST:-/data/corpora/common-voice}"
 ARCHIVE_NAME="common-voice-scripted-speech-26-0-russian.tar.gz"
 
 ARCHIVE="${DEST}/${ARCHIVE_NAME}"
 PARTIAL="${ARCHIVE}.part"
 SHA_FILE="${ARCHIVE}.sha256"
-EXTRACT_DIR="${DEST}/cv-corpus-26.0-ru"
+# The tarball carries its own `cv-corpus-26.0-2026-06-12/ru` top level, so tar
+# unpacks into DEST directly. Naming a second per-locale directory here buried
+# the corpus one level deeper than the release layout, which is harmless until
+# something is rebuilt from scratch and every path written against the release
+# layout misses by one component.
+EXTRACT_DIR="${DEST}"
+CORPUS_DIR="${EXTRACT_DIR}/${RELEASE}/${LOCALE}"
 
 # Extraction needs room for the archive plus the unpacked tree. MP3 is already
 # compressed, so gzip buys little — assume the extracted size ~= archive size.
@@ -206,8 +218,9 @@ log "summary:"
 log "  archive : ${ARCHIVE}"
 log "  sha256  : ${ARCHIVE_SHA}"
 log "  extracted to: ${EXTRACT_DIR}"
-log "  clips (mp3 count): $(find "$EXTRACT_DIR" -name '*.mp3' | wc -l)"
-log "  tsv manifests: $(find "$EXTRACT_DIR" -name '*.tsv' -printf '%f\n' | sort | tr '\n' ' ')"
+log "  corpus root : ${CORPUS_DIR}"
+log "  clips (mp3 count): $(find "$CORPUS_DIR" -name '*.mp3' | wc -l)"
+log "  tsv manifests: $(find "$CORPUS_DIR" -name '*.tsv' -printf '%f\n' | sort | tr '\n' ' ')"
 log ""
 log "NEXT: establish speaker-disjoint splits from the client_id column in the TSVs"
 log "      BEFORE caching any embeddings. Splitting after extraction is how"
