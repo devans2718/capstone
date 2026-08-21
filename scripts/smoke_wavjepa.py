@@ -138,7 +138,13 @@ def main() -> int:
     frames = sum(c.shape[-2] for c in captured[0])
     print(f"\n  segments per {CLIP_SECONDS}s clip: {calls}")
     print(f"  total frames across segments: {frames}")
-    print(f"  => ~{frames / CLIP_SECONDS:.0f} Hz frame rate (~{1000 * CLIP_SECONDS / frames:.1f} ms/frame)")
+    # Deliberately NOT reported as a frame rate. Dividing hooked frames by clip
+    # duration mixes a count that includes the model's own zero-padding with a
+    # duration that excludes it, and there is no single frame rate to report
+    # anyway: frames advance 160 samples inside a segment while segment origins
+    # advance 32,159. Use capstone.encoders.wavjepa.FrameGeometry for any
+    # frame/time conversion; this script only proves the hooks fire.
+    print(f"  ({frames} hooked frames includes padded tail — not a frame rate)")
 
     if len(layers) != EXPECTED_LAYERS:
         print(f"\nFAIL: expected {EXPECTED_LAYERS} layers, hooked {len(layers)}")

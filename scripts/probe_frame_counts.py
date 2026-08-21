@@ -214,20 +214,30 @@ def main() -> int:
         print("     in ONE call. Re-chunking it perturbs representations slightly.")
 
     # ---- frame period ---------------------------------------------------------
-    # Two different frame rates are in play and they are not equal. The encoder
-    # produces output_steps frames per target_length samples, a fixed property of
-    # the architecture. get_timestamps() instead divides the clip's own duration
-    # by however many frames survived the truncation. Alignment boundaries have
-    # to be converted with one of them, and the wrong choice drifts.
-    print("\n=== frame period ===")
-    true_ms = target_length / sr * 1000 / output_steps
-    print(f"  encoder-internal: {target_length}/{output_steps} samples per frame "
-          f"= {true_ms:.4f} ms")
+    # THREE rates are in play and none of them agree. This script can only see
+    # two, because both are derived from output *lengths*:
+    #
+    #   target_length / output_steps   the AVERAGE across a segment, 10.0497 ms
+    #   get_timestamps()               clip duration / surviving frame count
+    #
+    # The third is the one that actually governs alignment: the conv stride,
+    # exactly 160 samples = 10.000 ms between frame onsets within a segment,
+    # with segment origins advancing by target_length instead. Counting frames
+    # cannot see it — an earlier version of this block called the segment
+    # average "encoder-internal" and was wrong for that reason.
+    #
+    # scripts/probe_frame_positions.py locates frames rather than counting them
+    # and settles it. capstone.encoders.wavjepa.FrameGeometry is the only place
+    # any of this should be computed.
+    print("\n=== frame period (lengths only — see probe_frame_positions.py) ===")
+    mean_ms = target_length / sr * 1000 / output_steps
+    print(f"  segment average : {target_length}/{output_steps} samples per frame "
+          f"= {mean_ms:.4f} ms")
     for seconds, r in runs.items():
         ts_ms = seconds * 1000 / r["output"]
-        drift = (true_ms - ts_ms) * r["output"]
+        spread = (mean_ms - ts_ms) * r["output"]
         print(f"  {seconds:>2}s get_timestamps(): {ts_ms:.4f} ms/frame "
-              f"-> {drift:+.1f} ms cumulative drift by the final frame")
+              f"-> {spread:+.1f} ms apart by the final frame")
 
     print("\n=== verdict ===")
     if all_ok:
