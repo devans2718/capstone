@@ -1,0 +1,29 @@
+#!/bin/sh
+# Refuse a commit that stages a file starting with "#!" without the executable
+# bit. Windows-side edits over \\wsl.localhost silently drop 100755 to 100644;
+# core.fileMode=false keeps that from degrading files already recorded 100755,
+# but newly added files are always staged 100644, which is the gap this closes.
+set -eu
+
+flagged=$(mktemp)
+trap 'rm -f "$flagged"' EXIT
+
+# Inspect the staged blob, never the working tree — they can disagree.
+git diff --cached --name-only --diff-filter=ACM | while IFS= read -r path; do
+    mode=$(git ls-files -s -- "$path" | awk '{print $1}')
+    [ "$mode" = '100644' ] || continue
+    if [ "$(git show ":$path" 2>/dev/null | head -c 2)" = '#!' ]; then
+        printf '%s\n' "$path" >> "$flagged"
+    fi
+done || true
+
+[ -s "$flagged" ] || exit 0
+
+echo 'pre-commit: staged files carry a shebang but are not executable:' >&2
+sed 's/^/    /' "$flagged" >&2
+paths=$(tr '\n' ' ' < "$flagged")
+echo >&2
+echo 'Fix both the index and the working tree, then commit again:' >&2
+echo "    git update-index --chmod=+x $paths" >&2
+echo "    chmod +x $paths" >&2
+exit 1
