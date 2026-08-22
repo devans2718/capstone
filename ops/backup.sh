@@ -3,7 +3,7 @@
 # Windows scheduled task "Restic Backup - Capstone" at 9:15pm. Design and
 # recovery chain: vault note "Capstone Dev Environment (Docker + WSL)".
 #
-# Tiers:
+# Tiers — each is its own tagged snapshot stream with its own retention:
 #   tier 1  ~/code/capstone     irreplaceable — code, results, stimuli, annotations
 #   tier 2  /data/embeddings    regenerable, at GPU-hours cost
 #   tier 2  /data/checkpoints   re-downloadable today, not guaranteed tomorrow
@@ -21,8 +21,21 @@ mkdir -p "$LOG_DIR"
 exec > "$LOG_DIR/last-run.log" 2>&1
 echo "=== capstone backup $(date -Is) ==="
 
-SOURCES=("$HOME/code/capstone" /data/embeddings /data/checkpoints)
-KEEP=(--keep-daily 7 --keep-weekly 4 --keep-monthly 6)
+# Two snapshot streams, tagged, because the tiers want different retention and
+# a single snapshot can only have one policy.
+#
+# Tier 1 is text: six months of monthlies dedups to almost nothing, and the
+# history is the point. Tier 2 is incompressible float data — one hour of
+# 13-layer fp16 embeddings is ~7 GB and restic cannot pack it down. Under the
+# tier-1 policy a single re-extraction (new geometry, added layer, fp32) would
+# pin the superseded copy for six months, because none of the bytes dedup.
+# Keeping the last two says what is actually wanted: the current extraction and
+# one step back, since anything older is cheaper to regenerate than to store.
+TIER1=("$HOME/code/capstone")
+TIER2=(/data/embeddings /data/checkpoints)
+
+KEEP_TIER1=(--keep-daily 7 --keep-weekly 4 --keep-monthly 6)
+KEEP_TIER2=(--keep-last 2)
 
 # restic does not read .gitignore, so its scratch entries are mirrored here —
 # and only those. Deliberately NOT excluded: .git (full history — the only
@@ -36,12 +49,29 @@ EXCLUDES=(
 )
 
 run_leg() {
-  echo "--- leg: $1"
-  restic -r "$1" backup "${EXCLUDES[@]}" "${SOURCES[@]}" || return 1
-  restic -r "$1" forget --prune "${KEEP[@]}" || return 1
+  local repo="$1"
+  echo "--- leg: $repo"
+
+  restic -r "$repo" backup --tag tier1 "${EXCLUDES[@]}" "${TIER1[@]}" || return 1
+  restic -r "$repo" backup --tag tier2 "${EXCLUDES[@]}" "${TIER2[@]}" || return 1
+
+  # --group-by tag, not the default host,paths: it states the intent directly,
+  # and it keeps working if a tier ever gains or loses a path (which would
+  # otherwise silently start a fresh group with its own full retention).
+  #
+  # An untagged snapshot matches NEITHER filter and is therefore immortal.
+  # The ten pre-2026-08-21 snapshots were retagged tier1 once, by hand, when
+  # this split landed. Anything creating untagged snapshots here is a bug.
+  restic -r "$repo" forget --tag tier1 --group-by tag "${KEEP_TIER1[@]}" || return 1
+  restic -r "$repo" forget --tag tier2 --group-by tag "${KEEP_TIER2[@]}" || return 1
+
+  # One prune for both forgets rather than --prune on each: pruning is the
+  # expensive step and there is no reason to run it twice per leg per night.
+  restic -r "$repo" prune || return 1
+
   # Metadata-only check: unlike the vault, this repo is too big for a nightly
   # --read-data (it would re-download the entire B2 repo every night).
-  restic -r "$1" check || return 1
+  restic -r "$repo" check || return 1
 }
 
 status=0
