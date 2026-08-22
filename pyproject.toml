@@ -10,3 +10,13 @@ requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Model-dependent tests are opt-in: they need the 785 MB checkpoint and a GPU,
+# so a bare `pytest` stays fast and runnable anywhere, CI included. A -m on the
+# command line overrides this one, so `-m model` runs them in the container.
+addopts = "-m 'not model'"
+markers = [
+    "model: requires the WavJEPA checkpoint and a GPU; not runnable in CI",
+]
