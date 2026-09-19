@@ -188,3 +188,130 @@ def build_manifest(inventory: Path, *, split_scheme: str, random_seed: int,
         n_sites_scored=n_sites_scored,
         synthetic=True,
     )
+
+
+# ------------------------------------------------------- the synthetic cell (§6)
+
+# Accuracies the draw targets. Not calibrated to anything — no probe has been
+# trained — but chosen so the differential question in the brief's §7 has a
+# non-empty answer, and so the gap runs in the direction a lexical shortcut
+# predicts: a probe leaning on word identity loses more when word types stop
+# recurring between train and test than it loses to anything else.
+P_CORRECT = {"ordinary": 0.85, "word_disjoint": 0.62, "combined_diagonal": 0.70}
+
+# Share of sites the diagonal fold scheme discards. Matches the measured
+# figure: only 2,104 of 10,392 sites are scored under it, so ~80% are ineligible.
+DIAGONAL_DISCARD = 0.80
+
+N_FOLDS = 5
+
+
+def select_sites(inventory, n: int, seed: int):
+    """Choose the n sites the run scores, edge cases included by construction.
+
+    The brief requires at least one zero-onset site, one clamped site, and both
+    underlying classes. Those are not left to a random draw over 10,392 rows,
+    where the clamped sites alone are 3-in-10,392 and would essentially never
+    appear. An edge case that is merely reachable elsewhere in the inventory is
+    not demonstrated by a demonstration set.
+
+    The zero-onset picks are drawn from sites that read as zero in BOTH
+    timebases. The two disagree — 4 sites in the recording's own timebase, 39 in
+    the excerpt-local one the extractor actually indexes — and which is correct
+    is an open question (D1 in the decisions document). Picking from the
+    intersection means this run keeps its zero-onset case whichever way that
+    resolves, rather than needing to be regenerated.
+
+    Returns the selected rows in inventory order, so the output does not depend
+    on the order the edge cases happened to be added.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    picked: list[str] = []
+
+    def take(pool, k):
+        if len(pool) == 0:
+            return
+        chosen = rng.choice(pool.site_id.to_numpy(),
+                            size=min(k, len(pool)), replace=False)
+        picked.extend(x for x in chosen if x not in picked)
+
+    zero_both = inventory[(inventory.n_frame_onsets == 0)
+                          & (inventory.n_frame_onsets_abs == 0)]
+    take(zero_both, 2)
+    take(inventory[inventory.excerpt_clamped], 2)
+    take(inventory[inventory.n_flaps_in_word >= 2], 2)
+
+    # Fill the rest keeping both classes present in roughly corpus proportion.
+    remaining = inventory[~inventory.site_id.isin(picked)]
+    for cls, share in (("d", 0.35), ("t", 0.65)):
+        take(remaining[remaining.underlying == cls],
+             max(1, round((n - len(picked)) * share)))
+    take(inventory[~inventory.site_id.isin(picked)], n - len(picked))
+
+    return inventory[inventory.site_id.isin(picked[:n])].reset_index(drop=True)
+
+
+def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
+               encoder: str = "wavjepa", layer: int = 8):
+    """Generate the three conditions over one selected set of sites.
+
+    SYNTHETIC, AND THE SCHEMA SAYS SO ON EVERY ROW
+        No probe has been trained. These probabilities carry no information
+        about /t/ and /d/ whatsoever, and the only thing being demonstrated is
+        that a number round-trips from a tool call to a screen with its
+        provenance intact. Retrieval is exactly as testable against noise as
+        against a real result, because retrieval does not depend on whether a
+        probability means anything.
+
+    THE DRAW IS SEEDED AND THE SEED IS RECORDED
+        A synthetic result that cannot be regenerated is worse than none: it
+        cannot be checked, and it cannot be told apart from a result that was
+        adjusted until it looked right.
+
+    WHY combined_diagonal EXISTS
+        The two conditions the design specifies both score every site, so
+        eligible=false never occurs and the designated failure case has no
+        reachable target. This third condition discards ~80% of sites, matching
+        the diagonal scheme's measured discard, which makes the state real
+        rather than nominal.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    sites = select_sites(inventory, n_sites, seed)
+    folds = rng.integers(0, N_FOLDS, size=len(sites))
+
+    # One correctness draw per site per condition, then a probability CONSISTENT
+    # with it. Drawing p_t independently and deriving correctness from it would
+    # let the two disagree, and a row whose probability contradicts its own
+    # correct flag is a bug that looks like a subtle modelling choice.
+    rows = []
+    ineligible = rng.random(len(sites)) < DIAGONAL_DISCARD
+    for cond in CONDITIONS:
+        hits = rng.random(len(sites)) < P_CORRECT[cond]
+        for i, site in enumerate(sites.itertuples()):
+            eligible = not (cond == "combined_diagonal" and ineligible[i])
+            if not eligible:
+                rows.append({
+                    "site_id": site.site_id, "encoder": encoder, "layer": layer,
+                    "condition": cond, "fold": int(folds[i]),
+                    "eligible": False, "scored": False,
+                    "p_t": None, "pred": None, "correct": None, "synthetic": True,
+                })
+                continue
+            truth = site.underlying
+            correct = bool(hits[i])
+            pred = truth if correct else ("d" if truth == "t" else "t")
+            # p_t on the side its own prediction implies, margin away from 0.5.
+            margin = float(rng.uniform(0.08, 0.45))
+            p_t = 0.5 + margin if pred == "t" else 0.5 - margin
+            rows.append({
+                "site_id": site.site_id, "encoder": encoder, "layer": layer,
+                "condition": cond, "fold": int(folds[i]),
+                "eligible": True, "scored": True,
+                "p_t": round(p_t, 6), "pred": pred, "correct": correct,
+                "synthetic": True,
+            })
+    return sites, rows
