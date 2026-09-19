@@ -133,7 +133,15 @@ def collect(root: Path, keep_marked: bool = False):
     return realizations, per_speaker, durations, rows, stats
 
 
-def report(realizations, per_speaker, durations, stats, root: Path) -> None:
+def report(realizations, per_speaker, durations, stats, root: Path,
+           keep_marked: bool = False) -> bool:
+    """Print the realization report; return whether the flap cross-check agrees.
+
+    The return value exists so main() can exit non-zero. EXPECTED_T_FLAPS is
+    the one number in this file that ties it to the other inventory, and a
+    cross-check that only prints cannot be depended on by a hook, a CI step, or
+    an acceptance gate.
+    """
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     print(f"Buckeye /t/ and /d/ surface realizations — {stamp}")
     print(f"corpus: {root}")
@@ -184,13 +192,21 @@ def report(realizations, per_speaker, durations, stats, root: Path) -> None:
     flaps_from_t = realizations["t"]["dx"]
     print("-- consistency check against the 2026-08-21 flap inventory --")
     print(f"  /t/ -> [dx] here:            {flaps_from_t:,}")
+    if keep_marked:
+        # The expected figure is the DEFAULT selection's. --keep-marked admits
+        # the 754 hedged flaps, so the two numbers are supposed to differ and
+        # comparing them would report a failure that is not one.
+        print(f"  expected (count_flap_sites): n/a under --keep-marked "
+              f"({EXPECTED_T_FLAPS:,} is the default selection's figure)")
+        return True
     print(f"  expected (count_flap_sites): {EXPECTED_T_FLAPS:,}")
     if flaps_from_t != EXPECTED_T_FLAPS:
         print("  ** MISMATCH — the two inventories disagree. Do not cite either")
         print("     figure until this is resolved; one of the two selections is")
         print("     wrong, and a plausible number is the failure mode here.")
-    else:
-        print("  OK — the reverse selection reproduces it exactly.")
+        return False
+    print("  OK — the reverse selection reproduces it exactly.")
+    return True
 
 
 def main() -> int:
@@ -205,7 +221,8 @@ def main() -> int:
     realizations, per_speaker, durations, rows, stats = collect(
         args.root, keep_marked=args.keep_marked
     )
-    report(realizations, per_speaker, durations, stats, root=args.root)
+    agrees = report(realizations, per_speaker, durations, stats, root=args.root,
+                    keep_marked=args.keep_marked)
 
     if args.dump:
         args.dump.parent.mkdir(parents=True, exist_ok=True)
@@ -215,7 +232,11 @@ def main() -> int:
                 fh.write("\t".join(r) + "\n")
         print(f"\nwrote {len(rows):,} tokens to {args.dump}")
 
-    return 0
+    # Non-zero on disagreement. The printed warning above is the diagnosis; the
+    # exit code is what lets anything else depend on it — a pre-commit hook, a
+    # CI step, or the acceptance gate for the Challenge 2 slice, none of which
+    # can read prose. A cross-check that cannot fail a caller is a comment.
+    return 0 if agrees else 1
 
 
 if __name__ == "__main__":
