@@ -1,0 +1,11 @@
+{
+  "checkpoint_revision": "6be4a50",
+  "code_commit": "41b703633c0452d684ee37f0c525ba8ca2793058-dirty",
+  "context_ms": 200.0,
+  "inventory_hash": "59cdf28b1c63c03c2c2eba5252450e973b143616c769c6ab85aa704dc7bb52ff",
+  "n_sites_scored": 40,
+  "random_seed": 20260919,
+  "run_id": "20260919T203935Z",
+  "split_scheme": "speaker-disjoint x word-type-disjoint, 5-fold; combined_diagonal discards off-diagonal",
+  "synthetic": true
+}
