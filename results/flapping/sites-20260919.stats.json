@@ -1,0 +1,14 @@
+{
+  "context_ms": 200,
+  "excluded_annotator_mark": 754,
+  "excluded_length_mismatch": 2986,
+  "excluded_not_t_or_d": 198,
+  "excluded_tier_mismatch": 3,
+  "flap_bearing_words": 14238,
+  "n_excerpt_clamped": 3,
+  "n_sites": 10392,
+  "n_underlying_d": 2529,
+  "n_underlying_t": 7863,
+  "n_zero_onset_absolute": 4,
+  "n_zero_onset_excerpt_local": 39
+}

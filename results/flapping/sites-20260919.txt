@@ -2,7 +2,7 @@
 Buckeye flapping sites — RQ1 English arm
 ==================================================================
   root: /data/corpora/buckeye
-  date: 2026-09-19T18:57:46Z
+  date: 2026-09-19T20:43:14Z
 
 -- corpus --
   tracks parsed                   255
@@ -83,3 +83,4 @@ Buckeye flapping sites — RQ1 English arm
     genuinely ambiguous             0  (some single position attested as both)
     positionally determined, by site count: [Buckeye word types redacted]
 wrote 10,392 sites to results/flapping/sites-20260919.parquet
+wrote exclusion counts to results/flapping/sites-20260919.stats.json

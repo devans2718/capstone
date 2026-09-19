@@ -690,6 +690,49 @@ def write_parquet(sites, path: Path) -> None:
     pq.write_table(pa.Table.from_pylist(rows, schema=schema), path)
 
 
+def write_stats(sites, stats, path: Path) -> None:
+    """Write the label-and-population exclusion counts as JSON.
+
+    WHY THIS EXISTS SEPARATELY FROM THE PARQUET
+        The application has to show what the retained set excludes, and three of
+        those figures are not columns and never can be: 2,986 words dropped for
+        canonical/actual length mismatch, 754 flaps carrying the annotator's
+        hedge mark, 198 flaps from neither /t/ nor /d/. They are counts of
+        things that did NOT become rows, so the only place they exist is the
+        parse that rejected them.
+
+        Without this file the application would have to carry those numbers as
+        literals in its source, transcribed by hand from a text report. A
+        transcribed number does not change when the measurement does, which is
+        the failure mode where an interface confidently displays last month's
+        figure. Writing them out at the moment they are measured is the whole
+        point.
+
+    The zero-onset and clamped counts are recomputed here from the sites rather
+    than read from anywhere, and both timebases are reported for the same reason
+    report() gives both.
+    """
+    import json
+
+    by_cat = Counter(s.underlying for s in sites)
+    payload = {
+        "flap_bearing_words": stats["flap_words"],
+        "excluded_length_mismatch": stats["flap_words_unaligned"],
+        "excluded_tier_mismatch": stats["tier_mismatch"],
+        "excluded_not_t_or_d": stats["flap_not_from_t_or_d"],
+        "excluded_annotator_mark": stats["excluded_annotator_mark"],
+        "n_sites": len(sites),
+        "n_underlying_t": by_cat["t"],
+        "n_underlying_d": by_cat["d"],
+        "n_zero_onset_excerpt_local": sum(1 for s in sites if s.n_frame_onsets == 0),
+        "n_zero_onset_absolute": sum(1 for s in sites if s.n_frame_onsets_abs == 0),
+        "n_excerpt_clamped": sum(1 for s in sites if s.excerpt_clamped),
+        "context_ms": 200,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=DEFAULT_ROOT,
@@ -724,6 +767,9 @@ def main() -> int:
     if args.parquet:
         write_parquet(sites, args.parquet)
         print(f"wrote {len(sites):,} sites to {args.parquet}")
+        stats_path = args.parquet.with_suffix(".stats.json")
+        write_stats(sites, stats, stats_path)
+        print(f"wrote exclusion counts to {stats_path}")
 
     return 0
 
