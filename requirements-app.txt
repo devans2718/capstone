@@ -1,0 +1,44 @@
+# Application-only dependencies for the Challenge 2 slice.
+#
+# WHY THIS IS SEPARATE FROM requirements.txt
+#     requirements.txt is the extraction and probing environment: torch,
+#     transformers, and a CUDA base image behind them. The slice trains nothing
+#     and runs no forward pass, so none of that is needed to run or review it.
+#
+#     plan_excerpt, Excerpt and FrameGeometry import torch only under
+#     TYPE_CHECKING and inside function bodies, so the alignment arithmetic the
+#     application depends on is reachable from a plain virtualenv. Keeping the
+#     two files apart is what makes that reachable in practice rather than in
+#     principle: a reviewer with no GPU can `pip install -r requirements-app.txt`
+#     and run the thing.
+#
+#     The cost is that a package needed by both must be kept consistent by hand.
+#     soundfile and numpy are today's two, and both are pinned to the versions
+#     requirements.lock.txt resolved, deliberately. The application reads the
+#     same wav files the encoder does and writes the parquet the encoder side
+#     will read back, and a decoder or dtype difference between the two
+#     environments would surface as an audio or a join bug with no obvious
+#     cause. Pinning them here is cheaper than diagnosing that later.
+
+numpy==2.2.6         # pinned to match requirements.lock.txt — see above
+pandas==2.3.3        # test-case ground truth, computed independently of DuckDB
+pyarrow==21.0.0      # site inventory and predictions on disk; the join spine
+duckdb==1.4.1        # the retrieval tools; typed SQL over the two parquet files
+soundfile==0.13.1    # clip export. Pinned to match requirements.txt — see above.
+streamlit==1.50.0    # the presentation layer
+
+# Testing. Not in §11's list, which names only what the application imports,
+# but the slice's acceptance is seven test cases (brief §9), and a test suite
+# that can only run inside the CUDA image is not one a reviewer can run.
+# requirements.txt leaves pytest unpinned and requirements.lock.txt predates it
+# being installed, so this pin is what currently resolves rather than a version
+# inherited from either file.
+pytest==9.1.1
+
+# The package itself, as the Dockerfile installs it (line 26). Without it
+# `import capstone` fails and the existing frame-geometry tests do not even
+# collect, which would make "the tests pass in the app environment" an untested
+# claim rather than a checked one. The Dockerfile passes --no-deps; that is
+# redundant here because pyproject.toml declares no dependencies of its own,
+# and uv rejects the flag as a requirements-file line.
+-e .

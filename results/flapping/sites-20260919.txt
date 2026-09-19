@@ -1,0 +1,85 @@
+==================================================================
+Buckeye flapping sites — RQ1 English arm
+==================================================================
+  root: /data/corpora/buckeye
+  date: 2026-09-19T18:57:46Z
+
+-- corpus --
+  tracks parsed                   255
+  word tokens                 283,660
+
+-- flap-bearing words --
+  words containing [dx]        14,238
+    canonical/actual aligned   11,252  (79.0%)
+    length mismatch, skipped    2,986  (21.0%)
+
+-- exclusions within aligned words --
+  .words/.phones tier mismatch            3
+  flap label disagreement                 0
+  flap not from /t/ or /d/              198
+  annotator mark '*' on the flap        754
+
+-- underlying category of every aligned flap --
+  t        8,377
+  d        2,769
+  dh         118
+  dx          24
+  n           16
+  ah           7
+  ih           5
+  th           5
+
+== USABLE SITES ==
+  total                        10,392
+  underlying /t/               7,863  (75.7%)
+  underlying /d/               2,529  (24.3%)
+  balanced-subsample ceiling    5,058  (2,529 per class)
+
+-- speaker coverage (a speaker-disjoint split needs both classes) --
+  speakers with any site           40
+  speakers with both classes       40
+  sites per speaker          min 96 / median 249 / max 552
+
+-- duration --
+  flap duration ms           min 6.2 / median 27.4 / max 133.9
+  total flap audio           286.0 s
+
+-- frames per site (WavJEPA geometry, 10 ms hop) --
+  Two timebases. 'absolute' is the site's position in the
+  recording, which is what the 2026-08-21 report published.
+  'excerpt' is the span the extractor actually indexes, since
+  encode_excerpt lays the segment grid from the excerpt's first
+  sample. They need not agree; both are reported.
+
+                               excerpt    absolute
+  onsets per site, min               0           0
+  median                             2           3
+  max                               13          13
+  total onsets                  24,016      28,392
+  sites with zero onsets            39           4
+
+  the two timebases disagree on 4,524 of 10,392 sites (43.53%).
+  This is arithmetic, not noise. context_ms = 200 is exactly
+  3,200 samples = exactly 20 frames at a 160-sample stride, so
+  a centred target's onset lands ON a frame boundary and the
+  count is floor(duration / stride) with no leading partial
+  frame. In the recording's timebase the onset falls at an
+  arbitrary phase, which about half the time buys one more.
+  Recorded, not reconciled: the excerpt-local column is the
+  one that describes what a probe will be trained on, and the
+  absolute total over-counts it.
+
+-- excerpt planning at context_ms = 200 --
+  sites clamped at a recording edge        3
+  A clamped site cannot be centred, so it carries a different
+  positional contribution from every other site. Counted here
+  so the imbalance is known before results exist, not after.
+
+-- word types carrying BOTH underlying classes (pre-registration §1a) --
+  types with both /t/ and /d/      25 of 1,022
+  sites in them                   220  (2.12% of all sites)
+  of those types:
+    positionally determined        25  (each position is one class; two flap sites, not one ambiguous one)
+    genuinely ambiguous             0  (some single position attested as both)
+    positionally determined, by site count: [Buckeye word types redacted]
+wrote 10,392 sites to results/flapping/sites-20260919.parquet
