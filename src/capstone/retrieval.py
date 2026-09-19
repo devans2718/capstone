@@ -201,7 +201,7 @@ class SliceStore:
             SELECT s.site_id, s.speaker, s.track, s.word, s.underlying,
                    s.start_sample, s.end_sample, s.duration_ms,
                    s.n_frame_onsets, s.n_frame_onsets_abs, s.excerpt_clamped,
-                   s.prev_phone, s.next_phone, s.next_word,
+                   s.prev_phone, s.next_phone, s.prev_word, s.next_word,
                    p.condition, p.fold, p.eligible, p.scored, p.p_t, p.pred,
                    p.correct, p.synthetic
             FROM sites s JOIN preds p ON p.site_id = s.site_id
@@ -233,6 +233,8 @@ class SliceStore:
 
         base = {"site_id": site_id, "condition": condition,
                 "word": site.word.iloc[0], "underlying": site.underlying.iloc[0],
+                "prev_word": site.prev_word.iloc[0],
+                "next_word": site.next_word.iloc[0],
                 "n_frame_onsets": int(site.n_frame_onsets.iloc[0]),
                 "n_frame_onsets_abs": int(site.n_frame_onsets_abs.iloc[0]),
                 "excerpt_clamped": bool(site.excerpt_clamped.iloc[0]),
@@ -270,6 +272,7 @@ class SliceStore:
 
         sql = f"""
             SELECT s.site_id, s.speaker, s.word, s.underlying,
+                   s.prev_word, s.next_word,
                    s.start_sample, s.duration_ms, s.n_frame_onsets,
                    a.correct AS correct_a, b.correct AS correct_b,
                    a.p_t AS p_t_a, b.p_t AS p_t_b,

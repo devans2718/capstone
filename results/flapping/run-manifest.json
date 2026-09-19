@@ -1,11 +1,11 @@
 {
   "checkpoint_revision": "6be4a50",
-  "code_commit": "66225146d31d22bc0eff411afbf3c034ff782492",
+  "code_commit": "a8d6c90b36035a7b35123949cab27ee851b93c0b-dirty",
   "context_ms": 200.0,
-  "inventory_hash": "59cdf28b1c63c03c2c2eba5252450e973b143616c769c6ab85aa704dc7bb52ff",
+  "inventory_hash": "93a12090733d39c23dc54562ef77978195006cd0944d0ac1b46b0d5e32177134",
   "n_sites_scored": 40,
   "random_seed": 20260919,
-  "run_id": "20260919T204820Z",
+  "run_id": "20260919T225357Z",
   "split_scheme": "speaker-disjoint x word-type-disjoint, 5-fold; combined_diagonal discards off-diagonal",
   "synthetic": true
 }

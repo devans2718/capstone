@@ -161,6 +161,8 @@ class Site:
     # token. next_word is empty when the following entry does not abut.
     prev_phone: str = ""
     next_phone: str = ""
+    prev_word: str = ""
+    prev_word_last_phone: str = ""
     next_word: str = ""
     next_word_first_phone: str = ""
 
@@ -410,6 +412,20 @@ def collect_sites(root: Path, keep_marked: bool = False):
                     next_word = n_word
                     next_word_first_phone = n_actual[0] if n_actual else ""
 
+            # The preceding word, same rule. Both neighbours are needed to
+            # render a fragment of transcript around the site, which is what a
+            # human listening to a clip actually needs: 'ladies' alone does not
+            # tell you what you are about to hear, and a reviewer asked to judge
+            # a label by ear without the surrounding words is guessing.
+            # Empty means a pause intervened, and the renderer must show that
+            # rather than closing the gap — 826 sites have no following word.
+            prev_word, prev_word_last_phone = "", ""
+            if i > 0:
+                _, p_end, p_word, _, p_actual, _ = entries[i - 1]
+                if w_start - p_end <= ADJACENCY_TOL:
+                    prev_word = p_word
+                    prev_word_last_phone = p_actual[-1] if p_actual else ""
+
             n_flaps = actual.count("dx")
 
             for idx, (c, a) in enumerate(zip(canon, actual)):
@@ -446,6 +462,8 @@ def collect_sites(root: Path, keep_marked: bool = False):
                                 if phone.index > 0 else ""),
                     next_phone=(phones[phone.index + 1].label
                                 if phone.index + 1 < len(phones) else ""),
+                    prev_word=prev_word,
+                    prev_word_last_phone=prev_word_last_phone,
                     next_word=next_word,
                     next_word_first_phone=next_word_first_phone,
                     annotator_mark=phone.mark,
@@ -669,6 +687,8 @@ def write_parquet(sites, path: Path) -> None:
         ("actual_phones", pa.list_(pa.string())),
         ("prev_phone", pa.string()),
         ("next_phone", pa.string()),
+        ("prev_word", pa.string()),
+        ("prev_word_last_phone", pa.string()),
         ("next_word", pa.string()),
         ("next_word_first_phone", pa.string()),
         ("annotator_mark", pa.string()),

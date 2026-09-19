@@ -56,10 +56,10 @@ CLIPS = Path("/data/clips")
 # is meaningless and an interface offering it trains the reviewer to approve
 # noise. Every verdict names which of four claims it is about.
 REVIEW_TARGETS = {
-    "label": "Is this a flap, and is the underlying /t/ vs /d/ assignment right?",
-    "clip": "Does the clip contain the site, centred and uncut?",
-    "retrieval": "Is this row responsive to the question asked?",
-    "grounding": "Did the prose stay inside the returned fields?",
+    "label": "Did you hear a flap, and does the /t/ or /d/ under it look right?",
+    "clip": "Does the audio contain the flap, roughly centred and not cut off?",
+    "retrieval": "Is this site actually an answer to what you filtered for?",
+    "grounding": "Does the wording on screen stay within what the data says?",
 }
 
 
@@ -92,6 +92,38 @@ def load_manifest() -> Manifest:
 @st.cache_data
 def load_stats() -> dict:
     return json.loads(STATS.read_text())
+
+
+def transcript(row) -> str:
+    """The flap site's word with one word either side: 'seven ladies who'.
+
+    A reviewer asked to judge a label by ear needs to know what they are about
+    to hear. The word alone does not tell them — 'ladies' could be anywhere in
+    anything — and without the frame it is guesswork dressed up as a verdict.
+
+    An ellipsis marks a pause rather than a missing word, and it is shown rather
+    than closed over: 1,360 sites have no preceding word and 826 no following
+    one. Silently joining across the gap would put two words next to each other
+    that the speaker never said next to each other.
+    """
+    left = row.prev_word if getattr(row, "prev_word", "") else "…"
+    right = row.next_word if getattr(row, "next_word", "") else "…"
+    return f"{left} {row.word} {right}"
+
+
+def label_for(row) -> str:
+    """How a site is named anywhere a human has to pick one."""
+    return f'"{transcript(row)}"  ({row.site_id})'
+
+
+def coverage_sentence(cov) -> str:
+    """The denominators, in a sentence rather than as four bare numbers."""
+    d = cov.as_dict()
+    return (f"Showing **{d['compared_on']:,}** sites. This run scored "
+            f"**{d['n_scored']:,}** sites in total, out of **{d['n_total']:,}** "
+            f"in the corpus — so these are {d['compared_on']:,} of "
+            f"{d['n_scored']:,} scored, **not** {d['compared_on']:,} of "
+            f"{d['n_total']:,}.")
 
 
 def coverage_line(cov) -> str:
@@ -143,13 +175,20 @@ store = load_store()
 stats = load_stats()
 
 st.error(
-    "**SYNTHETIC RUN — these probabilities carry no information.** No probe has "
-    "been trained. Every `p_t` below is a seeded random draw, kept because "
-    "retrieval is exactly as testable against noise as against a real result. "
-    "Nothing here is a finding about /t/ or /d/."
+    "**SYNTHETIC RUN — the model scores on this page are made up.**  \n"
+    "No probe has been trained yet. Every `p_t` below is a random number from a "
+    "fixed seed. They are here so the plumbing can be tested end to end — which "
+    "works just as well with noise, because the plumbing does not care whether a "
+    "number means anything. **Nothing on this page is a finding about /t/ or /d/.**"
 )
 
-st.title("Underlying /t/ vs /d/ beneath a flap — evidence slice")
+st.title("Was that flap a /t/ or a /d/?")
+st.write(
+    "In American English the *t* in **water** and the *d* in **ladder** both come "
+    "out as the same quick tap — a flap. This page is for looking at individual "
+    "flaps in recorded speech, hearing them, and checking what the model said "
+    "about each one. Every site is 10–130 ms of audio inside a real conversation."
+)
 st.caption(
     f"run `{manifest.run_id}` · code `{manifest.code_commit[:12]}` · "
     f"inventory `{manifest.inventory_hash[:12]}` · checkpoint "
@@ -159,11 +198,22 @@ st.caption(
 
 with st.sidebar:
     st.header("Query")
-    condition = st.selectbox("Condition", CONDITIONS, index=1)
+    condition = st.selectbox("How train/test was split", CONDITIONS, index=1)
+    st.caption(
+        "`ordinary` — words can appear in both train and test.  \n"
+        "`word_disjoint` — a word type is in one or the other, never both.  \n"
+        "`combined_diagonal` — also speaker-split, which throws most sites away."
+    )
     encoder = st.selectbox("Encoder", ["wavjepa"])
-    layer = st.selectbox("Layer", list(range(13)), index=8)
-    underlying = st.selectbox("Underlying class", ["either", "t", "d"])
-    correctness = st.selectbox("Correctness", ["either", "correct", "misclassified"])
+    layer = st.selectbox("Encoder layer", list(range(13)), index=8)
+    underlying = st.selectbox("Underlying sound", ["either", "t", "d"],
+                              format_func=lambda v: {"either": "either",
+                                                     "t": "/t/ (water, city)",
+                                                     "d": "/d/ (ladder, ready)"}[v])
+    correctness = st.selectbox("Model got it", ["either", "correct", "misclassified"],
+                               format_func=lambda v: {"either": "either",
+                                                      "correct": "right",
+                                                      "misclassified": "wrong"}[v])
     st.divider()
     st.caption(f"Split scheme recorded in the manifest:\n\n`{manifest.split_scheme}`")
 
@@ -171,7 +221,8 @@ u = None if underlying == "either" else underlying
 c = None if correctness == "either" else (correctness == "correct")
 
 tab_evidence, tab_compare, tab_uncertainty, tab_state = st.tabs(
-    ["Evidence", "Condition differential", "Uncertainty", "Site lookup"]
+    ["Browse and listen", "Compare two splits",
+     "What this can and can't tell you", "Look up one site"]
 )
 
 # ------------------------------------------------------------------- evidence
@@ -179,37 +230,56 @@ tab_evidence, tab_compare, tab_uncertainty, tab_state = st.tabs(
 with tab_evidence:
     result = store.query_sites(condition=condition, encoder=encoder, layer=layer,
                                underlying=u, correct=c)
-    st.markdown(f"### Coverage — {coverage_line(result.coverage)}")
+    st.info(coverage_sentence(result.coverage))
     st.caption(
-        "Shown on every answer, including when it is uninformative. It is the "
-        "only thing that stops a 40-row table reading like a complete result."
+        f"`{coverage_line(result.coverage)}` — shown on every answer, even when "
+        "it tells you nothing new. It is the only thing stopping a 40-row table "
+        "from reading like the whole corpus."
     )
     if result.n == 0:
-        st.info("**n = 0.** No sites match this filter. That is an answer, not "
-                "an error — the denominators above still apply.")
+        st.warning("**Nothing matches these filters.** That is an answer, not an "
+                   "error — the counts above still hold. Try widening one filter.")
     else:
-        st.dataframe(result.rows, width="stretch", hide_index=True)
+        shown = result.rows.copy()
+        shown.insert(1, "transcript", [transcript(r) for r in shown.itertuples()])
+        st.dataframe(shown, width="stretch", hide_index=True)
 
         st.divider()
-        st.subheader("Listen to one site")
-        pick = st.selectbox("Site", result.rows.site_id.tolist())
+        st.subheader("Listen to one")
+        st.caption(
+            "Pick a site. You will hear the flap with 200 ms either side — about "
+            "a word's worth of run-up and follow-through, which is what makes it "
+            "possible to hear at all."
+        )
+        options = {label_for(r): r.site_id for r in result.rows.itertuples()}
+        picked_label = st.selectbox("Site", list(options))
+        pick = options[picked_label]
         if pick:
             plan = store.plan_clip(pick)
             row = result.rows[result.rows.site_id == pick].iloc[0]
             a, b = st.columns([2, 3])
             with a:
-                st.metric("p_t (synthetic)", f"{row.p_t:.3f}")
-                st.write(f"**{row.word}** · underlying /{row.underlying}/ · "
-                         f"predicted /{row.pred}/")
-                st.write(f"context: `{row.prev_phone}` [dx] `{row.next_phone}`"
-                         + (f" → *{row.next_word}*" if row.next_word else ""))
-            with b:
-                st.write(f"samples `{plan['start_sample']:,}`–`{plan['end_sample']:,}` "
-                         f"({plan['n_samples']:,} = {plan['n_samples']/16:.0f} ms)")
+                st.markdown(f"### “{transcript(row)}”")
+                st.caption(f"`{row.site_id}` · speaker `{row.speaker}`")
+                st.write(
+                    f"The flap is in **{row.word}**. It is really a "
+                    f"**/{row.underlying}/** underneath; the model guessed "
+                    f"**/{row.pred}/** — {'right' if row.correct else 'wrong'}."
+                )
+                st.metric("Model's score for /t/ (made up)", f"{row.p_t:.3f}")
                 st.caption(
-                    "Planned by `plan_excerpt` then `excerpt_samples` — the same "
-                    "call `encode_excerpt` makes. This is the audio the encoder "
-                    "would consume, not an approximation of it."
+                    f"Sounds either side: `{row.prev_phone}` … `{row.next_phone}`. "
+                    f"The flap itself is {row.duration_ms:.0f} ms long."
+                )
+            with b:
+                st.write(f"**Clip:** {plan['n_samples']/16:.0f} ms "
+                         f"(samples `{plan['start_sample']:,}`–`{plan['end_sample']:,}`)")
+                st.caption(
+                    "These are the exact samples the encoder would read, not a "
+                    "close approximation — the window comes from `plan_excerpt` "
+                    "and `excerpt_samples`, the same two calls `encode_excerpt` "
+                    "makes. A clip off by one frame would make anything you "
+                    "concluded by ear unfounded."
                 )
                 try:
                     clip = store.export_clip(pick, out_dir=CLIPS)
@@ -217,10 +287,16 @@ with tab_evidence:
                 except FileNotFoundError as exc:
                     st.warning(f"No corpus audio mounted: {exc}")
 
-            st.markdown("**Review — four separate verdicts, not accept/reject**")
+            st.markdown("#### Your verdict")
+            st.caption(
+                "Four separate judgements, because they can disagree — the clip "
+                "can be cut correctly while the label is wrong. There is no "
+                "single approve button on purpose: the model's score here is "
+                "random, so approving \"the answer\" would mean approving noise."
+            )
             for target, question in REVIEW_TARGETS.items():
                 cols = st.columns([3, 1, 1, 2])
-                cols[0].caption(f"`{target}` — {question}")
+                cols[0].markdown(f"**{target}** — {question}")
                 note = cols[3].text_input("note", key=f"n_{target}_{pick}",
                                           label_visibility="collapsed")
                 if cols[1].button("✓", key=f"y_{target}_{pick}"):
@@ -233,108 +309,146 @@ with tab_evidence:
 # ---------------------------------------------------------------- differential
 
 with tab_compare:
-    st.caption(
-        "Does correctness change when word types stop recurring between train "
-        "and test? A probe leaning on word identity should lose more here than "
-        "anywhere else — that is what the word-disjoint split is for."
+    st.markdown("#### Is the model listening, or just recognising the word?")
+    st.write(
+        "A model that has memorised *water → /t/* will look good until you test "
+        "it on words it never saw in training. That is what `word_disjoint` "
+        "does. If accuracy drops when you switch to it, memorising is part of "
+        "what was going on — and the sites that flipped are the evidence."
     )
     a, b = st.columns(2)
-    cond_a = a.selectbox("Condition A", CONDITIONS, index=0)
-    cond_b = b.selectbox("Condition B", CONDITIONS, index=1)
-    cmp_u = st.selectbox("Underlying class ", ["either", "t", "d"], key="cmp_u")
+    cond_a = a.selectbox("Compare this split…", CONDITIONS, index=0)
+    cond_b = b.selectbox("…against this one", CONDITIONS, index=1)
+    cmp_u = st.selectbox("Underlying sound ", ["either", "t", "d"], key="cmp_u",
+                         format_func=lambda v: {"either": "either",
+                                                "t": "/t/ (water, city)",
+                                                "d": "/d/ (ladder, ready)"}[v])
 
     comp = store.compare_conditions(cond_a, cond_b, encoder=encoder, layer=layer,
                                     underlying=None if cmp_u == "either" else cmp_u)
-    st.markdown(f"### Coverage — {coverage_line(comp.coverage)}")
-    st.caption(comp.note)
+    st.info(coverage_sentence(comp.coverage))
+    st.caption(f"{comp.note} · `{coverage_line(comp.coverage)}`")
     if comp.n == 0:
-        st.info("**n = 0.** No site changed correctness between these two "
-                "conditions under this filter.")
+        st.warning("**No site changed.** Every site the two splits share was "
+                   "judged the same way by both. That is an answer too.")
     else:
         flipped_out = int((comp.rows.correct_a & ~comp.rows.correct_b).sum())
         flipped_in = int((~comp.rows.correct_a & comp.rows.correct_b).sum())
-        st.write(f"**{flipped_out}** correct under `{cond_a}` and incorrect under "
-                 f"`{cond_b}`; **{flipped_in}** the other way.")
-        st.caption(
-            "Both counts are of returned rows. Nothing here is a rate, a "
-            "significance claim, or a statement about why — those would need a "
-            "denominator this run does not have and a probe that exists."
+        st.markdown(
+            f"**{flipped_out} sites** went from right under `{cond_a}` to wrong "
+            f"under `{cond_b}`. **{flipped_in}** went the other way."
         )
-        st.dataframe(comp.rows, width="stretch", hide_index=True)
+        st.caption(
+            "These are counts of the rows below — not percentages, not a "
+            "significance test, and not a claim about why. Saying why would "
+            "need a trained probe, which does not exist yet."
+        )
+        shown = comp.rows.copy()
+        shown.insert(1, "transcript", [transcript(r) for r in shown.itertuples()])
+        st.dataframe(shown, width="stretch", hide_index=True)
 
 # ----------------------------------------------------------------- uncertainty
 
 with tab_uncertainty:
-    st.subheader("1 · Label and population — real, measured, citable today")
-    st.caption("Measured by `scripts/count_flap_sites.py` and read from "
-               "`sites-20260919.stats.json`. Not transcribed into this file.")
-    m = st.columns(4)
-    excl = stats["excluded_length_mismatch"]
-    m[0].metric("words dropped, length mismatch",
-                f"{excl:,}", f"{excl / stats['flap_bearing_words']:.1%} of flap-bearing")
-    m[1].metric("annotator-marked flaps", f"{stats['excluded_annotator_mark']:,}")
-    m[2].metric("flaps not from /t/ or /d/", f"{stats['excluded_not_t_or_d']:,}")
-    m[3].metric("clamped at 200 ms", f"{stats['n_excerpt_clamped']:,}")
-
-    st.warning(
-        f"**The retained set is the cleanly-aligned set.** The "
-        f"{excl:,} excluded words ({excl / stats['flap_bearing_words']:.1%}) are the "
-        "most reduced and most coarticulated tokens — which is exactly where "
-        f"flapping is most interesting. No result on the remaining "
-        f"{stats['n_sites']:,} sites can speak to them, however narrow its "
-        "confidence interval. That is a bound on what any result here can mean, "
-        "and it is knowable now, before any result exists."
+    st.write(
+        "Two different things here are uncertain, and they are kept apart on "
+        "purpose. One is real and can be quoted today. The other is noise."
     )
 
+    st.subheader("1 · What got left out of the data — real, and quotable now")
+    st.caption("Counted by `scripts/count_flap_sites.py` and read from "
+               "`sites-20260919.stats.json`, not typed into this page.")
+    m = st.columns(4)
+    excl = stats["excluded_length_mismatch"]
+    m[0].metric("words thrown out",
+                f"{excl:,}", f"{excl / stats['flap_bearing_words']:.1%} of all flap words",
+                delta_color="off")
+    m[1].metric("flaps the annotator wasn't sure about",
+                f"{stats['excluded_annotator_mark']:,}")
+    m[2].metric("flaps from neither /t/ nor /d/", f"{stats['excluded_not_t_or_d']:,}")
+    m[3].metric("too near the start or end to centre", f"{stats['n_excerpt_clamped']:,}")
+
+    st.warning(
+        f"**What's left is the tidy half.** Those {excl:,} thrown-out words "
+        f"({excl / stats['flap_bearing_words']:.1%}) were dropped because the "
+        "written-down pronunciation and the actual one had different numbers of "
+        "sounds — which happens when a speaker slurs. So the excluded words are "
+        "the *most* casually pronounced ones, and casual pronunciation is "
+        f"exactly where flapping gets interesting. Whatever the remaining "
+        f"{stats['n_sites']:,} sites end up showing, it cannot speak for those. "
+        "That limit is knowable right now, before any result exists."
+    )
+
+    st.markdown("**Flaps too short for the model to see properly**")
     z = st.columns(2)
-    z[0].metric("sites with zero frame onsets — excerpt-local",
+    z[0].metric("counted the way the model reads them",
                 f"{stats['n_zero_onset_excerpt_local']:,}")
-    z[1].metric("— recording's own timebase", f"{stats['n_zero_onset_absolute']:,}")
+    z[1].metric("counted against the raw recording",
+                f"{stats['n_zero_onset_absolute']:,}")
     st.caption(
-        "Both are shown because which is correct is an open question — see D1 in "
-        "`docs/challenges/challenge-2-slice-decisions.md`. Showing one would be "
-        "picking a side of an unresolved question by way of a layout choice."
+        "The model samples audio every 10 ms. Some flaps are shorter than that, "
+        "so it may take no sample inside them at all. The two numbers disagree "
+        "because of an unresolved bug — see D1 in "
+        "`docs/challenges/challenge-2-slice-decisions.md`. Both are shown; "
+        "picking one would quietly settle an open question through a layout "
+        "choice."
     )
 
     st.divider()
-    st.subheader("2 · Probe — synthetic, carries no information")
+    st.subheader("2 · How confident the model is — meaningless here")
     st.error(
-        "`p_t` and its margin exist in the schema and are rendered wherever they "
-        "appear, labelled synthetic. They are seeded random draws. They are not "
-        "evidence about /t/ and /d/ and cannot become evidence by being averaged."
+        "Every `p_t` on this page is a random number. It is labelled wherever it "
+        "appears. It is not weak evidence about /t/ and /d/ — it is no evidence, "
+        "and averaging a lot of it together does not turn it into any."
     )
     st.caption(
-        "These two channels are never combined into a single confidence figure. "
-        "They have different provenance and different remedies — the first is "
-        "addressed by better alignment or by recovering the excluded tokens, the "
-        "second by more data or a better probe — and a blended number would make "
-        "both unfixable, because you could no longer tell which had moved."
+        "These two are never added together into one confidence score. They come "
+        "from different places and have different fixes — the first needs better "
+        "alignment or recovering those thrown-out words, the second needs a real "
+        "probe — and a combined number would hide which of the two had moved, "
+        "leaving you unable to fix either."
     )
 
 # ----------------------------------------------------------------- site lookup
 
 with tab_state:
-    st.caption(
-        "The three eligibility states, rendered distinctly. Collapsing any two "
-        "of them into 'no data' is the defect this view exists to catch."
+    st.write(
+        "There are three reasons a site might have no score, and they mean "
+        "different things. This page keeps them apart. Showing all three as a "
+        "blank cell — or worse, as a zero — is the specific mistake this view "
+        "exists to make impossible."
     )
-    site_id = st.text_input("Site identifier", value="sNNNNx:NNNNN")
-    cond = st.selectbox("Condition ", CONDITIONS, index=2, key="state_cond")
+    site_id = st.text_input("Site identifier", value="sNNNNx:NNNNN",
+                            help="Format is track:phone_number, e.g. sNNNNx:NNNNN")
+    cond = st.selectbox("Under which split", CONDITIONS, index=2, key="state_cond")
     if site_id:
         try:
             state = store.site_state(site_id.strip(), cond)
         except UnknownSite as exc:
             st.error(str(exc))
         else:
+            left = state["prev_word"] or "…"
+            right = state["next_word"] or "…"
+            st.markdown(f"### “{left} {state['word']} {right}”")
+            st.caption(f"`{state['site_id']}` · really a /{state['underlying']}/")
+
             if state["status"] == NOT_SCORED:
-                st.warning(f"**{NOT_SCORED}** — no prediction exists for this "
-                           "site under this condition. Not zero, not a "
-                           "probability, not an inferred value.")
+                st.warning(
+                    "**Thrown out by this split.** The site exists, but this way "
+                    "of dividing train and test discarded it, so no prediction "
+                    "was ever made. Not a zero, not a low score — nothing."
+                )
             elif state["status"] == NOT_REACHED:
-                st.info(f"**{NOT_REACHED}** — this site is eligible; the run "
-                        "scored 40 sites and did not include it.")
+                st.info(
+                    "**Not looked at in this run.** The site was eligible; this "
+                    "run only scored 40 sites and this was not one of them. "
+                    "Different from being thrown out."
+                )
             else:
-                st.success(f"**scored** — p_t {state['p_t']:.3f} (synthetic), "
-                           f"predicted /{state['pred']}/, "
-                           f"{'correct' if state['correct'] else 'incorrect'}")
-            st.json(state)
+                st.success(
+                    f"**Scored.** The model guessed /{state['pred']}/ — "
+                    f"{'right' if state['correct'] else 'wrong'} — with a made-up "
+                    f"score of {state['p_t']:.3f} for /t/."
+                )
+            with st.expander("Raw record"):
+                st.json(state)
