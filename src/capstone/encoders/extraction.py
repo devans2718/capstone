@@ -149,6 +149,31 @@ def plan_excerpt(
     )
 
 
+def excerpt_samples(excerpt: Excerpt, sample_rate: int = 16_000) -> tuple[int, int]:
+    """The sample window an Excerpt cuts out of its recording: (start, end).
+
+    ONE COPY, DELIBERATELY
+        encode_excerpt cuts the audio the encoder consumes. Anything else that
+        cuts the same window — a clip exporter, a listening tool — has to land on
+        the same two integers or it is showing a human something the model never
+        saw. Measured positional sensitivity is cosine distance 0.394 at layer 0
+        for a 10-frame shift, so "close enough" is not a category that exists
+        here: a clip off by one frame makes a conclusion drawn by ear unfounded.
+
+        The rounding is the part that does not survive restatement. `end` is
+        start PLUS a separately rounded duration, not a rounding of
+        target_end_ms + context_ms. Those two differ by one sample whenever the
+        fractional parts fall either side of a half, which is often.
+
+        So this is a function rather than a comment telling the next caller to
+        be careful. It lives at module scope, and it touches no torch, so the
+        application can import it without the CUDA environment.
+    """
+    start = int(round(excerpt.offset_ms / 1000 * sample_rate))
+    end = start + int(round(excerpt.duration_ms / 1000 * sample_rate))
+    return start, end
+
+
 class WavJEPAExtractor:
     """Frozen WavJEPA with per-layer hooks. One utterance per call.
 
@@ -251,8 +276,7 @@ class WavJEPAExtractor:
         callers must handle that rather than assume at least one frame.
         """
         wav = _as_1d(recording)
-        start = int(round(excerpt.offset_ms / 1000 * sample_rate))
-        end = start + int(round(excerpt.duration_ms / 1000 * sample_rate))
+        start, end = excerpt_samples(excerpt, sample_rate)
         frames = self.encode(wav[start:end])
 
         target = self.geometry.frames_for_interval(

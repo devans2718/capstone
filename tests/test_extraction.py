@@ -8,7 +8,7 @@ visible — if a test needs the checkpoint, it should be obvious why.
 
 import pytest
 
-from capstone.encoders.extraction import Excerpt, plan_excerpt
+from capstone.encoders.extraction import Excerpt, excerpt_samples, plan_excerpt
 from capstone.encoders.wavjepa import FrameGeometry
 
 from .test_frame_geometry import WAVJEPA
@@ -92,6 +92,42 @@ def test_very_short_target_can_yield_no_frames():
     ex = plan_excerpt(1_000.0, 1_006.0, recording_duration_ms=60_000, context_ms=200)
     frames = g.frames_for_interval(ex.target_start_local_ms, ex.target_end_local_ms)
     assert len(frames) == 0
+
+
+def test_excerpt_samples_matches_what_the_encoder_consumes():
+    """One window, one arithmetic. Anything else cutting audio calls this.
+
+    encode_excerpt used to carry these two lines inline, which made them
+    impossible to reuse from a torch-free caller — so a clip exporter would have
+    had to restate them, and a restatement that drifts shows a human audio the
+    model never saw.
+    """
+    ex = plan_excerpt(5_000.0, 5_030.0, recording_duration_ms=60_000, context_ms=200)
+    start, end = excerpt_samples(ex)
+    assert start == int(round(ex.offset_ms / 1000 * 16_000))
+    assert end - start == int(round(ex.duration_ms / 1000 * 16_000))
+
+
+def test_end_is_not_derived_from_target_end_plus_context():
+    """The restatement that looks right and lands one sample away.
+
+    `end` is start PLUS a separately rounded duration. Deriving it from
+    target_end_ms + context_ms rounds differently, and the two disagree on 40%
+    of windows — measured over 200,000 offsets, not estimated. At 16 kHz one
+    sample is 62.5 us, which sounds like nothing and is not: identical audio
+    shifted within its segment differs by cosine 0.394 at layer 0.
+    """
+    disagreements = 0
+    for i in range(2_000):
+        t0 = 1_000.0 + i * 0.0137
+        ex = plan_excerpt(t0, t0 + 27.4, recording_duration_ms=600_000, context_ms=200)
+        naive_end = int(round((ex.target_end_ms + 200.0) / 1000 * 16_000))
+        if excerpt_samples(ex)[1] != naive_end:
+            disagreements += 1
+    assert disagreements > 0, (
+        "the naive derivation agreed everywhere, which means this test no longer "
+        "guards anything — check whether the rounding changed"
+    )
 
 
 # ------------------------------------------------------------- checkpoint-bound
