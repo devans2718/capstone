@@ -51,6 +51,12 @@ MANIFEST = Path("/data/embeddings/run-manifest.json")
 REVIEWS = Path("/data/reviews/reviewed.jsonl")
 CLIPS = Path("/data/clips")
 
+# How many sites the lookup dropdown lists per state. 10,352 sites are never
+# reached by a 40-site run, and any one of them demonstrates that state just as
+# well as all of them — the true count is always shown beside the cap, so the
+# list cannot be read as the total.
+LOOKUP_LIMIT = 200
+
 # The four things a reviewer can judge. Deliberately not accept/reject: on a
 # synthetic run the probe output carries no information, so "accept this answer"
 # is meaningless and an interface offering it trains the reviewer to approve
@@ -79,19 +85,52 @@ def render_guard(manifest: Manifest) -> None:
         )
 
 
+def input_stamp() -> tuple:
+    """Modification times of everything the cached loaders are built from.
+
+    Passed as the first argument to each one, so a cache key changes when its
+    inputs do. Streamlit keys a no-argument cached function on nothing at all,
+    which means it never expires for the life of the session.
+
+    For load_store that is a development annoyance: the object outlives an edit
+    to retrieval.py and the next call hits a method the stale instance does not
+    have.
+
+    For load_manifest it is a provenance bug, and a bad one. Regenerating
+    predictions writes a new run_id, a new code_commit and a new inventory_hash,
+    and a cached manifest would go on asserting the old three in the caption
+    above rows that came from the new run. A page whose stated provenance
+    quietly stops describing what is on it is the exact failure the rest of this
+    interface exists to prevent, so it does not get to happen here by accident
+    of caching.
+    """
+    import capstone.predictions
+    import capstone.retrieval
+
+    paths = [INVENTORY, STATS, PREDICTIONS, MANIFEST,
+             Path(capstone.retrieval.__file__), Path(capstone.predictions.__file__)]
+    return tuple(p.stat().st_mtime_ns if p.exists() else 0 for p in paths)
+
+
 @st.cache_resource
-def load_store() -> SliceStore:
+def load_store(stamp: tuple) -> SliceStore:
     return SliceStore(INVENTORY, PREDICTIONS)
 
 
 @st.cache_data
-def load_manifest() -> Manifest:
+def load_manifest(stamp: tuple) -> Manifest:
     return Manifest.read(MANIFEST)
 
 
 @st.cache_data
-def load_stats() -> dict:
+def load_stats(stamp: tuple) -> dict:
     return json.loads(STATS.read_text())
+
+
+@st.cache_data
+def load_states(stamp: tuple, condition: str) -> dict:
+    """Sites grouped by eligibility state. Cached — it scans all 10,392 rows."""
+    return load_store(stamp).sites_by_state(condition)
 
 
 def transcript(row) -> str:
@@ -169,10 +208,11 @@ if missing:
             "python scripts/make_synthetic_predictions.py")
     st.stop()
 
-manifest = load_manifest()
+STAMP = input_stamp()
+manifest = load_manifest(STAMP)
 render_guard(manifest)
-store = load_store()
-stats = load_stats()
+store = load_store(STAMP)
+stats = load_stats(STAMP)
 
 st.error(
     "**SYNTHETIC RUN — the model scores on this page are made up.**  \n"
@@ -418,9 +458,42 @@ with tab_state:
         "blank cell — or worse, as a zero — is the specific mistake this view "
         "exists to make impossible."
     )
-    site_id = st.text_input("Site identifier", value="sNNNNx:NNNNN",
-                            help="Format is track:phone_number, e.g. sNNNNx:NNNNN")
     cond = st.selectbox("Under which split", CONDITIONS, index=2, key="state_cond")
+
+    groups = load_states(STAMP, cond)
+    kinds = {
+        "scored": f"Scored in this run ({len(groups['scored']):,})",
+        "discarded": f"Thrown out by this split ({len(groups['discarded']):,})",
+        "not_reached": f"Not looked at in this run ({len(groups['not_reached']):,})",
+    }
+    kind = st.radio("Show me a site that was…", list(kinds), horizontal=True,
+                    format_func=kinds.get, key="state_kind")
+
+    pool = groups[kind]
+    if pool.empty:
+        st.info(f"No sites are in that state under `{cond}`. Under `ordinary` "
+                "nothing is thrown out, for instance — every site stays "
+                "eligible, and the ones without a score simply were not reached.")
+        site_id = None
+    else:
+        # Capped, and the true count is in the radio label above so the cap
+        # cannot be mistaken for the total. Any one site demonstrates the state;
+        # shipping 10,352 options would make the page heavy to prove nothing
+        # extra. The identifier box below still reaches every site.
+        capped = pool.head(LOOKUP_LIMIT)
+        options = {label_for(r): r.site_id for r in capped.itertuples()}
+        if len(pool) > LOOKUP_LIMIT:
+            st.caption(f"Listing the first {LOOKUP_LIMIT} of {len(pool):,}. "
+                       "Any site can still be reached by identifier below.")
+        site_id = options[st.selectbox("Site", list(options), key="state_site")]
+
+    with st.expander("Or look one up by identifier"):
+        typed = st.text_input("Site identifier", value="",
+                              placeholder="sNNNNx:NNNNN",
+                              help="Format is track:phone_number")
+        if typed.strip():
+            site_id = typed.strip()
+
     if site_id:
         try:
             state = store.site_state(site_id.strip(), cond)

@@ -210,6 +210,37 @@ class SliceStore:
         """, params).df()
         return Result(rows, self.coverage(condition, compared_on=len(rows)))
 
+    def sites_by_state(self, condition: str) -> dict:
+        """Every site in the inventory, grouped by which of the three states it is in.
+
+        This is the one query in the module where the LEFT JOIN is doing the
+        real work rather than being a matter of taste. "Not reached by this run"
+        is the absence of a prediction row, so it exists only as a NULL on the
+        right-hand side; an inner join cannot express it at all, and the state
+        would silently cease to be selectable.
+
+        Exists so a caller does not have to know a site identifier in advance to
+        see a state. Being asked to type one is being asked to already know the
+        answer to the question the view is meant to answer.
+
+        Returns {"scored": df, "discarded": df, "not_reached": df}, each ordered
+        by site_id and carrying enough to render a transcript.
+        """
+        rows = self.db.execute("""
+            SELECT s.site_id, s.word, s.prev_word, s.next_word, s.underlying,
+                   p.eligible, p.scored
+            FROM sites s
+            LEFT JOIN preds p ON p.site_id = s.site_id AND p.condition = ?
+            ORDER BY s.site_id
+        """, [condition]).df()
+
+        absent = rows.eligible.isna()
+        return {
+            "scored": rows[~absent & rows.scored.fillna(False).astype(bool)],
+            "discarded": rows[~absent & ~rows.eligible.fillna(True).astype(bool)],
+            "not_reached": rows[absent],
+        }
+
     def site_state(self, site_id: str, condition: str) -> dict:
         """What is known about one site under one condition — all three states.
 
