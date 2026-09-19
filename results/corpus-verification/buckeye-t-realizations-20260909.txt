@@ -1,0 +1,107 @@
+Buckeye /t/ and /d/ surface realizations — 2026-09-09 20:40 UTC
+corpus: /data/corpora/buckeye
+
+-- parsing --
+  tracks read                           255
+  words seen                        283,660
+  words containing /t/ or /d/       101,698
+  dropped: canon/actual length       36,773
+  dropped: tier mismatch                 26
+  words usable                       64,899
+  tokens dropped: tier label              1
+  tokens dropped: annotator mark      1,563
+
+-- underlying /t/ : 48,825 tokens --
+  [t           ]  27,783   56.9%   median  60.3 ms   40/40 speakers
+  [tq          ]   9,365   19.2%   median  38.1 ms   40/40 speakers
+  [dx          ]   7,863   16.1%   median  27.2 ms   40/40 speakers
+  [d           ]   2,063    4.2%   median  38.7 ms   40/40 speakers
+  [ch          ]     771    1.6%   median  94.8 ms   40/40 speakers
+  [n           ]     244    0.5%   median  31.7 ms   39/40 speakers
+  [s           ]     103    0.2%   median  55.8 ms   29/40 speakers
+  [p           ]      99    0.2%   median  42.8 ms   27/40 speakers
+  [k           ]      76    0.2%   median  36.0 ms   25/40 speakers
+  [b           ]      73    0.1%   median  48.0 ms   22/40 speakers
+  [nx          ]      62    0.1%   median  27.1 ms   23/40 speakers
+  [ah          ]      30    0.1%   median  60.3 ms   22/40 speakers
+  [z           ]      29    0.1%   median  50.0 ms   15/40 speakers
+  [g           ]      28    0.1%   median  38.8 ms   13/40 speakers
+  [ih          ]      25    0.1%   median  56.7 ms   17/40 speakers
+  [w           ]      23    0.0%   median  36.8 ms   11/40 speakers
+  [dh          ]      21    0.0%   median  44.7 ms   13/40 speakers
+  [th          ]      21    0.0%   median  71.0 ms   13/40 speakers
+  [sh          ]      21    0.0%   median  63.8 ms   13/40 speakers
+  [m           ]      20    0.0%   median  45.6 ms   15/40 speakers
+  [eh          ]      13    0.0%   median  63.8 ms   11/40 speakers
+  [r           ]      10    0.0%   median  39.1 ms    8/40 speakers
+  [l           ]       9    0.0%   median  23.7 ms    7/40 speakers
+  [zh          ]       8    0.0%   median  52.0 ms    7/40 speakers
+  [ng          ]       8    0.0%   median  32.6 ms    8/40 speakers
+  [f           ]       8    0.0%   median  57.9 ms    5/40 speakers
+  [aw          ]       6    0.0%   median 137.9 ms    6/40 speakers
+  [en          ]       6    0.0%   median  43.0 ms    6/40 speakers
+  [hh          ]       6    0.0%   median  50.4 ms    4/40 speakers
+  [v           ]       6    0.0%   median  34.8 ms    2/40 speakers
+  [ae          ]       5    0.0%   median 101.6 ms    5/40 speakers
+  [jh          ]       5    0.0%   median  52.8 ms    4/40 speakers
+  [er          ]       3    0.0%   median  54.5 ms    2/40 speakers
+  [aa          ]       3    0.0%   median  82.4 ms    2/40 speakers
+  [iy          ]       2    0.0%   median 152.0 ms    2/40 speakers
+  [ay          ]       2    0.0%   median 189.6 ms    2/40 speakers
+  [q           ]       1    0.0%   median  13.4 ms    1/40 speakers
+  [ow          ]       1    0.0%   median 118.5 ms    1/40 speakers
+  [y           ]       1    0.0%   median  38.4 ms    1/40 speakers
+  [UNKNOWN     ]       1    0.0%   median  68.7 ms    1/40 speakers
+  [uw          ]       1    0.0%   median  45.8 ms    1/40 speakers
+
+-- underlying /d/ : 19,061 tokens --
+  [d           ]  15,546   81.6%   median  55.6 ms   40/40 speakers
+  [dx          ]   2,529   13.3%   median  28.0 ms   40/40 speakers
+  [t           ]     329    1.7%   median  73.4 ms   40/40 speakers
+  [jh          ]     128    0.7%   median  85.3 ms   29/40 speakers
+  [tq          ]     106    0.6%   median  38.4 ms   29/40 speakers
+  [n           ]     105    0.6%   median  45.6 ms   32/40 speakers
+  [b           ]      82    0.4%   median  40.4 ms   25/40 speakers
+  [g           ]      28    0.1%   median  39.2 ms   17/40 speakers
+  [dh          ]      26    0.1%   median  42.8 ms   12/40 speakers
+  [ch          ]      26    0.1%   median  76.6 ms   14/40 speakers
+  [v           ]      20    0.1%   median  48.3 ms   10/40 speakers
+  [ah          ]      19    0.1%   median  49.5 ms   11/40 speakers
+  [ih          ]      16    0.1%   median  41.3 ms   13/40 speakers
+  [zh          ]      15    0.1%   median  63.2 ms    8/40 speakers
+  [m           ]       9    0.0%   median  49.0 ms    7/40 speakers
+  [z           ]       9    0.0%   median  51.1 ms    9/40 speakers
+  [nx          ]       8    0.0%   median  26.1 ms    4/40 speakers
+  [s           ]       7    0.0%   median  72.8 ms    7/40 speakers
+  [eh          ]       7    0.0%   median  82.9 ms    5/40 speakers
+  [r           ]       6    0.0%   median  47.1 ms    6/40 speakers
+  [p           ]       5    0.0%   median  46.4 ms    5/40 speakers
+  [f           ]       5    0.0%   median  51.0 ms    5/40 speakers
+  [sh          ]       4    0.0%   median  71.4 ms    4/40 speakers
+  [k           ]       4    0.0%   median  58.2 ms    4/40 speakers
+  [er          ]       2    0.0%   median  96.2 ms    2/40 speakers
+  [l           ]       2    0.0%   median 100.4 ms    2/40 speakers
+  [w           ]       2    0.0%   median  36.7 ms    2/40 speakers
+  [en          ]       2    0.0%   median  41.6 ms    2/40 speakers
+  [iy          ]       2    0.0%   median  99.8 ms    2/40 speakers
+  [ao          ]       2    0.0%   median 108.4 ms    2/40 speakers
+  [y           ]       2    0.0%   median  29.8 ms    2/40 speakers
+  [ay          ]       1    0.0%   median 115.3 ms    1/40 speakers
+  [hh          ]       1    0.0%   median  40.7 ms    1/40 speakers
+  [ae          ]       1    0.0%   median  75.1 ms    1/40 speakers
+  [th          ]       1    0.0%   median  56.5 ms    1/40 speakers
+  [em          ]       1    0.0%   median  53.8 ms    1/40 speakers
+  [aa          ]       1    0.0%   median  61.4 ms    1/40 speakers
+  [el          ]       1    0.0%   median  51.7 ms    1/40 speakers
+  [uh          ]       1    0.0%   median 100.0 ms    1/40 speakers
+
+-- speaker coverage for the /t/ three-way contrast --
+  speakers carrying all of t/dx/tq: 40/40
+  per-speaker minimum cell: min 62, median 160, max 393
+
+-- consistency check against the 2026-08-21 flap inventory --
+  /t/ -> [dx] here:            7,863
+  expected (count_flap_sites): 7,863
+  OK — the reverse selection reproduces it exactly.
+
+wrote 67,886 tokens to /home/daniel/code/capstone/results/corpus-verification/buckeye-t-realizations-20260909.tsv

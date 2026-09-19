@@ -1,0 +1,78 @@
+Word-final vs word-medial realization of /t/ and /d/ in Buckeye
+corpus: /data/corpora/buckeye
+
+-- realization by position --
+  /t/ medial n=21,609   [t] 15,957 (73.8%)  [dx] 2,889 (13.4%)  [d] 1,289 (6.0%)  [ch] 733 (3.4%)
+  /t/ final  n=27,216   [t] 11,826 (43.5%)  [tq] 9,070 (33.3%)  [dx] 4,974 (18.3%)  [d] 774 (2.8%)
+  /d/ medial n= 8,896   [d] 7,493 (84.2%)  [dx] 1,059 (11.9%)  [jh] 119 (1.3%)  [t] 81 (0.9%)
+  /d/ final  n=10,165   [d] 8,053 (79.2%)  [dx] 1,470 (14.5%)  [t] 248 (2.4%)  [tq] 85 (0.8%)
+
+-- word-final: does realization track the following segment? --
+  /t/ -> [t ] n=11,826   next=vowel  16.7%   next=consonant  60.3%   break  22.9%
+  /t/ -> [dx] n= 4,974   next=vowel  93.6%   next=consonant   5.0%   break   1.3%
+  /d/ -> [d ] n= 8,053   next=vowel  22.2%   next=consonant  57.6%   break  20.2%
+  /d/ -> [dx] n= 1,470   next=vowel  86.3%   next=consonant  11.6%   break   2.0%
+
+-- /t/ word-final: types attested with BOTH [t] and [dx] --
+  types            : 140 of 820
+  tokens in them   : 13,513 of 16,800 (80.4%)
+  of those, minority share >= 20%: 110 types, 12,029 tokens
+  top 20 by token count (word: [t] / [dx], speakers):
+    [word]            1774 / 687    flap 27.9%   40 speakers
+    [word]              1335 / 444    flap 25.0%   40 speakers
+    [word]             1056 / 629    flap 37.3%   40 speakers
+    [word]              411 / 329    flap 44.5%   40 speakers
+    [word]             425 / 308    flap 42.0%   40 speakers
+    [word]               444 / 226    flap 33.7%   40 speakers
+    [word]              460 / 200    flap 30.3%   40 speakers
+    [word]              358 / 256    flap 41.7%   40 speakers
+    [word]              105 / 450    flap 81.1%   40 speakers
+    [word]            269 / 197    flap 42.3%   40 speakers
+    [word]              185 / 217    flap 54.0%   40 speakers
+    [word]            292 / 52     flap 15.1%   39 speakers
+    [word]               73 / 111    flap 60.3%   38 speakers
+    [word]              15 / 102    flap 87.2%   25 speakers
+    [word]              40 / 76     flap 65.5%   37 speakers
+    [word]           48 / 62     flap 56.4%   38 speakers
+    [word]               41 / 43     flap 51.2%   30 speakers
+    [word]              75 / 1      flap  1.3%   33 speakers
+    [word]             55 / 15     flap 21.4%   34 speakers
+    [word]             51 / 16     flap 23.9%   33 speakers
+
+-- /d/ word-final: types attested with BOTH [d] and [dx] --
+  types            : 170 of 752
+  tokens in them   : 7,289 of 9,523 (76.5%)
+  of those, minority share >= 20%: 101 types, 2,657 tokens
+  top 20 by token count (word: [d] / [dx], speakers):
+    [word]              521 / 198    flap 27.5%   40 speakers
+    [word]            598 / 109    flap 15.4%   40 speakers
+    [word]             434 / 118    flap 21.4%   40 speakers
+    [word]             334 / 82     flap 19.7%   40 speakers
+    [word]              299 / 67     flap 18.3%   40 speakers
+    [word]            274 / 43     flap 13.6%   40 speakers
+    [word]             208 / 31     flap 13.0%   39 speakers
+    [word]           189 / 23     flap 10.8%   38 speakers
+    [word]              164 / 21     flap 11.4%   37 speakers
+    [word]              131 / 40     flap 23.4%   38 speakers
+    [word]              117 / 29     flap 19.9%   28 speakers
+    [word]             113 / 14     flap 11.0%   35 speakers
+    [word]              102 / 16     flap 13.6%   38 speakers
+    [word]              70 / 41     flap 36.9%   38 speakers
+    [word]               82 / 20     flap 19.6%   30 speakers
+    [word]             90 / 12     flap 11.8%   29 speakers
+    [word]           79 / 15     flap 16.0%   31 speakers
+    [word]             87 / 1      flap  1.1%   31 speakers
+    [word]             59 / 22     flap 27.2%   31 speakers
+    [word]              54 / 22     flap 28.9%   27 speakers
+
+-- control: same measure on word-MEDIAL types --
+  /t/ medial: 105 of 1,897 types, 8,828 of 18,846 tokens (46.8%)
+  /d/ medial: 126 of 1,090 types, 5,097 of 8,552 tokens (59.6%)
+
+-- parsing --
+  words_unaligned                36,773
+  tier_mismatch                      26
+  tier_label_disagreement             1
+  excluded_annotator_mark         1,563
+  adjacent                       52,112
+  not_adjacent                   12,787
