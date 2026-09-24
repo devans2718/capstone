@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Is a word-type-disjoint split feasible on the Buckeye flap inventory?
 
-Read-only. Answers four questions: how many word types carry the 10,392 sites,
+Read-only. Answers five questions: how many word types carry the 10,392 sites,
 how concentrated they are, whether `underlying` is a deterministic function of
-the word type, and what survives a split that is type-disjoint and
-speaker-disjoint at the same time.
+the word type, what survives a split that is type-disjoint and
+speaker-disjoint at the same time, and whether the full 5 x 5 grid behind that
+split can score every site instead of only the diagonal.
 """
 import csv
 import random
@@ -99,3 +100,67 @@ for fold in range(5):
     tr_c, te_c = Counter(r["underlying"] for r in tr), Counter(r["underlying"] for r in te)
     print(f"  fold {fold}: train {len(tr):>5} (t={tr_c['t']:>4} d={tr_c['d']:>4})  "
           f"test {len(te):>5} (t={te_c['t']:>4} d={te_c['d']:>4})")
+
+# --- 5. the full 5 x 5 grid behind §3's stratified split -----------------
+# §3 tests only the diagonal: fold k holds out speaker fold k AND type fold k,
+# so 5 of the 25 (speaker fold, type fold) cells are ever scored. Every cell can
+# serve as a test set the same way: test = the cell, train = sites sharing
+# neither its speaker fold nor its type fold. Speaker and type folds are both
+# partitions, so each site sits in exactly one cell, and scoring all 25 gives
+# every site one out-of-fold prediction. Cell (k, k)'s train set is §3's fold k
+# train set exactly, so no probe sees less data than under the diagonal design.
+spk_fold = {s: i % 5 for i, s in enumerate(speakers)}
+typ_fold = {w: i % 5 for i, (w, _) in enumerate(ranked)}
+cell_of = [(spk_fold[r["speaker"]], typ_fold[r["word"]]) for r in rows]
+
+print("\nfull 5 x 5 grid: speaker fold x type fold (§3's stratified assignment)")
+per_cell = Counter(cell_of)
+print(f"  cells populated: {len(per_cell)} of 25; "
+      f"sites assigned to a cell: {sum(per_cell.values())} of {total}")
+
+grid = {}
+for a in range(5):
+    for b in range(5):
+        te = [r for r, c in zip(rows, cell_of) if c == (a, b)]
+        tr = [r for r, (sa, tb) in zip(rows, cell_of) if sa != a and tb != b]
+        leak = (len({r["speaker"] for r in te} & {r["speaker"] for r in tr})
+                + len({r["word"] for r in te} & {r["word"] for r in tr}))
+        grid[a, b] = dict(
+            n=len(te),
+            d=sum(r["underlying"] == "d" for r in te),
+            d_types=len({r["word"] for r in te if r["underlying"] == "d"}),
+            train=len(tr),
+            train_d=sum(r["underlying"] == "d" for r in tr),
+            leak=leak,
+        )
+
+for field, title in (("n", "test sites"), ("d", "test /d/ sites"),
+                     ("d_types", "distinct /d/ word types in test")):
+    print(f"\n  {title} (rows = speaker fold, cols = type fold):")
+    print("         " + "".join(f"{b:>6}" for b in range(5)))
+    for a in range(5):
+        print(f"    {a:>3}  " + "".join(f"{grid[a, b][field]:>6}" for b in range(5)))
+
+cells = grid.values()
+diag = [grid[k, k] for k in range(5)]
+print(f"\n  test sites per cell {min(c['n'] for c in cells)}-{max(c['n'] for c in cells)}, "
+      f"/d/ per cell {min(c['d'] for c in cells)}-{max(c['d'] for c in cells)}, "
+      f"/d/ types per cell {min(c['d_types'] for c in cells)}-{max(c['d_types'] for c in cells)}")
+print(f"  train sites per cell {min(c['train'] for c in cells)}-{max(c['train'] for c in cells)}, "
+      f"train /d/ {min(c['train_d'] for c in cells)}-{max(c['train_d'] for c in cells)}")
+print(f"  speakers or types shared between a cell's test and train: {sum(c['leak'] for c in cells)}")
+print(f"  scored, diagonal only (§3): {sum(c['n'] for c in diag)} sites, "
+      f"{sum(c['d'] for c in diag)} /d/")
+print(f"  scored, full grid:          {sum(c['n'] for c in cells)} sites, "
+      f"{sum(c['d'] for c in cells)} /d/")
+
+# The type folds come from walking `ranked`, and most_common() orders equal
+# counts by first appearance in the TSV. So the assignment is a function of the
+# inventory's row order as well as its contents. Measure how much rides on that.
+alpha = sorted(by_type.items(), key=lambda kv: (-kv[1], kv[0]))
+typ_fold_alpha = {w: i % 5 for i, (w, _) in enumerate(alpha)}
+moved = {w for w in typ_fold if typ_fold[w] != typ_fold_alpha[w]}
+tied = sum(n for n in Counter(by_type.values()).values() if n > 1)
+print(f"\n  types sharing a site count with another type: {tied} of {len(by_type)}")
+print(f"  types whose fold changes if ties break alphabetically instead of by row order: "
+      f"{len(moved)} ({sum(by_type[w] for w in moved)} sites)")
