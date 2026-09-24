@@ -22,19 +22,30 @@ CASES 3 AND 4 ARE THE LOAD-BEARING ONES
     They are the two a superficially plausible implementation fails: 3 because
     re-deriving a window is easier than calling plan_excerpt, and 4 because an
     absent row is easily rendered as a zero. Both are marked below.
+
+THIS MODULE BELONGS TO THE APP ENVIRONMENT
+    pandas, pyarrow and duckdb come from requirements-app.txt, not from the
+    CUDA image, which carries only what extraction and probing need. Without
+    the guards below, `docker compose run --rm dev python -m pytest` would stop
+    at collection and take the image's own tests down with it. With them, the
+    image skips this module as a whole and .venv-app runs it in full.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-import pandas as pd
-import pyarrow.parquet as pq
 import pytest
 
-from capstone.encoders.extraction import excerpt_samples, plan_excerpt
-from capstone.predictions import synthesize, write_predictions
-from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite
+pd = pytest.importorskip("pandas", reason="app environment only (requirements-app.txt)")
+pytest.importorskip("pyarrow", reason="app environment only (requirements-app.txt)")
+pytest.importorskip("duckdb", reason="app environment only (requirements-app.txt)")
+
+import pyarrow.parquet as pq  # noqa: E402
+
+from capstone.encoders.extraction import excerpt_samples, plan_excerpt  # noqa: E402
+from capstone.predictions import synthesize, write_predictions  # noqa: E402
+from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 INVENTORY = REPO / "results" / "flapping" / "sites-20260919.parquet"
