@@ -53,7 +53,7 @@ should fail.
 
 ```bash
 uv venv .venv-app && uv pip install --python .venv-app/bin/python -r requirements-app.txt
-.venv-app/bin/python scripts/count_flap_sites.py --parquet results/flapping/sites-20260919.parquet
+.venv-app/bin/python scripts/count_flap_sites.py --parquet results/flapping/sites-20260924.parquet
 .venv-app/bin/python scripts/make_synthetic_predictions.py
 .venv-app/bin/streamlit run app/streamlit_app.py
 ```
@@ -65,7 +65,7 @@ arithmetic the interface depends on is reachable from a plain virtualenv.
 
 **What data it uses.** The Buckeye inventory of 10,392 flap sites — 7,863
 underlying /t/, 2,529 /d/ — built by `scripts/count_flap_sites.py` and
-committed as `results/flapping/sites-20260919.parquet`. Predictions are written
+committed as `results/flapping/sites-20260924.parquet`. Predictions are written
 to `/data/embeddings/`, never into the repository; the run manifest is
 committed beside the inventory so a figure can be traced to a seed, an
 inventory hash and a commit. Corpus audio mounts at `/data` and stays there —

@@ -82,16 +82,35 @@ def test_target_stays_findable_through_the_staircase():
         assert ex.target_start_local_ms <= onset < ex.target_end_local_ms
 
 
-def test_very_short_target_can_yield_no_frames():
-    """4 of Buckeye's 10,392 flap sites are shorter than the frame hop.
+def test_very_short_centred_target_still_gets_its_onset_frame():
+    """A target shorter than the frame hop, centred by plan_excerpt, keeps a frame.
 
-    Documented as a test because callers must handle an empty range; discovering
-    it at probe time would look like a data bug.
+    Centring puts the target's start exactly on a frame onset, and that onset
+    is inside [start, end). This test used to assert the opposite (zero frames),
+    which pinned the off-by-one resolved as D1 rather than the docstring's
+    contract.
     """
     g = WAVJEPA
     ex = plan_excerpt(1_000.0, 1_006.0, recording_duration_ms=60_000, context_ms=200)
     frames = g.frames_for_interval(ex.target_start_local_ms, ex.target_end_local_ms)
+    assert len(frames) == 1
+    assert g.frame_to_ms(frames[0]) == pytest.approx(ex.target_start_local_ms, abs=1e-6)
+
+
+def test_short_target_off_an_onset_can_yield_no_frames():
+    """Empty ranges are still possible, so callers must still handle them.
+
+    A 6 ms target starting 2 ms after an onset contains no onset at all.
+    Nothing plan_excerpt produces lands here, but a raw timestamp can.
+    """
+    frames = WAVJEPA.frames_for_interval(1_002.0, 1_008.0)
     assert len(frames) == 0
+
+
+def test_generic_phase_excludes_the_frame_that_started_before_the_target():
+    """The other half of D1: a frame whose onset precedes start is not inside."""
+    frames = WAVJEPA.frames_for_interval(1_003.0, 1_033.0)
+    assert [WAVJEPA.frame_to_ms(i) for i in frames] == pytest.approx([1010.0, 1020.0, 1030.0])
 
 
 def test_excerpt_samples_matches_what_the_encoder_consumes():

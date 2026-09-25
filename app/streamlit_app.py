@@ -44,8 +44,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from capstone.predictions import CONDITIONS, Manifest  # noqa: E402
 from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite  # noqa: E402
 
-INVENTORY = ROOT / "results" / "flapping" / "sites-20260919.parquet"
-STATS = ROOT / "results" / "flapping" / "sites-20260919.stats.json"
+INVENTORY = ROOT / "results" / "flapping" / "sites-20260924.parquet"
+STATS = ROOT / "results" / "flapping" / "sites-20260924.stats.json"
 PREDICTIONS = Path("/data/embeddings/predictions.parquet")
 MANIFEST = Path("/data/embeddings/run-manifest.json")
 REVIEWS = Path("/data/reviews/reviewed.jsonl")
@@ -204,7 +204,7 @@ missing = [p for p in (INVENTORY, PREDICTIONS, MANIFEST) if not p.exists()]
 if missing:
     st.error("Missing inputs:\n\n" + "\n".join(f"- `{p}`" for p in missing))
     st.code("python scripts/count_flap_sites.py --parquet "
-            "results/flapping/sites-20260919.parquet\n"
+            "results/flapping/sites-20260924.parquet\n"
             "python scripts/make_synthetic_predictions.py")
     st.stop()
 
@@ -397,7 +397,7 @@ with tab_uncertainty:
 
     st.subheader("1 · What got left out of the data — real, and quotable now")
     st.caption("Counted by `scripts/count_flap_sites.py` and read from "
-               "`sites-20260919.stats.json`, not typed into this page.")
+               "`sites-20260924.stats.json`, not typed into this page.")
     m = st.columns(4)
     excl = stats["excluded_length_mismatch"]
     m[0].metric("words thrown out",
@@ -419,19 +419,17 @@ with tab_uncertainty:
         "That limit is knowable right now, before any result exists."
     )
 
-    st.markdown("**Flaps too short for the model to see properly**")
-    z = st.columns(2)
-    z[0].metric("counted the way the model reads them",
-                f"{stats['n_zero_onset_excerpt_local']:,}")
-    z[1].metric("counted against the raw recording",
-                f"{stats['n_zero_onset_absolute']:,}")
+    st.markdown("**Flaps too short for the model to see**")
+    st.metric("flaps the model takes no sample inside",
+              f"{stats['n_zero_onset_excerpt_local']:,}")
     st.caption(
-        "The model samples audio every 10 ms. Some flaps are shorter than that, "
-        "so it may take no sample inside them at all. The two numbers disagree "
-        "because of an unresolved bug — see D1 in "
-        "`docs/challenges/challenge-2-slice-decisions.md`. Both are shown; "
-        "picking one would quietly settle an open question through a layout "
-        "choice."
+        "The model samples audio every 10 ms, and some flaps are shorter than "
+        "that. None is missed, because every flap is cut out so that it starts "
+        "exactly on a sample. Measured against the raw recording instead, "
+        f"{stats['n_zero_onset_absolute']:,} flaps would contain no sample, but "
+        "that is not how the model reads them. Until 2026-09-24 an off-by-one "
+        "bug dropped the sample at each flap's start and left 39 flaps empty "
+        "(D1 in `docs/challenges/challenge-2-slice-decisions.md`)."
     )
 
     st.divider()

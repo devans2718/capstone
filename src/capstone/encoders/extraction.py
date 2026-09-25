@@ -271,9 +271,11 @@ class WavJEPAExtractor:
 
         Returns (frames, target_range) where frames is (13, n, 768) and
         target_range indexes the frames whose onsets fall inside the target.
-        The range can be empty for a very short target — 4 of Buckeye's 10,392
-        flap sites are under 13.4 ms and contain no frame onset at all — so
-        callers must handle that rather than assume at least one frame.
+        A centred target always contains the onset at its own start, so no
+        Buckeye flap site yields an empty range. The range can still be empty
+        for a short target that does not start on an onset (a clamped excerpt,
+        or a raw timestamp), so callers must handle that rather than assume at
+        least one frame.
         """
         wav = _as_1d(recording)
         start, end = excerpt_samples(excerpt, sample_rate)

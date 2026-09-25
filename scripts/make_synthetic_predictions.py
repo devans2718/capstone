@@ -41,7 +41,7 @@ from capstone.predictions import (  # noqa: E402
     write_predictions,
 )
 
-DEFAULT_INVENTORY = Path("results/flapping/sites-20260919.parquet")
+DEFAULT_INVENTORY = Path("results/flapping/sites-20260924.parquet")
 DEFAULT_OUT = Path("/data/embeddings/predictions.parquet")
 DEFAULT_MANIFEST_COPY = Path("results/flapping/run-manifest.json")
 

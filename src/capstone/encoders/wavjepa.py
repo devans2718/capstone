@@ -270,9 +270,34 @@ class FrameGeometry:
         within = sample % self.target_length
         return within >= (self.output_steps - 1) * self.stride + self.receptive_field
 
+    def first_frame_at_or_after(self, sample: int) -> int:
+        """The first frame whose onset is >= `sample`.
+
+        sample_to_frame's counterpart from the other side. A sample in a
+        segment's slack maps to the next segment's first frame, because the
+        clamped last frame of its own segment started before it.
+        """
+        frame = self.sample_to_frame(sample)
+        if self.frame_start_sample(frame) < sample:
+            frame += 1
+        return frame
+
     def frames_for_interval(self, start_ms: float, end_ms: float) -> range:
-        """Frames whose onsets fall in [start_ms, end_ms) — a probe's label span."""
-        return range(self.ms_to_frame(start_ms), self.ms_to_frame(end_ms))
+        """Frames whose onsets fall in [start_ms, end_ms) — a probe's label span.
+
+        Both ends go through first_frame_at_or_after. Until 2026-09-24 both went
+        through sample_to_frame, which returns the last onset at or BEFORE a
+        time. That made two errors: it included a frame starting before the
+        target, and it excluded the last frame starting inside it. At a generic
+        phase the two cancel in the count, but not in which frames are chosen.
+        plan_excerpt puts every target exactly on an onset, and at that phase
+        only the second error applies. So every centred target lost the
+        frame whose receptive field begins at the flap onset, which is its
+        best-aligned frame (decision D1 in docs/challenges/challenge-2-slice-decisions.md).
+        """
+        to_sample = lambda t_ms: int(round(t_ms / 1000 * self.sample_rate))  # noqa: E731
+        return range(self.first_frame_at_or_after(to_sample(start_ms)),
+                     self.first_frame_at_or_after(to_sample(end_ms)))
 
 
 def reassemble(

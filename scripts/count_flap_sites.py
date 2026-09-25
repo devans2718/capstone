@@ -328,12 +328,17 @@ def frame_onsets(start: float, end: float, recording_ms: float) -> tuple[int, in
         They differ systematically, and the reason is arithmetic rather than
         accidental. context_ms = 200 is exactly 3,200 samples, which is exactly
         20 frames at a 160-sample stride, so a centred target's onset always
-        lands ON a frame boundary in excerpt-local coordinates. The count is
-        then floor(duration / stride) with no partial frame at the leading
-        edge. In the recording's own timebase the onset falls at an arbitrary
-        phase within its segment, and roughly half the time that phase buys one
-        extra frame. Absolute counts are therefore >= excerpt-local ones, and
-        the published total over-counts what extraction will actually index.
+        lands ON a frame boundary in excerpt-local coordinates. That onset is
+        inside [start, end), so the count is ceil(duration / stride) and never
+        zero. In the recording's own timebase the start falls at an arbitrary
+        phase, and the frame it lands inside began before it and does not count.
+        Absolute counts are therefore <= excerpt-local ones.
+
+        (Before 2026-09-24 this was the other way round. frames_for_interval
+        dropped the onset at start, so excerpt counts were floor(duration /
+        stride) and 39 sites had none. That was D1 in
+        docs/challenges/challenge-2-slice-decisions.md, resolved by fixing the
+        implementation.)
 
         Two smaller mechanisms also apply: the staircase leaves a 79-sample
         interval at the end of each 2.01 s segment that no frame reads, and
@@ -571,13 +576,13 @@ def report(sites, stats, underlying_all, per_speaker, root=DEFAULT_ROOT,
                   f"({n_diff/m:.2%}).")
             print("  This is arithmetic, not noise. context_ms = 200 is exactly")
             print("  3,200 samples = exactly 20 frames at a 160-sample stride, so")
-            print("  a centred target's onset lands ON a frame boundary and the")
-            print("  count is floor(duration / stride) with no leading partial")
-            print("  frame. In the recording's timebase the onset falls at an")
-            print("  arbitrary phase, which about half the time buys one more.")
+            print("  a centred target's start lands ON a frame onset, and that")
+            print("  onset counts: the excerpt count is ceil(duration / stride),")
+            print("  never zero. In the recording's timebase the start falls at")
+            print("  an arbitrary phase, which often costs that leading frame.")
             print("  Recorded, not reconciled: the excerpt-local column is the")
             print("  one that describes what a probe will be trained on, and the")
-            print("  absolute total over-counts it.")
+            print("  absolute column under-counts it.")
         else:
             print("\n  the two timebases agree on every site.")
 

@@ -215,12 +215,12 @@ def select_sites(inventory, n: int, seed: int):
     appear. An edge case that is merely reachable elsewhere in the inventory is
     not demonstrated by a demonstration set.
 
-    The zero-onset picks are drawn from sites that read as zero in BOTH
-    timebases. The two disagree — 4 sites in the recording's own timebase, 39 in
-    the excerpt-local one the extractor actually indexes — and which is correct
-    is an open question (D1 in the decisions document). Picking from the
-    intersection means this run keeps its zero-onset case whichever way that
-    resolves, rather than needing to be regenerated.
+    The zero-onset picks are sites with no frame onset in the recording's own
+    timebase. Since D1 was resolved (2026-09-24), no site has zero onsets in
+    the excerpt-local timebase the extractor indexes: a centred target always
+    contains the onset at its own start. These 4 are the sites where reading
+    the wrong column would make a usable site look empty, and they stay in
+    the set to test for exactly that.
 
     Returns the selected rows in inventory order, so the output does not depend
     on the order the edge cases happened to be added.
@@ -237,9 +237,7 @@ def select_sites(inventory, n: int, seed: int):
                             size=min(k, len(pool)), replace=False)
         picked.extend(x for x in chosen if x not in picked)
 
-    zero_both = inventory[(inventory.n_frame_onsets == 0)
-                          & (inventory.n_frame_onsets_abs == 0)]
-    take(zero_both, 2)
+    take(inventory[inventory.n_frame_onsets_abs == 0], 2)
     take(inventory[inventory.excerpt_clamped], 2)
     take(inventory[inventory.n_flaps_in_word >= 2], 2)
 

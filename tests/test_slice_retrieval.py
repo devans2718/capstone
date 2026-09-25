@@ -48,7 +48,7 @@ from capstone.predictions import synthesize, write_predictions  # noqa: E402
 from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
-INVENTORY = REPO / "results" / "flapping" / "sites-20260919.parquet"
+INVENTORY = REPO / "results" / "flapping" / "sites-20260924.parquet"
 CORPUS = Path("/data/corpora/buckeye")
 
 needs_inventory = pytest.mark.skipif(
@@ -255,25 +255,30 @@ def test_case_6_unknown_identifier_raises_and_names_itself(slice_fixture):
 
 @needs_inventory
 def test_case_7_zero_onset_site_is_returned_not_dropped(slice_fixture):
-    """A site with no frame onset comes back, with the zero visible.
+    """A site with no onset in the recording's timebase comes back, usable.
 
-    Neither dropped silently nor raising. The count is surfaced so it can reach
-    the label-uncertainty channel rather than disappearing into a filter.
+    Since D1 was resolved, every site has at least one onset in the
+    excerpt-local timebase the extractor indexes. The 4 sites with none in the
+    recording's own timebase are where the two columns can be confused: read
+    the wrong one and a site the probe will use looks empty. So the site must
+    come back, neither dropped nor raising, and n_frame_onsets must carry the
+    excerpt-local count, not the absolute zero.
     """
     store, _, _, sites = slice_fixture
 
-    zero = sites[sites.n_frame_onsets == 0]
+    zero = sites[sites.n_frame_onsets_abs == 0]
     assert len(zero) > 0, "fixture selected no zero-onset site — nothing tested"
 
     for site_id in zero.site_id:
         state = store.site_state(site_id, "ordinary")
-        assert state["n_frame_onsets"] == 0
+        assert state["n_frame_onsets_abs"] == 0
+        assert state["n_frame_onsets"] >= 1
         assert state["status"] in ("scored", NOT_SCORED, NOT_REACHED)
 
     result = store.query_sites(condition="ordinary",
                                site_ids=zero.site_id.tolist())
     assert set(result.rows.site_id) == set(zero.site_id)
-    assert (result.rows.n_frame_onsets == 0).all()
+    assert (result.rows.n_frame_onsets >= 1).all()
 
 
 # ------------------------------------------------------ corpus-dependent extra

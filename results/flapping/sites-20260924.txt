@@ -2,7 +2,7 @@
 Buckeye flapping sites — RQ1 English arm
 ==================================================================
   root: /data/corpora/buckeye
-  date: 2026-09-19T22:07:19Z
+  date: 2026-09-25T02:36:54Z
 
 -- corpus --
   tracks parsed                   255
@@ -52,22 +52,22 @@ Buckeye flapping sites — RQ1 English arm
   sample. They need not agree; both are reported.
 
                                excerpt    absolute
-  onsets per site, min               0           0
-  median                             2           3
-  max                               13          13
-  total onsets                  24,016      28,392
-  sites with zero onsets            39           4
+  onsets per site, min               1           0
+  median                             3           3
+  max                               14          13
+  total onsets                  33,079      28,382
+  sites with zero onsets             0           4
 
-  the two timebases disagree on 4,524 of 10,392 sites (43.53%).
+  the two timebases disagree on 4,643 of 10,392 sites (44.68%).
   This is arithmetic, not noise. context_ms = 200 is exactly
   3,200 samples = exactly 20 frames at a 160-sample stride, so
-  a centred target's onset lands ON a frame boundary and the
-  count is floor(duration / stride) with no leading partial
-  frame. In the recording's timebase the onset falls at an
-  arbitrary phase, which about half the time buys one more.
+  a centred target's start lands ON a frame onset, and that
+  onset counts: the excerpt count is ceil(duration / stride),
+  never zero. In the recording's timebase the start falls at
+  an arbitrary phase, which often costs that leading frame.
   Recorded, not reconciled: the excerpt-local column is the
   one that describes what a probe will be trained on, and the
-  absolute total over-counts it.
+  absolute column under-counts it.
 
 -- excerpt planning at context_ms = 200 --
   sites clamped at a recording edge        3
@@ -83,6 +83,6 @@ Buckeye flapping sites — RQ1 English arm
     genuinely ambiguous             0  (some single position attested as both)
     positionally determined, by site count: [Buckeye word types redacted]
 
-wrote 10,392 sites to /tmp/claude-1000/-home-daniel-code-capstone/ea67988a-4bbd-42f8-b3dd-cd4ee60d8a34/scratchpad/t.tsv
+wrote 10,392 sites to /tmp/claude-1000/-home-daniel-code-capstone/9118b4c2-3676-425c-ace4-0eaa66f2d09e/scratchpad/sites.tsv
 wrote 10,392 sites to results/flapping/sites-20260919.parquet
 wrote exclusion counts to results/flapping/sites-20260919.stats.json
