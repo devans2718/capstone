@@ -6,6 +6,9 @@ how concentrated they are, whether `underlying` is a deterministic function of
 the word type, what survives a split that is type-disjoint and
 speaker-disjoint at the same time, and whether the full 5 x 5 grid behind that
 split can score every site instead of only the diagonal.
+
+Word types are ranked by site count, ties broken alphabetically, so every fold
+assignment here is a function of the inventory's contents and not its row order.
 """
 import csv
 import random
@@ -28,7 +31,11 @@ print(f"speakers: {len({r['speaker'] for r in rows})}")
 by_type = Counter(r["word"] for r in rows)
 print(f"\ndistinct word types: {len(by_type)}")
 
-ranked = by_type.most_common()
+# Count descending, ties broken by spelling in code-point order (Python's own
+# string order, so 'Daddy' sorts before every lowercase word). Not
+# most_common(): that orders ties by first appearance in the TSV, which would
+# make the §3 and §5 fold assignment depend on row order. See §5.
+ranked = sorted(by_type.items(), key=lambda kv: (-kv[1], kv[0]))
 total = len(rows)
 for n in (10, 50, 100, 200):
     share = sum(c for _, c in ranked[:n]) / total
@@ -154,13 +161,14 @@ print(f"  scored, diagonal only (§3): {sum(c['n'] for c in diag)} sites, "
 print(f"  scored, full grid:          {sum(c['n'] for c in cells)} sites, "
       f"{sum(c['d'] for c in cells)} /d/")
 
-# The type folds come from walking `ranked`, and most_common() orders equal
-# counts by first appearance in the TSV. So the assignment is a function of the
-# inventory's row order as well as its contents. Measure how much rides on that.
-alpha = sorted(by_type.items(), key=lambda kv: (-kv[1], kv[0]))
-typ_fold_alpha = {w: i % 5 for i, (w, _) in enumerate(alpha)}
-moved = {w for w in typ_fold if typ_fold[w] != typ_fold_alpha[w]}
+# Why the tie-break is registered rather than left implicit. Until 2026-09-24
+# `ranked` was most_common(), which orders equal counts by first appearance in
+# the TSV, so the fold assignment rode on the inventory's row order. This
+# measures how much would move back under that rule.
+row_order = by_type.most_common()
+typ_fold_row = {w: i % 5 for i, (w, _) in enumerate(row_order)}
+moved = {w for w in typ_fold if typ_fold[w] != typ_fold_row[w]}
 tied = sum(n for n in Counter(by_type.values()).values() if n > 1)
 print(f"\n  types sharing a site count with another type: {tied} of {len(by_type)}")
-print(f"  types whose fold changes if ties break alphabetically instead of by row order: "
+print(f"  types whose fold would differ under the old row-order tie-break: "
       f"{len(moved)} ({sum(by_type[w] for w in moved)} sites)")

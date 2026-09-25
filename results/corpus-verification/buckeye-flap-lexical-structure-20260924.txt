@@ -1,5 +1,5 @@
 Buckeye flap inventory — lexical structure and split feasibility
-Generated 2026-09-24T18:51:45-05:00 by scripts/analyze_flap_lexical_structure.py
+Generated 2026-09-24T19:05:02-05:00 by scripts/analyze_flap_lexical_structure.py
 Source: results/corpus-verification/buckeye-flap-sites-20260821.tsv
 
 sites: 10392
@@ -29,51 +29,51 @@ joint speaker- + type-disjoint 5-fold (held-out = 20% speakers, 20% types)
     fold 4: train  5995 (t=4337 d=1658)  test  626 (t=530 d= 96)  discarded  3771 (36%)
 
   types drawn stratified by frequency:
-    fold 0: train  6682 (t=4865 d=1817)  test  475 (t=418 d= 57)  discarded  3235 (31%)
-    fold 1: train  6511 (t=4983 d=1528)  test  508 (t=374 d=134)  discarded  3373 (32%)
-    fold 2: train  6725 (t=5113 d=1612)  test  381 (t=280 d=101)  discarded  3286 (32%)
-    fold 3: train  6656 (t=5086 d=1570)  test  379 (t=266 d=113)  discarded  3357 (32%)
-    fold 4: train  6706 (t=5130 d=1576)  test  361 (t=250 d=111)  discarded  3325 (32%)
+    fold 0: train  6686 (t=4954 d=1732)  test  479 (t=392 d= 87)  discarded  3227 (31%)
+    fold 1: train  6490 (t=4925 d=1565)  test  487 (t=372 d=115)  discarded  3415 (33%)
+    fold 2: train  6749 (t=5119 d=1630)  test  405 (t=303 d=102)  discarded  3238 (31%)
+    fold 3: train  6656 (t=5066 d=1590)  test  379 (t=283 d= 96)  discarded  3357 (32%)
+    fold 4: train  6732 (t=5149 d=1583)  test  387 (t=274 d=113)  discarded  3273 (31%)
 
 type-disjoint only (speakers ignored), 5-fold stratified by frequency:
-  fold 0: train  8022 (t=5844 d=2178)  test  2370 (t=2019 d= 351)
-  fold 1: train  8127 (t=6189 d=1938)  test  2265 (t=1674 d= 591)
-  fold 2: train  8264 (t=6303 d=1961)  test  2128 (t=1560 d= 568)
-  fold 3: train  8549 (t=6481 d=2068)  test  1843 (t=1382 d= 461)
-  fold 4: train  8606 (t=6635 d=1971)  test  1786 (t=1228 d= 558)
+  fold 0: train  8022 (t=5959 d=2063)  test  2370 (t=1904 d= 466)
+  fold 1: train  8127 (t=6133 d=1994)  test  2265 (t=1730 d= 535)
+  fold 2: train  8264 (t=6286 d=1978)  test  2128 (t=1577 d= 551)
+  fold 3: train  8549 (t=6444 d=2105)  test  1843 (t=1419 d= 424)
+  fold 4: train  8606 (t=6630 d=1976)  test  1786 (t=1233 d= 553)
 
 full 5 x 5 grid: speaker fold x type fold (§3's stratified assignment)
   cells populated: 25 of 25; sites assigned to a cell: 10392 of 10392
 
   test sites (rows = speaker fold, cols = type fold):
               0     1     2     3     4
-      0     475   383   334   335   288
-      1     441   508   448   383   344
-      2     409   430   381   339   361
-      3     494   468   499   379   432
-      4     551   476   466   407   361
+      0     479   381   339   335   281
+      1     456   487   458   376   347
+      2     395   424   405   346   350
+      3     505   492   475   379   421
+      4     535   481   451   407   387
 
   test /d/ sites (rows = speaker fold, cols = type fold):
               0     1     2     3     4
-      0      57   124    77    78    82
-      1      72   134   127    92   119
-      2      73    98   101    74   104
-      3      71   134   151   113   142
-      4      78   101   112   104   111
+      0      87    99    69    73    90
+      1      95   115   135    67   132
+      2      88    99   102    85    76
+      3     101   121   151    96   142
+      4      95   101    94   103   113
 
   distinct /d/ word types in test (rows = speaker fold, cols = type fold):
               0     1     2     3     4
-      0      29    40    34    34    31
-      1      32    36    35    33    35
-      2      32    37    37    30    41
-      3      29    42    45    39    36
-      4      30    34    39    41    35
+      0      37    32    35    27    37
+      1      36    33    32    29    41
+      2      31    37    38    38    33
+      3      38    29    48    37    39
+      4      35    35    41    35    33
 
-  test sites per cell 288-551, /d/ per cell 57-151, /d/ types per cell 29-45
-  train sites per cell 6244-7079, train /d/ 1461-1817
+  test sites per cell 281-535, /d/ per cell 67-151, /d/ types per cell 27-48
+  train sites per cell 6255-7072, train /d/ 1504-1760
   speakers or types shared between a cell's test and train: 0
-  scored, diagonal only (§3): 2104 sites, 516 /d/
+  scored, diagonal only (§3): 2137 sites, 513 /d/
   scored, full grid:          10392 sites, 2529 /d/
 
   types sharing a site count with another type: 985 of 1022
-  types whose fold changes if ties break alphabetically instead of by row order: 777 (2848 sites)
+  types whose fold would differ under the old row-order tie-break: 777 (2848 sites)
