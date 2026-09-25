@@ -1,12 +1,31 @@
 # Pilot: English flapping probe — pre-registration
 
-**Revision 3 — in progress, not final.** Nothing has been run. Updated
-2026-09-24 in §3, §4 and §6. The word-type ranking now has an explicit
-tie-break, and scoring moves from the 5 diagonal cells of the speaker × type
-grid to all 25. Both changes came from measuring the inventory
-(`scripts/analyze_flap_lexical_structure.py` §5), not from any result. Still
-pending before this revision is final and pushed: the provisional thresholds in
-§5, and whatever is adopted from the Challenge 2 research feedback.
+**Revision 3 — in progress, not final.** Nothing has been run. Still pending
+before this revision is final and pushed: the provisional thresholds in §5, and
+whatever is adopted from the Challenge 2 research feedback.
+
+**Changes in revision 3**, each from measuring the corpus or the code, none
+from a result:
+
+1. **Word-type tie-break registered (§3).** 985 of the 1,022 types share a
+   site count with another type. Revision 2 left their order to
+   `Counter.most_common()`, which is the inventory file's row order. So its
+   claim that the split was "reproducible from the inventory alone" held only
+   while that order held. Ties now break alphabetically; the two rules place
+   777 types (2,848 sites) in different folds. Measured in
+   `scripts/analyze_flap_lexical_structure.py` §5.
+2. **All 25 cells of the speaker × type grid are scored (§3, §4, §6).**
+   Revision 2 tested only the 5 diagonal cells, which left ~80% of sites
+   unscored. The same construction scores every site once, and no probe trains
+   on less than before.
+3. **Frame counting fixed (§1, §2).** `frames_for_interval` dropped the frame
+   starting exactly at each flap's onset (decision D1 in
+   `docs/challenges/challenge-2-slice-decisions.md`). Fixed, every site has at
+   least one frame, and **the §1 exclusion of sites with no frame onset now
+   selects nothing**. Revision 2 said 4 sites; the pre-fix extractor would have
+   found 39. Sites with ≤2 frames fall from 41% to 18.4%.
+4. **Correction.** Revision 2 gave the pooled diagonal as "≈1,990 sites". Its
+   own script summed to 2,104. The /d/ figure, 516, was right.
 
 **Revision 2, 2026-08-22. Nothing has been run at any point in this file's
 history.** Revision 1 (`b0b2bce`, pushed) registered speaker-disjoint splits
@@ -52,7 +71,11 @@ acoustic classification.
   scope here. Reported, never silently dropped.
 - Sites that cannot be centred at the chosen context width (`Excerpt.clamped`)
   — **3 of 10,392 at 200 ms**.
-- The 4 sites containing no frame onset at all.
+- Sites containing no frame onset at all. **Selects none**: centring puts
+  every target's start on a frame onset, and that onset counts (min 1 frame
+  per site, `results/flapping/sites-20260924.txt`). Kept as a rule so a
+  future change to context width or geometry cannot let an empty site through
+  silently.
 
 **Inventory: 10,392 sites, 7,863 /t/ and 2,529 /d/**, 75.7 / 24.3, across 40
 speakers, every speaker carrying both classes (min 96, median 249).
@@ -109,9 +132,9 @@ is pre-final-LayerNorm. All 13 are probed.
   staircase, not a uniform rate; no frame rate is retyped anywhere.
 
 **Pooling: mean over the site's frame onsets.** Registered as the default so
-the pilot has one rule, *not* as a settled finding. Sites are 2–3 frames wide
-(median 27.4 ms, 41% have ≤2 onsets), so mean / max / midpoint are materially
-different vectors. Max and midpoint are the pre-declared secondary comparison;
+the pilot has one rule, *not* as a settled finding. Sites are 2–4 frames wide
+(median 27.4 ms and 3 frames; 18.4% have ≤2), so mean / max / midpoint are
+materially different vectors. Max and midpoint are the pre-declared secondary comparison;
 anything beyond those three is exploratory and gets labelled so.
 
 ## 3. Probe and splits
@@ -138,42 +161,29 @@ Construction, 5 speaker folds × 5 type folds:
    spelling in code-point order** (Python's default string sort, so a
    capitalised type sorts before lowercase ones). Assign the *i*-th ranked type
    to type fold *i mod 5*. Walking the ranked list spreads each fold's types
-   across the whole frequency range, and needs **no random seed**.
-   *(Rev 3: the tie-break is registered because 985 of 1,022 types share a
-   count with another type. Rev 2 left ties to `Counter.most_common()`, which
-   orders them by row order in the inventory file. Its claim that the split was
-   "reproducible from the inventory alone" held only while that order held.
-   The two rules differ for 777 types, 2,848 sites.)*
-   A frequency-blind random draw was measured at rev 2 and rejected: it swung
-   test-fold /d/ counts between 71 and 253 across folds, against 57–134 for the
-   stratified walk under row-order ties. Under the registered tie-break the
-   stratified range is 87–113.
+   across the whole frequency range, and needs **no random seed**: the
+   assignment is a function of the inventory's contents alone. A
+   frequency-blind random draw was measured and rejected. It swung diagonal
+   test-fold /d/ counts between 71 and 253, against 87–113 for the stratified
+   walk.
 3. **Every cell of the 5 × 5 grid is a test set.** Cell (*a*, *b*) = sites in
    speaker fold *a* and type fold *b*. For each cell, **test** = the cell;
    **train** = sites in neither speaker fold *a* nor type fold *b*; one probe
    per cell, 25 in all. Speaker folds and type folds are both partitions, so
    every site is in exactly one cell and receives exactly one out-of-fold
-   prediction. Cell (*k*, *k*)'s train set is exactly rev 2's fold *k*, so no
-   probe trains on less than under the diagonal design.
-   *(Rev 2 tested only the 5 diagonal cells, which left ~80% of sites unscored.
-   Measured 2026-09-24: all 25 cells populated, no speaker or word type shared
-   between any cell's test and train set.)*
+   prediction. Measured: all 25 cells populated, no speaker or word type
+   shared between any cell's test and train set.
 
-**The discard is now from training, not from scoring: ~32% of sites per
-probe.** Each probe trains on 6,255–7,072 sites (1,504–1,760 /d/). Sites that
+**The discard is from training, not from scoring: ~32% of sites per probe.** Each probe trains on 6,255–7,072 sites (1,504–1,760 /d/). Sites that
 share exactly one axis with the test cell are left out of that probe's
 training, but every site is scored by its own cell. Test cells run 281–535
 sites, 67–151 of them /d/, drawn from 27–48 distinct /d/ word types.
 
 **Scoring is pooled, not averaged.** Out-of-fold predictions from all 25 cells
-are collected and scored **once** over the pooled set: **every site that
-survives §1's exclusions, 10,392 before exclusions, of which 2,529 are /d/**.
-After exclusions that is **10,385 sites (2,528 /d/)** if the zero-onset
-exclusion counts in the recording's timebase (4 sites), or **10,349 (2,521
-/d/)** if it counts in the excerpt-local timebase (39 sites). Which one applies
-is decision D1 in `docs/challenges/challenge-2-slice-decisions.md`, and it must
-be settled before the run. Per-cell scores are reported as a spread of 25
-numbers, not as the headline.
+are collected and scored **once** over the pooled set: every site that survives
+§1's exclusions, **10,389 sites, of which 2,529 are /d/**. That is the
+inventory's 10,392 less the 3 clamped sites, all /t/. Per-cell scores are
+reported as a spread of 25 numbers, not as the headline.
 
 *(No minimum-sample threshold is registered. Revision 1 carried one — "≥500
 minority sites per fold" — that had been chosen with the inventory already in
@@ -259,16 +269,12 @@ second run as the first.
 
 Neither should be settled unilaterally:
 
-- **Is the ~32% per-fold discard acceptable**, or is there a split design that
-  buys type-disjointness more cheaply?
-  *(Rev 3: partly answered by the full grid. No site goes unscored any more,
-  but each probe still trains without ~32% of the data. Whether that training
-  cost is acceptable remains the advisor's call.)*
-- **Do the pooled test sites support a 13-layer comparison?** The layer-wise
-  curve is the actual RQ3 deliverable, and this is the number that limits how
-  finely layers can be distinguished. *(Rev 2 put the pool at ≈1,990, and the
-  measured diagonal was 2,104. Under rev 3 it is ~10,350–10,385, with
-  ~2,520 /d/.)*
+- **Is leaving ~32% of sites out of each probe's training acceptable**, or is
+  there a split design that buys type-disjointness more cheaply? Every site is
+  still scored (§3). The cost is to training, not to the test set.
+- **Do 10,389 pooled test sites (2,529 /d/) support a 13-layer comparison?**
+  The layer-wise curve is the actual RQ3 deliverable, and this is the number
+  that limits how finely layers can be distinguished.
 
 ## 7. Deviations
 
