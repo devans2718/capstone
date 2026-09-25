@@ -1,5 +1,13 @@
 # Pilot: English flapping probe — pre-registration
 
+**Revision 3 — in progress, not final.** Nothing has been run. Updated
+2026-09-24 in §3, §4 and §6. The word-type ranking now has an explicit
+tie-break, and scoring moves from the 5 diagonal cells of the speaker × type
+grid to all 25. Both changes came from measuring the inventory
+(`scripts/analyze_flap_lexical_structure.py` §5), not from any result. Still
+pending before this revision is final and pushed: the provisional thresholds in
+§5, and whatever is adopted from the Challenge 2 research feedback.
+
 **Revision 2, 2026-08-22. Nothing has been run at any point in this file's
 history.** Revision 1 (`b0b2bce`, pushed) registered speaker-disjoint splits
 only. It was revised, not deviated from, after measuring that **word identity
@@ -123,28 +131,49 @@ Both axes, jointly. Type-disjointness is the one that makes the task
 phonological rather than lexical; speaker-disjointness is the standard guard
 the advisor asked for, kept.
 
-Construction, 5 folds:
+Construction, 5 speaker folds × 5 type folds:
 
 1. Sort speakers; assign speaker *i* to fold *i mod 5*.
-2. Rank word types by site frequency; assign the *i*-th ranked type to fold
-   *i mod 5*. Walking the ranked list spreads each fold's held-out types across
-   the whole frequency range, and needs **no random seed** — the construction
-   is deterministic and reproducible from the inventory alone. A frequency-blind
-   random draw was measured and rejected: it swung test-fold /d/ counts between
-   71 and 253 across folds, against 57–134 for the stratified walk.
-3. For fold *k*: **test** = sites whose speaker *and* word type are both held
-   out; **train** = sites where neither is. Sites matching exactly one axis are
-   **discarded for that fold**.
+2. Rank word types by site count, highest first, **ties broken by the word's
+   spelling in code-point order** (Python's default string sort, so a
+   capitalised type sorts before lowercase ones). Assign the *i*-th ranked type
+   to type fold *i mod 5*. Walking the ranked list spreads each fold's types
+   across the whole frequency range, and needs **no random seed**.
+   *(Rev 3: the tie-break is registered because 985 of 1,022 types share a
+   count with another type. Rev 2 left ties to `Counter.most_common()`, which
+   orders them by row order in the inventory file. Its claim that the split was
+   "reproducible from the inventory alone" held only while that order held.
+   The two rules differ for 777 types, 2,848 sites.)*
+   A frequency-blind random draw was measured at rev 2 and rejected: it swung
+   test-fold /d/ counts between 71 and 253 across folds, against 57–134 for the
+   stratified walk under row-order ties. Under the registered tie-break the
+   stratified range is 87–113.
+3. **Every cell of the 5 × 5 grid is a test set.** Cell (*a*, *b*) = sites in
+   speaker fold *a* and type fold *b*. For each cell, **test** = the cell;
+   **train** = sites in neither speaker fold *a* nor type fold *b*; one probe
+   per cell, 25 in all. Speaker folds and type folds are both partitions, so
+   every site is in exactly one cell and receives exactly one out-of-fold
+   prediction. Cell (*k*, *k*)'s train set is exactly rev 2's fold *k*, so no
+   probe trains on less than under the diagonal design.
+   *(Rev 2 tested only the 5 diagonal cells, which left ~80% of sites unscored.
+   Measured 2026-09-24: all 25 cells populated, no speaker or word type shared
+   between any cell's test and train set.)*
 
-**The discard is the price and is registered as known: ~32% of sites per fold.**
-Test folds run 361–508 sites. Test folds are disjoint by construction, since
-distinct folds hold out distinct speakers.
+**The discard is now from training, not from scoring: ~32% of sites per
+probe.** Each probe trains on 6,255–7,072 sites (1,504–1,760 /d/). Sites that
+share exactly one axis with the test cell are left out of that probe's
+training, but every site is scored by its own cell. Test cells run 281–535
+sites, 67–151 of them /d/, drawn from 27–48 distinct /d/ word types.
 
-**Scoring is pooled, not averaged.** Out-of-fold predictions from all 5 folds
-are collected and scored **once** over the pooled set — **≈1,990 sites, of
-which ≈516 are /d/**. Per-fold numbers are too thin to average meaningfully;
-pooling gives one number with an adequate minority count. Per-fold scores are
-reported as a spread, not as the headline.
+**Scoring is pooled, not averaged.** Out-of-fold predictions from all 25 cells
+are collected and scored **once** over the pooled set: **every site that
+survives §1's exclusions, 10,392 before exclusions, of which 2,529 are /d/**.
+After exclusions that is **10,385 sites (2,528 /d/)** if the zero-onset
+exclusion counts in the recording's timebase (4 sites), or **10,349 (2,521
+/d/)** if it counts in the excerpt-local timebase (39 sites). Which one applies
+is decision D1 in `docs/challenges/challenge-2-slice-decisions.md`, and it must
+be settled before the run. Per-cell scores are reported as a spread of 25
+numbers, not as the headline.
 
 *(No minimum-sample threshold is registered. Revision 1 carried one — "≥500
 minority sites per fold" — that had been chosen with the inventory already in
@@ -156,6 +185,11 @@ view and could only pass. The pooled counts above are stated as facts instead.)*
 lookup table over the training types. Under the type-disjoint split it collapses
 toward chance on held-out types, and that collapse is the check that the split
 is doing its job. Report it.
+
+The lookup, the control task and the speaker-leakage check all run on the same
+25 cells as the real probe (§3) and are pooled the same way. A control scored
+over a different set of sites than the probe it calibrates would not be a
+control.
 
 **Control task (Hewitt & Liang 2019, *Designing and Interpreting Probes with
 Control Tasks*), demoted to a sanity check.** Each word type draws a random
@@ -227,9 +261,14 @@ Neither should be settled unilaterally:
 
 - **Is the ~32% per-fold discard acceptable**, or is there a split design that
   buys type-disjointness more cheaply?
-- **Do ≈1,990 pooled test sites support a 13-layer comparison?** The layer-wise
+  *(Rev 3: partly answered by the full grid. No site goes unscored any more,
+  but each probe still trains without ~32% of the data. Whether that training
+  cost is acceptable remains the advisor's call.)*
+- **Do the pooled test sites support a 13-layer comparison?** The layer-wise
   curve is the actual RQ3 deliverable, and this is the number that limits how
-  finely layers can be distinguished.
+  finely layers can be distinguished. *(Rev 2 put the pool at ≈1,990, and the
+  measured diagonal was 2,104. Under rev 3 it is ~10,350–10,385, with
+  ~2,520 /d/.)*
 
 ## 7. Deviations
 
