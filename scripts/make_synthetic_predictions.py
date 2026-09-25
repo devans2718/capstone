@@ -47,7 +47,8 @@ DEFAULT_MANIFEST_COPY = Path("results/flapping/run-manifest.json")
 
 # Recorded in the manifest rather than described in prose, so the split the
 # predictions claim to come from is a field a reader can compare against.
-SPLIT_SCHEME = "speaker-disjoint x word-type-disjoint, 5-fold; combined_diagonal discards off-diagonal"
+SPLIT_SCHEME = ("combined: speaker x word-type 5x5 grid, all 25 cells scored; "
+                "clamped sites excluded before scoring in every condition")
 
 
 def main() -> int:

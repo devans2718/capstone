@@ -242,7 +242,7 @@ with st.sidebar:
     st.caption(
         "`ordinary` — words can appear in both train and test.  \n"
         "`word_disjoint` — a word type is in one or the other, never both.  \n"
-        "`combined_diagonal` — also speaker-split, which throws most sites away."
+        "`combined` — word-split *and* speaker-split: the pre-registered design."
     )
     encoder = st.selectbox("Encoder", ["wavjepa"])
     layer = st.selectbox("Encoder layer", list(range(13)), index=8)
@@ -461,7 +461,7 @@ with tab_state:
     groups = load_states(STAMP, cond)
     kinds = {
         "scored": f"Scored in this run ({len(groups['scored']):,})",
-        "discarded": f"Thrown out by this split ({len(groups['discarded']):,})",
+        "excluded": f"Excluded before scoring ({len(groups['excluded']):,})",
         "not_reached": f"Not looked at in this run ({len(groups['not_reached']):,})",
     }
     kind = st.radio("Show me a site that was…", list(kinds), horizontal=True,
@@ -469,9 +469,7 @@ with tab_state:
 
     pool = groups[kind]
     if pool.empty:
-        st.info(f"No sites are in that state under `{cond}`. Under `ordinary` "
-                "nothing is thrown out, for instance — every site stays "
-                "eligible, and the ones without a score simply were not reached.")
+        st.info(f"No sites are in that state under `{cond}`.")
         site_id = None
     else:
         # Capped, and the true count is in the radio label above so the cap
@@ -505,15 +503,17 @@ with tab_state:
 
             if state["status"] == NOT_SCORED:
                 st.warning(
-                    "**Thrown out by this split.** The site exists, but this way "
-                    "of dividing train and test discarded it, so no prediction "
-                    "was ever made. Not a zero, not a low score — nothing."
+                    "**Excluded before scoring.** The site exists, but the flap "
+                    "sits too near the start or end of its recording for the "
+                    "fixed 200 ms window to centre on it, so it was set aside "
+                    "before any split, and no prediction was ever made. Not a "
+                    "zero, not a low score — nothing."
                 )
             elif state["status"] == NOT_REACHED:
                 st.info(
                     "**Not looked at in this run.** The site was eligible; this "
-                    "run only scored 40 sites and this was not one of them. "
-                    "Different from being thrown out."
+                    "run only looked at 40 sites and this was not one of them. "
+                    "Different from being excluded."
                 )
             else:
                 st.success(

@@ -28,8 +28,8 @@ EVERY RESPONSE CARRIES A COVERAGE BLOCK
     different sentence, and the true one.
 
 WHICH QUESTION EACH METHOD ANSWERS, AND WHY THAT DECIDES THE JOIN
-    Three eligibility states have to stay distinguishable: discarded by the
-    split, scored, and never reached by this run. The third is represented by
+    Three eligibility states have to stay distinguishable: excluded before
+    scoring, scored, and never reached by this run. The third is represented by
     the ABSENCE of a prediction row, so any method that has to report it must
     start from the inventory rather than from predictions.
 
@@ -56,10 +56,10 @@ from .encoders.extraction import excerpt_samples, plan_excerpt
 SAMPLE_RATE = 16_000
 CONTEXT_MS = 200.0
 
-# What an unscored or discarded site renders as. A string, never a number:
+# What an unscored or excluded site renders as. A string, never a number:
 # the whole point of the failure case is that absence must not be able to reach
 # a chart axis or an average.
-NOT_SCORED = "not scored — discarded by the split"
+NOT_SCORED = "not scored — excluded before scoring"
 NOT_REACHED = "not scored — this run did not reach this site"
 
 
@@ -159,13 +159,13 @@ class SliceStore:
             ).fetchone()[0]
         else:
             # n_eligible counts the whole inventory minus those this condition
-            # explicitly discarded. Sites with no row are eligible-but-unreached,
+            # explicitly excluded. Sites with no row are eligible-but-unreached,
             # not ineligible — that is the distinction the brief exists to keep.
-            discarded = self.db.execute(
+            excluded = self.db.execute(
                 "SELECT count(*) FROM preds WHERE condition = ? AND NOT eligible",
                 [condition],
             ).fetchone()[0]
-            n_eligible = n_total - discarded
+            n_eligible = n_total - excluded
             n_scored = self.db.execute(
                 "SELECT count(*) FROM preds WHERE condition = ? AND scored", [condition]
             ).fetchone()[0]
@@ -223,7 +223,7 @@ class SliceStore:
         see a state. Being asked to type one is being asked to already know the
         answer to the question the view is meant to answer.
 
-        Returns {"scored": df, "discarded": df, "not_reached": df}, each ordered
+        Returns {"scored": df, "excluded": df, "not_reached": df}, each ordered
         by site_id and carrying enough to render a transcript.
         """
         rows = self.db.execute("""
@@ -237,7 +237,7 @@ class SliceStore:
         absent = rows.eligible.isna()
         return {
             "scored": rows[~absent & rows.scored.fillna(False).astype(bool)],
-            "discarded": rows[~absent & ~rows.eligible.fillna(True).astype(bool)],
+            "excluded": rows[~absent & ~rows.eligible.fillna(True).astype(bool)],
             "not_reached": rows[absent],
         }
 
@@ -245,7 +245,7 @@ class SliceStore:
         """What is known about one site under one condition — all three states.
 
         This is the method the failure case exercises. It never returns a number
-        standing in for an absence: a discarded site reports NOT_SCORED and a
+        standing in for an absence: an excluded site reports NOT_SCORED and a
         site this run never reached reports NOT_REACHED, both as strings, with
         p_t left as None rather than filled in.
         """

@@ -90,7 +90,7 @@ make that more than an intention:
 - A **coverage block on every response**, including uninformative ones. 40 of
   10,392 sites are scored, and a 40-row table with no denominator reads exactly
   like a complete result.
-- **Three eligibility states kept distinct** — discarded by the split, scored,
+- **Three eligibility states kept distinct** — excluded before scoring, scored,
   and never reached. The third is the *absence* of a row, and collapsing any
   two of them into "no data" is the defect test case 4 exists to catch.
 - **Clips planned, never re-derived.** `plan_clip` goes through `plan_excerpt`

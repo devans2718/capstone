@@ -12,7 +12,8 @@ THE THREE ELIGIBILITY STATES, AND WHERE EACH ONE LIVES
     that rendering any two of them the same way is the defect the failure test
     exists to catch:
 
-      eligible = false      discarded by the split; no prediction was possible.
+      eligible = false      excluded before scoring (pre-registration §1, e.g.
+                            a clamped excerpt); no prediction was possible.
                             A ROW EXISTS with eligible=false, scored=false and
                             p_t null.
       eligible, scored      a prediction exists. A row exists, fully populated.
@@ -48,7 +49,7 @@ from .encoders.extraction import REVISION as CHECKPOINT_REVISION
 
 CONTEXT_MS = 200.0
 
-CONDITIONS = ("ordinary", "word_disjoint", "combined_diagonal")
+CONDITIONS = ("ordinary", "word_disjoint", "combined")
 
 
 def prediction_schema():
@@ -70,7 +71,7 @@ def prediction_schema():
         ("layer", pa.int32()),           # nullable: not every encoder has layers
         ("condition", pa.string()),
         ("fold", pa.int32()),
-        ("eligible", pa.bool_()),        # false = discarded by the split
+        ("eligible", pa.bool_()),        # false = excluded before scoring
         ("scored", pa.bool_()),          # false = eligible but not scored this run
         ("p_t", pa.float64()),           # NULL whenever scored is false
         ("pred", pa.string()),           # 't' | 'd'; nullable
@@ -197,11 +198,7 @@ def build_manifest(inventory: Path, *, split_scheme: str, random_seed: int,
 # non-empty answer, and so the gap runs in the direction a lexical shortcut
 # predicts: a probe leaning on word identity loses more when word types stop
 # recurring between train and test than it loses to anything else.
-P_CORRECT = {"ordinary": 0.85, "word_disjoint": 0.62, "combined_diagonal": 0.70}
-
-# Share of sites the diagonal fold scheme discards. Matches the measured
-# figure: only 2,104 of 10,392 sites are scored under it, so ~80% are ineligible.
-DIAGONAL_DISCARD = 0.80
+P_CORRECT = {"ordinary": 0.85, "word_disjoint": 0.62, "combined": 0.70}
 
 N_FOLDS = 5
 
@@ -222,6 +219,13 @@ def select_sites(inventory, n: int, seed: int):
     the wrong column would make a usable site look empty, and they stay in
     the set to test for exactly that.
 
+    ALL clamped sites are taken, not a sample. They are the ineligible ones, and
+    coverage() counts eligibility from prediction rows. A clamped site left out
+    of the run would have no row and would read as "not reached", a state it
+    can never leave. Taking all of them makes n_eligible exact: 10,389, the
+    pre-registration's pool. A real run writes a row for every excluded site for
+    the same reason.
+
     Returns the selected rows in inventory order, so the output does not depend
     on the order the edge cases happened to be added.
     """
@@ -238,7 +242,7 @@ def select_sites(inventory, n: int, seed: int):
         picked.extend(x for x in chosen if x not in picked)
 
     take(inventory[inventory.n_frame_onsets_abs == 0], 2)
-    take(inventory[inventory.excerpt_clamped], 2)
+    take(inventory[inventory.excerpt_clamped], len(inventory))
     take(inventory[inventory.n_flaps_in_word >= 2], 2)
 
     # Fill the rest keeping both classes present in roughly corpus proportion.
@@ -268,12 +272,17 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
         cannot be checked, and it cannot be told apart from a result that was
         adjusted until it looked right.
 
-    WHY combined_diagonal EXISTS
-        The two conditions the design specifies both score every site, so
-        eligible=false never occurs and the designated failure case has no
-        reachable target. This third condition discards ~80% of sites, matching
-        the diagonal scheme's measured discard, which makes the state real
-        rather than nominal.
+    WHERE eligible=false COMES FROM
+        The sites pre-registration §1 excludes before any probe runs. Today
+        that is the 3 clamped excerpts, whose window runs off the recording.
+        That holds in every condition, because the exclusion happens before
+        the split. `combined` is the pre-registered speaker- and
+        type-disjoint split. It scores all 25 cells of its 5 x 5 grid, so the
+        split itself discards nothing. Until 2026-09-24 this condition was
+        `combined_diagonal` and marked ~80% of sites ineligible to match the
+        diagonal-only design. The full grid retired that, and select_sites
+        already draws two clamped sites, so the state stays reachable from
+        real exclusions rather than an invented rate.
     """
     import numpy as np
 
@@ -286,11 +295,10 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
     # let the two disagree, and a row whose probability contradicts its own
     # correct flag is a bug that looks like a subtle modelling choice.
     rows = []
-    ineligible = rng.random(len(sites)) < DIAGONAL_DISCARD
     for cond in CONDITIONS:
         hits = rng.random(len(sites)) < P_CORRECT[cond]
         for i, site in enumerate(sites.itertuples()):
-            eligible = not (cond == "combined_diagonal" and ineligible[i])
+            eligible = not site.excerpt_clamped
             if not eligible:
                 rows.append({
                     "site_id": site.site_id, "encoder": encoder, "layer": layer,

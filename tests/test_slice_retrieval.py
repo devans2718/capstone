@@ -11,7 +11,7 @@ NO /data, NO CORPUS, NO CHECKPOINT
     The fixture builds its own inventory and predictions into tmp_path from a
     fixed seed, so every case here runs on a bare checkout. That is deliberate:
     the two cases the brief says must pass whatever happens are the provenance
-    round-trip and the off-diagonal null, and a mandatory test that needs a
+    round-trip and the excluded-site null, and a mandatory test that needs a
     registered 40 GB corpus mounted is a test that will be skipped exactly when
     it matters.
 
@@ -98,7 +98,9 @@ def test_case_1_basic_filter_matches_an_independent_count(slice_fixture):
     assert set(result.rows.site_id) == set(expected.site_id)
     # The denominator travels with the answer, always.
     assert result.coverage.n_total == len(inventory)
-    assert result.coverage.n_scored == 40
+    in_cond = preds[preds.condition == "word_disjoint"]
+    assert result.coverage.n_scored == int(in_cond.scored.sum())
+    assert result.coverage.n_eligible == len(inventory) - int((~in_cond.eligible).sum())
     assert result.coverage.compared_on == result.n
 
 
@@ -179,15 +181,22 @@ def test_case_3_clip_offsets_round_trip_through_plan_excerpt(slice_fixture):
 # ----------------------------------------------------------- case 4 (REQUIRED)
 
 @needs_inventory
-def test_case_4_off_diagonal_site_is_never_rendered_as_a_number(slice_fixture):
-    """REQUIRED. eligible = false reports a state, never 0 and never a p_t."""
-    store, _, preds, _ = slice_fixture
+def test_case_4_excluded_site_is_never_rendered_as_a_number(slice_fixture):
+    """REQUIRED. eligible = false reports a state, never 0 and never a p_t.
 
-    off = preds[(preds.condition == "combined_diagonal") & (~preds.eligible)]
+    The ineligible sites are the clamped ones, excluded before scoring in every
+    condition (pre-registration §1). Until 2026-09-24 this case targeted
+    off-diagonal sites under `combined_diagonal`. The full grid scores every
+    cell, so the split no longer discards anything.
+    """
+    store, _, preds, sites = slice_fixture
+
+    off = preds[(preds.condition == "combined") & (~preds.eligible)]
     assert len(off) > 0, "fixture produced no ineligible sites — nothing tested"
+    assert set(off.site_id) == set(sites[sites.excerpt_clamped].site_id)
 
     for site_id in off.site_id:
-        state = store.site_state(site_id, "combined_diagonal")
+        state = store.site_state(site_id, "combined")
         assert state["eligible"] is False
         assert state["scored"] is False
         assert state["status"] == NOT_SCORED
@@ -203,7 +212,7 @@ def test_case_4_off_diagonal_site_is_never_rendered_as_a_number(slice_fixture):
 
 
 @needs_inventory
-def test_case_4b_unscored_site_is_distinct_from_discarded(slice_fixture):
+def test_case_4b_unscored_site_is_distinct_from_excluded(slice_fixture):
     """The third eligibility state — a real site this run never reached."""
     store, inventory, preds, _ = slice_fixture
 
@@ -213,7 +222,7 @@ def test_case_4b_unscored_site_is_distinct_from_discarded(slice_fixture):
     assert state["scored"] is False
     assert state["status"] == NOT_REACHED
     assert state["status"] != NOT_SCORED, (
-        "'never reached' and 'discarded by the split' rendered identically — "
+        "'never reached' and 'excluded before scoring' rendered identically — "
         "that collapse is the defect this case exists to catch"
     )
     assert state["p_t"] is None
@@ -224,12 +233,13 @@ def test_case_4b_unscored_site_is_distinct_from_discarded(slice_fixture):
 @needs_inventory
 def test_case_5_empty_result_is_an_answer_with_a_denominator(slice_fixture):
     """A filter matching nothing: n = 0 plus coverage, not an exception."""
-    store, inventory, _, _ = slice_fixture
+    store, inventory, preds, _ = slice_fixture
 
     result = store.query_sites(condition="word_disjoint", layer=11)
     assert result.n == 0
     assert result.coverage.n_total == len(inventory)
-    assert result.coverage.n_scored == 40
+    assert result.coverage.n_scored == int(
+        preds[preds.condition == "word_disjoint"].scored.sum())
     assert result.coverage.compared_on == 0
     # An empty table without a denominator is indistinguishable from a bug.
     assert result.coverage.as_dict()["n_total"] > 0
