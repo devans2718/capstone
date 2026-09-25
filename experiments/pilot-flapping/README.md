@@ -1,8 +1,14 @@
 # Pilot: English flapping probe — pre-registration
 
 **Revision 3 — in progress, not final.** Nothing has been run. Still pending
-before this revision is final and pushed: the provisional thresholds in §5, and
-whatever is adopted from the Challenge 2 research feedback.
+before this revision is final and pushed:
+
+- whichever Challenge 2 feedback items are adopted: the MFCC feature
+  configuration (§4), and optionally ABX, a random-split condition, and
+  publishing the token list and split files;
+- the §3 split construction moved into `src/` as shared code, used by the
+  probe run and the demo slice alike. The slice currently draws random fold
+  numbers for its synthetic rows.
 
 **Changes in revision 3**, each from measuring the corpus or the code, none
 from a result:
@@ -24,7 +30,16 @@ from a result:
    least one frame, and **the §1 exclusion of sites with no frame onset now
    selects nothing**. Revision 2 said 4 sites; the pre-fix extractor would have
    found 39. Sites with ≤2 frames fall from 41% to 18.4%.
-4. **Correction.** Revision 2 gave the pooled diagonal as "≈1,990 sites". Its
+4. **§5 criteria finalized.** Criterion 1 compares against the MFCC baseline
+   (newly registered in §4) instead of an absolute 0.60. Criterion 2 is a leak
+   bound instead of a selectivity floor, because under this split Hewitt &
+   Liang's own ceiling argument puts the control at chance. Criterion 4 keeps
+   0.45 with its trivial floors stated. Hewitt & Liang, the input revision 2
+   named, turned out to state no thresholds at all; see §5.
+5. **Transcription neutralisation recorded (§1a).** 30.5% of sites share a
+   transcribed pronunciation with the other class. This is a population note,
+   not a change to the design.
+6. **Correction.** Revision 2 gave the pooled diagonal as "≈1,990 sites". Its
    own script summed to 2,104. The /d/ figure, 516, was right.
 
 **Revision 2, 2026-08-22. Nothing has been run at any point in this file's
@@ -39,7 +54,8 @@ This is the advisor's step 4. It exists so that step 5's result can be read
 against criteria fixed in advance.
 
 Scope: WavJEPA (frozen) on the Buckeye flapping set, one model, one dataset,
-layer-wise. This is the gate before extending to the baseline encoders.
+layer-wise, measured against an MFCC baseline. This is the gate before
+extending to the baseline encoders.
 
 **Thresholds below are judgment calls, not derived bounds.** If one turns out
 badly calibrated, that is a finding to record — not a licence to move it after
@@ -98,6 +114,15 @@ must be able to see that it was known before the run.
   so this is an inference and is recorded as one.
 - **A word-identity lookup table scores 0.9951** on the real task, using no
   audio at all. Keyed on (word, position) it would be effectively 1.0.
+- **30.5% of sites are neutralised in the transcription** (measured
+  2026-09-19, decision D5). 59 cells of (transcribed pronunciation, position)
+  are attested as both /t/ and /d/ across different words: `got ~ god`,
+  `what ~ would`, `write ~ ride`. That covers 3,173 sites (2,601 /t/, 572 /d/),
+  flagged as `surface_ambiguous` in the inventory. **This is a claim about
+  Buckeye's labels, not the audio.** The transcription hides the vowel-length
+  difference before /t/ vs /d/, which is plausibly the cue that separates
+  them. Recorded as a known population; not an evaluation subset in this
+  revision.
 
 **Two consequences, both binding:**
 
@@ -214,39 +239,72 @@ detector, not the primary calibration** — it should come out near chance, and
 if it does not, word or speaker information is reaching the probe through a
 route not accounted for here.
 
+Hewitt & Liang give the reason directly: the control ceiling is "the fraction
+of tokens in the evaluation set whose types occur in the training set (plus
+chance accuracy on all other tokens)" (§2.3). Under this split that fraction
+is zero, so the ceiling is chance. The control's gate is therefore a leak
+bound (§5, criterion 2), not a selectivity floor.
+
 **Selectivity = real balanced accuracy − control balanced accuracy**, per layer,
-same probe and hyperparameters. Note this is in balanced-accuracy points, a
-deviation from the paper's plain accuracy, taken because of the 75.7/24.3
-imbalance — their reported magnitudes will not transfer one-for-one.
+same probe and hyperparameters, **reported but not gated on**. With the control
+at chance by construction it is close to (real − 0.50) and adds nothing to
+criterion 1. It is in balanced-accuracy points rather than the paper's plain
+accuracy because of the 75.7/24.3 imbalance. Hewitt & Liang state no absolute
+selectivity threshold anywhere; they use it only to compare probes and layers.
+
+**Registered baseline: MFCC.** The same linear probe on MFCC features. The
+sites, excerpts, frames, pooling, class weighting and 25 cells are all the
+same as for WavJEPA, and it is scored the same pooled way. It plays the role
+of Hewitt & Liang's random-representation baseline (their Proj0, §4; Zhang &
+Bowman 2018): features with no learned structure. That shows how much of the
+probe's result is available from the acoustics alone. Criterion 1 is
+measured against it. *(Feature configuration, meaning coefficients, deltas and
+MFCC vs log-mel, is still to be fixed in this revision.)*
 
 **Speaker-leakage check.** A probe trained on the same representations to
 predict speaker identity, reported alongside. Diagnostic, not a gate.
 
 ## 5. Criteria — what counts as the pilot failing
 
-All refer to the **best layer**, scored on the pooled out-of-fold set.
+All are scored on the pooled out-of-fold set (10,389 sites, 2,529 /d/). "Best
+layer" is WavJEPA's layer with the highest balanced accuracy.
 
 | # | Criterion | Threshold |
 |---|---|---|
-| 1 | Balanced accuracy | **≥ 0.60** *(provisional)* |
-| 2 | Selectivity (real − control) | **≥ 0.10** *(provisional)* |
+| 1 | Best layer beats the MFCC baseline | gap **≥ 0.05** balanced accuracy, **and** bootstrap 95% lower bound of the gap **> 0** |
+| 2 | Control task shows no leak | control balanced accuracy within **0.50 ± 0.03** at **every** layer |
 | 3 | Layer-wise curve is not flat | best − worst **≥ 0.05** balanced accuracy |
-| 4 | Minority-class F1 (/d/) | **≥ 0.45** *(provisional)* |
+| 4 | Minority-class F1 (/d/), best layer | **≥ 0.45** |
 
-Chance is 0.50 balanced accuracy.
+Chance is 0.50 balanced accuracy. None of these is derived from Hewitt &
+Liang, who state no thresholds; each is a judgment call with its reasoning
+below. Finalized in revision 3, before any probe has been trained.
+**Running before this revision is pushed voids the pre-registration.**
 
-⚠ **The three marked *provisional* must be finalized before the first probe is
-trained, and this file updated, in one further revision.** They were set for a
-task where word types recurred; generalizing a phonological cue to *unseen*
-words is materially harder, and revision 1's values are no longer calibrated to
-what is being asked. The finalizing input is Hewitt & Liang's reported
-selectivity magnitudes. **Running before that revision voids the
-pre-registration** — that is the whole point of the file.
+**Criterion 1 is comparative, not absolute.** An absolute bar (rev 2: ≥ 0.60)
+was set for a task where word types recurred, and nothing calibrates it for
+unseen words. Beating features with no learned structure is the claim the
+project actually needs. The gap uses the same 0.05 as criterion 3, the
+smallest difference this design treats as meaningful. The bootstrap resamples
+**word types** (10,000 resamples, seed recorded) because word types are the
+unit this design generalizes over, and it **re-selects the best layer inside
+every resample**, so that picking the best of 13 layers cannot inflate the
+gap. Sampling noise on a single balanced accuracy at this *n* is about ±0.011
+(95%, independent sites); the word-type bootstrap will be wider, and that is
+the conservative direction.
 
-Criterion 1 is set above chance by a margin because the deliverable is a
-*comparison across layers*; a signal too weak to separate layers cannot support
-RQ3 whatever its significance. Criterion 4 exists so an aggregate cannot hide a
-probe that has quietly stopped predicting /d/.
+**Criterion 2 is a leak bound.** Under this split the control should sit at
+chance (§4). ±0.03 is about three times the ±0.011 sampling band, wide enough
+not to fire on noise. It applies at every layer, not only the best, because a
+leak at any layer means information is reaching the probe by a route this
+design does not account for.
+
+**Criterion 4 is a guard, not a second performance bar.** It exists so an
+aggregate cannot hide a probe that has quietly stopped predicting /d/. Trivial
+floors at 24.3% /d/: always answering /d/ gives F1 **0.391**, a coin flip
+**0.327**, and guessing /d/ at its base rate **0.243**. For reference, a probe
+at balanced accuracy 0.60 with errors split evenly between the classes reaches
+F1 0.42, so 0.45 is not lenient.
 
 **If criteria are met:** proceed to the step-5 write-up, then the baseline
 encoders (RQ3).
@@ -254,7 +312,7 @@ encoders (RQ3).
 **If not, the pilot has failed, and failure is diagnostic rather than
 terminal.** Read in this order:
 
-- *Near chance at every layer* — suspect the label/alignment path, the 2–3 frame
+- *Near chance at every layer* — suspect the label/alignment path, the 2–4 frame
   site width, or that the cue genuinely does not generalize across vocabulary,
   before concluding anything about the encoder.
 - *High real accuracy with high control accuracy* — a leak. The split should
