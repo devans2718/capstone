@@ -288,6 +288,12 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
 
     rng = np.random.default_rng(seed)
     sites = select_sites(inventory, n_sites, seed)
+    # TODO(pre-reg rev 3, before the run): take folds from the registered
+    # split instead of drawing them. Under `combined` a site's fold is its
+    # (speaker fold, type fold) cell, 0-24, fixed by pre-registration §3; the
+    # construction lives only in scripts/analyze_flap_lexical_structure.py
+    # today and moves into src/ as shared code. Random 0-4 is harmless while
+    # every row is synthetic, but it does not describe the design.
     folds = rng.integers(0, N_FOLDS, size=len(sites))
 
     # One correctness draw per site per condition, then a probability CONSISTENT

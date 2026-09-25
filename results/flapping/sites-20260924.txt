@@ -2,7 +2,7 @@
 Buckeye flapping sites — RQ1 English arm
 ==================================================================
   root: /data/corpora/buckeye
-  date: 2026-09-25T02:36:54Z
+  date: 2026-09-25T03:17:10Z
 
 -- corpus --
   tracks parsed                   255
@@ -84,5 +84,5 @@ Buckeye flapping sites — RQ1 English arm
     positionally determined, by site count: [Buckeye word types redacted]
 
 wrote 10,392 sites to /tmp/claude-1000/-home-daniel-code-capstone/9118b4c2-3676-425c-ace4-0eaa66f2d09e/scratchpad/sites.tsv
-wrote 10,392 sites to results/flapping/sites-20260919.parquet
-wrote exclusion counts to results/flapping/sites-20260919.stats.json
+wrote 10,392 sites to results/flapping/sites-20260924.parquet
+wrote exclusion counts to results/flapping/sites-20260924.stats.json

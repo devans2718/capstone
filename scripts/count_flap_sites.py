@@ -60,7 +60,7 @@ import argparse
 import sys
 import wave
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -178,6 +178,16 @@ class Site:
     n_frame_onsets: int = 0
     n_frame_onsets_abs: int = 0
     excerpt_clamped: bool = False
+
+    # -- neutralisation (decision D5) --------------------------------------
+    # True when this site's (actual phone string, position) cell is attested
+    # with BOTH underlying classes somewhere in the inventory: got ~ god,
+    # write ~ ride. Filled in by mark_surface_ambiguous once every site is known,
+    # because it is a property of the whole inventory, not of one site.
+    # Ambiguous in Buckeye's transcription, NOT necessarily in the audio: the
+    # labels hide the vowel-length difference before /t/ vs /d/, which is
+    # plausibly the very cue that separates the pair.
+    surface_ambiguous: bool = False
 
     @property
     def duration(self) -> float:
@@ -656,6 +666,26 @@ def both_class_report(sites) -> None:
             print(f"    {w}: {idxs}")
 
 
+def mark_surface_ambiguous(sites) -> list:
+    """Return the sites with surface_ambiguous set where the surface cell carries both classes.
+
+    A cell is (actual phone string, phone_idx_in_word). This is D5's
+    across-spelling case, distinct from §1a's within-spelling one: §1a asks
+    whether one written word carries both classes at one position (it never
+    does), this asks whether one transcribed pronunciation does (59 cells,
+    3,173 sites, 30.53%). A column rather than a subset, so a named
+    evaluation subset stays possible later without recomputing, and without
+    deciding the research question now.
+    """
+    classes = defaultdict(set)
+    for s in sites:
+        classes[(s.actual_phones, s.phone_idx_in_word)].add(s.underlying)
+    # Site is frozen, so this builds new records rather than mutating.
+    return [replace(s, surface_ambiguous=len(classes[(s.actual_phones,
+                                                      s.phone_idx_in_word)]) > 1)
+            for s in sites]
+
+
 def write_parquet(sites, path: Path) -> None:
     """Write the inventory as parquet with an explicitly declared schema.
 
@@ -700,6 +730,7 @@ def write_parquet(sites, path: Path) -> None:
         ("n_frame_onsets", pa.int32()),
         ("n_frame_onsets_abs", pa.int32()),
         ("excerpt_clamped", pa.bool_()),
+        ("surface_ambiguous", pa.bool_()),
     ])
 
     rows = [asdict(s) for s in sites]
@@ -751,6 +782,7 @@ def write_stats(sites, stats, path: Path) -> None:
         "n_underlying_d": by_cat["d"],
         "n_zero_onset_excerpt_local": sum(1 for s in sites if s.n_frame_onsets == 0),
         "n_zero_onset_absolute": sum(1 for s in sites if s.n_frame_onsets_abs == 0),
+        "n_surface_ambiguous": sum(1 for s in sites if s.surface_ambiguous),
         "n_excerpt_clamped": sum(1 for s in sites if s.excerpt_clamped),
         "context_ms": 200,
     }
@@ -774,6 +806,7 @@ def main() -> int:
     sites, stats, underlying_all, per_speaker = collect_sites(
         args.root, keep_marked=args.keep_marked
     )
+    sites = mark_surface_ambiguous(sites)
     report(sites, stats, underlying_all, per_speaker, root=args.root)
 
     if args.dump:
