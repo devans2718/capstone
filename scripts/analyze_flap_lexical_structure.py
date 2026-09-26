@@ -9,12 +9,18 @@ split can score every site instead of only the diagonal.
 
 Word types are ranked by site count, ties broken alphabetically, so every fold
 assignment here is a function of the inventory's contents and not its row order.
+The ranking and the §5 folds come from capstone.splits, the same code the probe
+run and the slice use, so this report describes the split that is actually run.
 """
 import csv
 import random
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from capstone.splits import rank_types, speaker_folds, type_folds  # noqa: E402
 
 DEFAULT_TSV = (Path(__file__).resolve().parent.parent
                / "results/corpus-verification/buckeye-flap-sites-20260821.tsv")
@@ -35,7 +41,7 @@ print(f"\ndistinct word types: {len(by_type)}")
 # string order, so 'Daddy' sorts before every lowercase word). Not
 # most_common(): that orders ties by first appearance in the TSV, which would
 # make the §3 and §5 fold assignment depend on row order. See §5.
-ranked = sorted(by_type.items(), key=lambda kv: (-kv[1], kv[0]))
+ranked = rank_types(r["word"] for r in rows)
 total = len(rows)
 for n in (10, 50, 100, 200):
     share = sum(c for _, c in ranked[:n]) / total
@@ -116,8 +122,8 @@ for fold in range(5):
 # partitions, so each site sits in exactly one cell, and scoring all 25 gives
 # every site one out-of-fold prediction. Cell (k, k)'s train set is §3's fold k
 # train set exactly, so no probe sees less data than under the diagonal design.
-spk_fold = {s: i % 5 for i, s in enumerate(speakers)}
-typ_fold = {w: i % 5 for i, (w, _) in enumerate(ranked)}
+spk_fold = speaker_folds(r["speaker"] for r in rows)
+typ_fold = type_folds(r["word"] for r in rows)
 cell_of = [(spk_fold[r["speaker"]], typ_fold[r["word"]]) for r in rows]
 
 print("\nfull 5 x 5 grid: speaker fold x type fold (§3's stratified assignment)")

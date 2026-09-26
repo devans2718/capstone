@@ -25,6 +25,9 @@ pandas==2.3.3        # test-case ground truth, computed independently of DuckDB
 pyarrow==21.0.0      # site inventory and predictions on disk; the join spine
 duckdb==1.4.1        # the retrieval tools; typed SQL over the two parquet files
 soundfile==0.13.1    # clip export. Pinned to match requirements.txt — see above.
+scikit-learn==1.9.0  # capstone.splits' `random` condition (StratifiedKFold).
+                     # Pinned to match requirements.lock.txt: the slice's folds
+                     # and the probe run's must come from the same shuffle.
 streamlit==1.50.0    # the presentation layer
 
 # Testing. Not in §11's list, which names only what the application imports,
