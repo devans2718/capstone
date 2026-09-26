@@ -1,9 +1,3 @@
----
-tags:
-  - class/cs-5588
-updated: 2026-09-25T21:10
----
-
 # Challenge 2 Enhancement — brief for the repo-side agent
 
 **Written 2026-09-25 against the repo at `~/code/capstone`, checked the same evening.** Deadline: **Mon 2026-09-28, 11:59 PM**. A written report follows on Wed 09-30 and reuses everything built here.
@@ -113,7 +107,7 @@ Move the construction into a module (e.g. `capstone.splits`) that the probe run,
 | --- | --- | --- |
 | **MFCC feature configuration** (§4) | — | MFCC vs log-mel, coefficient count, deltas. The criterion-1 baseline, so it must be fixed before the push |
 | **ABX** as a secondary measure | — | Depends on a study of `zerospeech/libri-light-abx2`, in progress. A cost estimate for flap sites (whether it runs on our pooled site vectors or needs frame sequences) would help decide |
-| **Second encoder: confirmatory or exploratory** | — | `facebook/wav2vec2-base`, chosen because Pasad et al. 2021 analyzes it layer by layer, so there is a published curve to check against |
+| **Second encoder: confirmatory or exploratory** | — | `facebook/wav2vec2-base`, chosen because Pasad et al. 2022 analyzes it layer by layer, so there is a published curve to check against |
 | **Per-layer CIs** for the curves | same word-type bootstrap as criterion 1, per layer, per condition | Criterion 1's gap CI is registered; the per-layer CIs aren't |
 | **Publishing** the token list, split files, configs, results CSV | — | Touches whether the repo stays private (it is private because of the Buckeye download script) |
 
