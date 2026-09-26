@@ -1,0 +1,18 @@
+Lemma overlap across the word-disjoint split
+Generated 2026-09-26T17:09:29-05:00 by scripts/measure_lemma_overlap.py
+Source: results/flapping/sites-20260924.parquet
+
+nltk 3.10.3, WordNet 3.0
+eligible sites 10389, type keys 991, lemmas 863
+lemmas spanning 2+ type keys: 132, covering 299 keys and 3126 sites
+  largest: [Buckeye lemmas redacted]
+
+word_disjoint: test sites whose lemma occurs in their probe's training set
+  lemma seen  all  2882 of 10389 (27.7%)   /t/ 2065 of 7860 (26.3%)   /d/ 817 of 2529 (32.3%)
+  same label  all  2689 of 10389 (25.9%)   /t/ 1979 of 7860 (25.2%)   /d/ 710 of 2529 (28.1%)
+  same label, by lemma: [Buckeye lemmas redacted]
+
+joint: test sites whose lemma occurs in their probe's training set
+  lemma seen  all  2803 of 10389 (27.0%)   /t/ 2009 of 7860 (25.6%)   /d/ 794 of 2529 (31.4%)
+  same label  all  2612 of 10389 (25.1%)   /t/ 1923 of 7860 (24.5%)   /d/ 689 of 2529 (27.2%)
+  same label, by lemma: [Buckeye lemmas redacted]
