@@ -34,6 +34,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from capstone import seeds  # noqa: E402
 from capstone.predictions import (  # noqa: E402
     CONDITIONS,
     build_manifest,
@@ -62,7 +63,6 @@ def main() -> int:
     ap.add_argument("--manifest-copy", type=Path, default=DEFAULT_MANIFEST_COPY,
                     help="committed copy of the manifest")
     ap.add_argument("--n-sites", type=int, default=40)
-    ap.add_argument("--seed", type=int, default=20260919)
     ap.add_argument("--layer", type=int, default=8)
     args = ap.parse_args()
 
@@ -75,13 +75,14 @@ def main() -> int:
         )
 
     inventory = pq.read_table(args.inventory).to_pandas()
-    sites, rows = synthesize(inventory, n_sites=args.n_sites, seed=args.seed,
+    sites, rows = synthesize(inventory, n_sites=args.n_sites, seed=seeds.SYNTHETIC,
                              layer=args.layer)
 
     write_predictions(rows, args.out)
     manifest = build_manifest(
-        args.inventory, split_scheme=SPLIT_SCHEME, random_seed=args.seed,
-        n_sites_scored=len(sites),
+        args.inventory, split_scheme=SPLIT_SCHEME,
+        seeds={"synthetic": seeds.SYNTHETIC}, n_sites_scored=len(sites),
+        synthetic=True, encoders=("wavjepa",),
     )
     manifest.write(args.out.with_name("run-manifest.json"))
     manifest.write(args.manifest_copy)
@@ -89,7 +90,7 @@ def main() -> int:
     scored = sum(1 for r in rows if r["scored"])
     ineligible = sum(1 for r in rows if not r["eligible"])
     print(f"inventory        {len(inventory):,} sites  ({args.inventory})")
-    print(f"selected         {len(sites)} sites, seed {args.seed}")
+    print(f"selected         {len(sites)} sites, seed {seeds.SYNTHETIC}")
     print(f"  zero-onset     {int((sites.n_frame_onsets == 0).sum())} excerpt-local / "
           f"{int((sites.n_frame_onsets_abs == 0).sum())} absolute")
     print(f"  clamped        {int(sites.excerpt_clamped.sum())}")

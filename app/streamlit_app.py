@@ -233,7 +233,7 @@ st.caption(
     f"run `{manifest.run_id}` · code `{manifest.code_commit[:12]}` · "
     f"inventory `{manifest.inventory_hash[:12]}` · checkpoint "
     f"`{manifest.checkpoint_revision}` · context {manifest.context_ms:.0f} ms · "
-    f"seed {manifest.random_seed}"
+    "seeds " + ", ".join(f"{k} {v}" for k, v in sorted(manifest.seeds.items()))
 )
 
 with st.sidebar:

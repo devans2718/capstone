@@ -69,6 +69,8 @@ def prediction_schema():
         ("encoder", pa.string()),        # 'wavjepa'; the lookup baseline is 'lookup'
         ("layer", pa.int32()),           # nullable: not every encoder has layers
         ("condition", pa.string()),
+        ("subsampled", pa.bool_()),      # the §3 secondary run; never in the name
+        ("pooling", pa.string()),        # 'mean' (registered) | 'max' | 'midpoint'
         ("fold", pa.int32()),            # NULL when eligible is false: in no fold
         ("eligible", pa.bool_()),        # false = excluded before scoring
         ("scored", pa.bool_()),          # false = eligible but not scored this run
@@ -157,9 +159,10 @@ class Manifest:
     checkpoint_revision: str
     context_ms: float
     split_scheme: str
-    random_seed: int
+    seeds: dict
     n_sites_scored: int
-    synthetic: bool = True
+    synthetic: bool
+    encoders: tuple = ()
 
     def to_json(self) -> str:
         return json.dumps(self.__dict__, indent=2, sort_keys=True) + "\n"
@@ -171,12 +174,24 @@ class Manifest:
 
     @classmethod
     def read(cls, path: Path) -> "Manifest":
-        return cls(**json.loads(path.read_text()))
+        d = json.loads(path.read_text())
+        d["encoders"] = tuple(d.get("encoders", ()))
+        return cls(**d)
 
 
-def build_manifest(inventory: Path, *, split_scheme: str, random_seed: int,
-                   n_sites_scored: int, run_id: str | None = None) -> Manifest:
-    """Assemble a manifest from the inputs that actually produced a run."""
+def build_manifest(inventory: Path, *, split_scheme: str, seeds: dict,
+                   n_sites_scored: int, synthetic: bool, encoders=(),
+                   run_id: str | None = None) -> Manifest:
+    """Assemble a manifest from the inputs that actually produced a run.
+
+    `synthetic` has no default. Until revision 3's run it was hardcoded true,
+    which was right while every row was noise and would be wrong the moment a
+    real run wrote its manifest through the same call. A caller now has to say
+    which it is.
+
+    `seeds` is every seed the run drew from, by name: a real run has four
+    (capstone.seeds.REGISTERED), the synthetic slice one.
+    """
     return Manifest(
         run_id=run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
         inventory_hash=file_hash(inventory),
@@ -184,9 +199,10 @@ def build_manifest(inventory: Path, *, split_scheme: str, random_seed: int,
         checkpoint_revision=CHECKPOINT_REVISION,
         context_ms=CONTEXT_MS,
         split_scheme=split_scheme,
-        random_seed=random_seed,
+        seeds=dict(seeds),
         n_sites_scored=n_sites_scored,
-        synthetic=True,
+        synthetic=synthetic,
+        encoders=tuple(encoders),
     )
 
 
@@ -314,7 +330,8 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
             if not eligible:
                 rows.append({
                     "site_id": site.site_id, "encoder": encoder, "layer": layer,
-                    "condition": cond, "fold": None,
+                    "condition": cond, "subsampled": False, "pooling": "mean",
+                    "fold": None,
                     "eligible": False, "scored": False,
                     "p_t": None, "pred": None, "correct": None, "synthetic": True,
                 })
@@ -327,7 +344,8 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
             p_t = 0.5 + margin if pred == "t" else 0.5 - margin
             rows.append({
                 "site_id": site.site_id, "encoder": encoder, "layer": layer,
-                "condition": cond, "fold": int(folds[cond][site.site_id]),
+                "condition": cond, "subsampled": False, "pooling": "mean",
+                "fold": int(folds[cond][site.site_id]),
                 "eligible": True, "scored": True,
                 "p_t": round(p_t, 6), "pred": pred, "correct": correct,
                 "synthetic": True,
