@@ -1,11 +1,16 @@
 {
   "checkpoint_revision": "6be4a50",
-  "code_commit": "99e82af1a3fb360e5257ebd86a3b669e0a86d9eb",
+  "code_commit": "647ec903b57ce28e62af788405f1a9c247024f64",
   "context_ms": 200.0,
+  "encoders": [
+    "wavjepa"
+  ],
   "inventory_hash": "b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162",
   "n_sites_scored": 40,
-  "random_seed": 20260919,
-  "run_id": "20260926T034652Z",
+  "run_id": "20260926T235750Z",
+  "seeds": {
+    "synthetic": 20260919
+  },
   "split_scheme": "capstone.splits. Clamped sites excluded before fold assignment and scoring in every condition; folds over the 10,389 eligible. random: stratified 5-fold by label, seeded; speaker_disjoint: 5 speaker folds; word_disjoint: 5 type folds; joint: speaker x word-type 5x5 grid, all 25 cells scored",
   "synthetic": true
 }
