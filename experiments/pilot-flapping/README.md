@@ -1,17 +1,10 @@
 # Pilot: English flapping probe — pre-registration
 
-**Revision 3 — in progress, not final.** Nothing has been run. Still pending
-before this revision is final and pushed:
+**Revision 3, 2026-09-26. Nothing has been run.** Final as pushed. From here,
+departures are appended to §7, never edited in above.
 
-- whichever Challenge 2 feedback items are adopted: the MFCC feature
-  configuration (§4), and optionally ABX, a random-split condition, and
-  publishing the token list and split files;
-- the §3 split construction moved into `src/` as shared code, used by the
-  probe run and the demo slice alike. The slice currently draws random fold
-  numbers for its synthetic rows.
-
-**Changes in revision 3**, each from measuring the corpus or the code, none
-from a result:
+**Changes in revision 3**, each from measuring the corpus or the code, or from
+the Challenge 2 feedback, none from a result:
 
 1. **Word-type tie-break registered (§3).** 985 of the 1,022 types share a
    site count with another type. Revision 2 left their order to
@@ -41,6 +34,62 @@ from a result:
    not a change to the design.
 6. **Correction.** Revision 2 gave the pooled diagonal as "≈1,990 sites". Its
    own script summed to 2,104. The /d/ figure, 516, was right.
+7. **Four split conditions, not one (§3).** `random`, `speaker_disjoint`,
+   `word_disjoint` and `joint`, the last being revision 2's design. The three
+   new ones reuse the grid's own axes, so the drop across them is attributable
+   to the constraint rather than to differently drawn folds. Only `joint`
+   gates (§5). The others are the result the feedback asked for: how much of
+   the score survives as the lexical and speaker routes are closed.
+8. **Folds assigned over the 10,389 eligible sites (§1, §3).** The 3 clamped
+   sites used to count in the type ranking while being excluded from scoring.
+   Counting them moves 186 singleton types to a different fold, so they now
+   leave before assignment. With change 18, this moves every grid figure in
+   §3; the old ones are in
+   `results/corpus-verification/buckeye-flap-lexical-structure-20260924.txt`.
+9. **Secondary run at matched training size (§3).** The single-axis
+   conditions retrained on 80% of their own training set, ≈64% of sites, to
+   match `joint`.
+10. **Controls under every condition; speaker-leakage check placed (§4).** The
+    lookup and the control task run under all four. The speaker-ID probe runs
+    under `random` and `word_disjoint` only, the two conditions where it is
+    defined.
+11. **MFCC configuration fixed (§4)**, with "same frames" corrected to what
+    the code can do: MFCC frames are not the encoder's frames.
+12. **Per-layer confidence intervals registered (§5).**
+13. **Second encoder, exploratory (scope).** `facebook/wav2vec2-base`.
+14. **Split construction moved to shared code.** `capstone.splits`, used by the
+    probe run, the demo slice and the analysis script alike.
+    `tests/test_splits.py` holds §3's figures.
+15. **Every seed registered by value (§3, *Registered seeds*).** Revision 2
+    said the control mapping and the bootstrap were "seeded and recorded"
+    without saying with what, which leaves the seed free to be chosen after a
+    result. The bootstrap seed bears directly on criterion 1.
+16. **Criterion 2 restated as a randomization test (§4, §5).** The ±0.03
+    bound assumed independent sites. Control labels are drawn per word type,
+    and simulated with no leak at all, the bound fires 59–80% of the time on a
+    single mapping (`scripts/simulate_control_spread.py`,
+    `results/corpus-verification/buckeye-control-spread-20260926.txt`). The
+    new test compares the real control score against the same statistic under
+    10,000 redrawn mappings.
+17. **Probe hyperparameters registered (§3).** Revision 2 said "the same probe
+    and hyperparameters" without giving any, which left the regularization
+    free to be chosen after a result. It bears on criterion 1, where 768
+    dimensions are compared against 39.
+18. **"Word type" defined, with contractions merged onto their host (§1a,
+    §3).** Revision 2 never said what a word type was. It was the raw word
+    form, so `do` could train while `don't` was tested. The type key is now
+    the word form, lowercased, with 34 contracted forms merged onto the host
+    that carries the flap (187 sites). 1,021 word forms become 991 keys. The
+    key is not a lemma, and lemma overlap across the split is measured and
+    registered as a limitation (§1a).
+19. **Criterion 1 re-scored on unseen lemmas, reported and not gated (§5).**
+    The subset of 7,586 sites is fixed now, as a committed file, so that the
+    re-score is not a choice made after the run.
+
+**Considered in revision 3 and not adopted:** ABX as a secondary measure
+(not costed for flap sites; a follow-up), and publishing the token list,
+split files, configs and results CSV (a question of what leaves the private
+repository, not of design; decided separately).
 
 **Revision 2, 2026-08-22. Nothing has been run at any point in this file's
 history.** Revision 1 (`b0b2bce`, pushed) registered speaker-disjoint splits
@@ -56,6 +105,14 @@ against criteria fixed in advance.
 Scope: WavJEPA (frozen) on the Buckeye flapping set, one model, one dataset,
 layer-wise, measured against an MFCC baseline. This is the gate before
 extending to the baseline encoders.
+
+**Second encoder, exploratory: `facebook/wav2vec2-base`**, chosen because
+Pasad et al. 2022 (arXiv:2107.04734v3) analyze it layer by layer, so there is
+a published curve to check against. It runs the same design and gates nothing, and every result
+from it is labelled exploratory. It needs its own frame geometry, derived from
+its conv stack and verified the way WavJEPA's was. WavJEPA's `FrameGeometry` is
+not reused and no frame rate is typed in. Dropping it for time is not a
+deviation.
 
 **Thresholds below are judgment calls, not derived bounds.** If one turns out
 badly calibrated, that is a finding to record — not a licence to move it after
@@ -86,7 +143,9 @@ acoustic classification.
   dx`); recovering them needs edit-distance alignment between tiers, out of
   scope here. Reported, never silently dropped.
 - Sites that cannot be centred at the chosen context width (`Excerpt.clamped`)
-  — **3 of 10,392 at 200 ms**.
+  — **3 of 10,392 at 200 ms**. They are removed before folds are assigned
+  (§3), not only before scoring. A site that is never scored does not decide
+  where other sites go.
 - Sites containing no frame onset at all. **Selects none**: centring puts
   every target's start on a frame onset, and that onset counts (min 1 frame
   per site, `results/flapping/sites-20260924.txt`). Kept as a rule so a
@@ -123,6 +182,22 @@ must be able to see that it was known before the run.
   difference before /t/ vs /d/, which is plausibly the cue that separates
   them. Recorded as a known population; not an evaluation subset in this
   revision.
+- **The figures above count raw word forms. The split's unit is the type
+  key** (§3, measured 2026-09-26): the form, lowercased, with contractions
+  merged onto their host. That gives 991 keys over the 10,389 eligible sites.
+- **Known limitation: the split is disjoint by form, not by lemma**
+  (measured 2026-09-26, `scripts/measure_lemma_overlap.py`,
+  `results/corpus-verification/buckeye-lemma-overlap-20260926.txt`). Under
+  `joint`, **25.1% of test sites (2,612) have their lemma in their probe's
+  training set with their own label** (24.5% of /t/, 27.2% of /d/). That is
+  the share a probe memorizing lemmas could exploit. Most of it comes from a
+  few verb families: `get/got/getting/gotten` (619 sites), `out/outer` (258),
+  `do/did/does` (226), `put/putting` (118), `start/started/starting` (90).
+  Counting the lemma regardless of label gives 27.0%. Lemmas are from WordNet
+  3.0, guided by Buckeye's POS tags, so this is an estimate. "Unseen words"
+  in this design means unseen word forms. A lemma-disjoint split was not
+  attempted: it would reshuffle every fold, and it is a follow-up. Criterion
+  1 is also re-scored on the sites whose lemma is unseen (§5).
 
 **Two consequences, both binding:**
 
@@ -168,29 +243,62 @@ anything beyond those three is exploratory and gets labelled so.
 a linear probe keeps "the encoder represents this" the simplest reading of a
 positive result. A stronger probe is a follow-up, not part of the gate.
 
+**Hyperparameters, fixed and never tuned.** scikit-learn (1.9.0 in the lock)
+`LogisticRegression` with an L2 penalty, **C = 1.0**, solver `lbfgs`,
+`max_iter = 1000`. Features are **standardized per probe**: a `StandardScaler`
+is fit on that probe's training sites only, then applied to its test sites.
+One setting for everything: every representation (WavJEPA, MFCC, wav2vec2),
+layer, condition and run, the control task and the speaker-ID probe included.
+A fit that does not converge is reported as such, and is not refit with other
+settings.
+
 **Class imbalance: `class_weight='balanced'`, all sites retained.**
 Subsampling to the balanced ceiling of 5,058 would discard 5,334 sites to buy
 the convenience of accuracy and balanced accuracy coinciding. Choosing the
 metric correctly is cheaper.
 
-### Splits: word-type-disjoint **and** speaker-disjoint
+### Splits: four conditions from one grid, one of them gated
 
-Both axes, jointly. Type-disjointness is the one that makes the task
-phonological rather than lexical; speaker-disjointness is the standard guard
-the advisor asked for, kept.
+Implemented once, in `capstone.splits`. The probe run, the demo slice and the
+analysis script all take their folds from it, and `tests/test_splits.py`
+reproduces every figure in this section.
 
-Construction, 5 speaker folds × 5 type folds:
+**The gated condition is `joint`: word-type-disjoint and speaker-disjoint.**
+Type-disjointness is the one that makes the task phonological rather than
+lexical; speaker-disjointness is the standard guard the advisor asked for,
+kept.
+
+Construction, 5 speaker folds × 5 type folds, **over the 10,389 eligible
+sites**. The §1 exclusions are applied first, so excluded sites are neither
+ranked nor counted, and belong to no fold:
 
 1. Sort speakers; assign speaker *i* to fold *i mod 5*.
-2. Rank word types by site count, highest first, **ties broken by the word's
-   spelling in code-point order** (Python's default string sort, so a
-   capitalised type sorts before lowercase ones). Assign the *i*-th ranked type
-   to type fold *i mod 5*. Walking the ranked list spreads each fold's types
-   across the whole frequency range, and needs **no random seed**: the
+2. Rank word types by site count, highest first, **ties broken by spelling in
+   code-point order** (Python's default string sort). Assign the *i*-th ranked
+   type to type fold *i mod 5*. Walking the ranked list spreads each fold's
+   types across the whole frequency range, and needs **no random seed**: the
    assignment is a function of the inventory's contents alone. A
    frequency-blind random draw was measured and rejected. It swung diagonal
    test-fold /d/ counts between 71 and 253, against 87–113 for the stratified
-   walk.
+   walk (both measured over all 10,392 sites and raw word forms, before
+   changes 8 and 18).
+
+   **A word type is a type key** (`capstone.splits.type_key`): the
+   inventory's `word` column (the orthographic word form, with no
+   pronunciation or POS in it), lowercased, with contracted forms merged onto
+   the host word that carries the flap. The merge is an explicit table
+   covering every contracted form in the inventory, not "cut at the
+   apostrophe":
+   - `'s`, `'ll`, `'ve` → the host (`city's` → `city`): the clitic contains no
+     /t/ or /d/.
+   - `it'd`, `that'd` → the host: labelled /t/, the host's segment.
+   - `don't`, `didn't`, `doesn't`, `wouldn't`, `couldn't` → `do`, `did`,
+     `does`, `would`, `could`: the flap is the host's /d/.
+   - `i'd`, `they'd`, `you'd`, `he'd`, `there'd`, `haven't` keep their own
+     key: the flap is in the clitic.
+
+   34 forms (187 sites) are merged, and 1,021 word forms become 991 keys. The
+   same key is the unit of the lookup table and the control task (§4).
 3. **Every cell of the 5 × 5 grid is a test set.** Cell (*a*, *b*) = sites in
    speaker fold *a* and type fold *b*. For each cell, **test** = the cell;
    **train** = sites in neither speaker fold *a* nor type fold *b*; one probe
@@ -199,16 +307,83 @@ Construction, 5 speaker folds × 5 type folds:
    prediction. Measured: all 25 cells populated, no speaker or word type
    shared between any cell's test and train set.
 
-**The discard is from training, not from scoring: ~32% of sites per probe.** Each probe trains on 6,255–7,072 sites (1,504–1,760 /d/). Sites that
-share exactly one axis with the test cell are left out of that probe's
-training, but every site is scored by its own cell. Test cells run 281–535
-sites, 67–151 of them /d/, drawn from 27–48 distinct /d/ word types.
+**The discard is from training, not from scoring: ~32% of sites per probe.**
+Each probe trains on 6,257–7,100 sites (1,389–1,820 /d/). Sites that share
+exactly one axis with the test cell are left out of that probe's training, but
+every site is scored by its own cell. Test cells run 310–535 sites, 57–189 of
+them /d/, drawn from 25–39 distinct /d/ type keys. The diagonal alone would
+score 2,187 sites (543 /d/). Measured in
+`results/corpus-verification/buckeye-flap-lexical-structure-20260926.txt`.
+
+**/d/ is unevenly spread across type folds**, and this is known before the
+run. Type fold 1 holds about twice the /d/ of type fold 3 (718 against 362
+test sites). The walk balances site counts, not labels, and some merged keys
+are large and entirely /d/: `do` (113 sites), `did` (104). Class weighting
+handles the training imbalance, and scoring is pooled, so no cell's
+proportion is the headline. The per-cell spread is read with it in mind.
 
 **Scoring is pooled, not averaged.** Out-of-fold predictions from all 25 cells
 are collected and scored **once** over the pooled set: every site that survives
 §1's exclusions, **10,389 sites, of which 2,529 are /d/**. That is the
 inventory's 10,392 less the 3 clamped sites, all /t/. Per-cell scores are
 reported as a spread of 25 numbers, not as the headline.
+
+### The three reported conditions
+
+Each reuses one of the grid's two partitions, or neither:
+
+| Condition | Test | Train | Probes | `fold` |
+| --- | --- | --- | --- | --- |
+| `random` | site fold *k* | the other four site folds | 5 | 0–4 |
+| `speaker_disjoint` | speaker fold *a* (a grid row) | all other speaker folds | 5 | 0–4 |
+| `word_disjoint` | type fold *b* (a grid column) | all other type folds | 5 | 0–4 |
+| `joint` | cell (*a*, *b*) | neither *a* nor *b* | 25 | 0–24, as 5*a* + *b* |
+
+Because the axes are shared, **`joint`'s train set for cell (*a*, *b*) is
+exactly the intersection of `speaker_disjoint`'s train set for *a* and
+`word_disjoint`'s for *b*.** A difference between conditions is then
+attributable to the constraint, not to differently drawn folds.
+
+**`random` is shuffled 5-fold, stratified by underlying label**
+(scikit-learn `StratifiedKFold(shuffle=True)`), **seed 20260926**, over the
+same 10,389 sites. It is the only condition with a seed. Tokens of one word
+landing in both train and test is the point of this condition, not a defect.
+
+Every condition scores every eligible site exactly once and is pooled the same
+way as `joint`. They are **reported, not gated** (§5): the drop across them is
+the result, and under `random` and `speaker_disjoint` the controls cannot
+behave as they do under `joint` (§4).
+
+### Secondary run: training matched to `joint`
+
+The single-axis conditions train on ~80% of sites and `joint` on ~64%, so part
+of any drop from `word_disjoint` to `joint` is only less training data. **In a
+secondary run, each of `random`, `speaker_disjoint` and `word_disjoint` trains
+on 80% of its own training set (≈64% of sites):** `round(0.8 × n)` sites per
+class, drawn without replacement from a generator keyed on (20260926, fold).
+Test sets are unchanged. The subsample is marked by its own column in the
+predictions and results, not encoded in the condition name. Reported beside
+the headline runs, never in place of them, and gated on nothing.
+
+### Registered seeds
+
+Every random draw in the run, in one place. The values are labels in date
+form, chosen before any result and meaning nothing else. Each kind of draw
+has its own seed, except that `random`'s folds and the subsample share
+20260926. They still never share a random stream: the folds come from
+scikit-learn's generator, and the subsample from a numpy generator keyed on
+(20260926, fold). A run records every seed in its manifest.
+
+| Seed | Drives | Where |
+| --- | --- | --- |
+| **20260926** | `random`'s fold assignment (`StratifiedKFold(shuffle=True, random_state=…)`) | §3 |
+| **20260926** | the secondary run's subsample, drawn from a generator keyed on (seed, fold) | §3 |
+| **20260927** | the control task's word-type → label mapping | §4 |
+| **20260928** | the word-type bootstrap: criterion 1's gap, and every per-layer interval | §5 |
+| **20260929** | criterion 2's 10,000 null control mappings, drawn by the same procedure as the real one | §4, §5 |
+
+The speaker and type folds need no seed (§3 construction). The demo slice's
+synthetic predictions use 20260919, which is not part of this design.
 
 *(No minimum-sample threshold is registered. Revision 1 carried one — "≥500
 minority sites per fold" — that had been chosen with the inventory already in
@@ -221,21 +396,41 @@ lookup table over the training types. Under the type-disjoint split it collapses
 toward chance on held-out types, and that collapse is the check that the split
 is doing its job. Report it.
 
-The lookup, the control task and the speaker-leakage check all run on the same
-25 cells as the real probe (§3) and are pooled the same way. A control scored
-over a different set of sites than the probe it calibrates would not be a
-control.
+**The lookup and the control task run under all four conditions (§3)**, each
+on the same folds as the real probe in that condition, and pooled the same
+way. A control scored over a different set of sites than the probe it
+calibrates would not be a control. Expected shape: the lookup near 0.99 under
+`random` and `speaker_disjoint`, where word types recur between train and
+test, and collapsing under `word_disjoint` and `joint`, where they do not. That
+collapse is the plainest single exhibit of what the type-disjoint split
+removes.
 
 **Control task (Hewitt & Liang 2019, *Designing and Interpreting Probes with
 Control Tasks*), demoted to a sanity check.** Each word type draws a random
-/t/-or-/d/ label matching the real marginal; every token of that type inherits
-it. The mapping is seeded and recorded.
+/t/-or-/d/ label, and every token of that type inherits it.
+
+**The mapping procedure**, written once because criterion 2's randomization
+test (§5) redraws it, and a redraw that differs from the real draw would test
+against the wrong distribution:
+
+1. Take the type keys (§3) of the 10,389 eligible sites, 991 of them, in
+   code-point order.
+2. With a numpy `default_rng(seed)`, draw one uniform per type in that order.
+   A type is /d/ if its draw is below **2,529 / 10,389**, the eligible /d/
+   share, and /t/ otherwise.
+
+Each type is drawn independently, so no type's label depends on any other
+type's, and in particular not on the training types'. The randomization test
+relies on that. The real mapping is one draw with **seed 20260927**. The
+10,000 null mappings are 10,000 consecutive draws from a single generator
+with **seed 20260929** (§3, *Registered seeds*).
 
 Its role has changed from revision 1 and the change is deliberate: under a
 type-disjoint split, memorization is *already* neutralized, because held-out
-types were never seen with any label. A memorizing probe therefore scores near
-chance on the control run by construction. **The control is now a leak
-detector, not the primary calibration** — it should come out near chance, and
+types were never seen with any label. A memorizing probe therefore scores
+chance on the control run in expectation. Any single mapping can land well off
+0.50 (sd ≈ 0.056, change 16). **The control is now a leak detector, not the
+primary calibration**: it should come out where a random mapping puts it, and
 if it does not, word or speaker information is reaching the probe through a
 route not accounted for here.
 
@@ -245,34 +440,83 @@ chance accuracy on all other tokens)" (§2.3). Under this split that fraction
 is zero, so the ceiling is chance. The control's gate is therefore a leak
 bound (§5, criterion 2), not a selectivity floor.
 
+That argument holds for the type-disjoint conditions only. **Under `random`
+and `speaker_disjoint` the control is expected to sit well above chance**:
+word types recur, the control's labels are a function of the type, and a
+probe that identifies words memorizes them. There the control is reported for
+the comparison, and is not a leak test. This is why criterion 2 is scored on
+`joint` alone (§5).
+
 **Selectivity = real balanced accuracy − control balanced accuracy**, per layer,
-same probe and hyperparameters, **reported but not gated on**. With the control
-at chance by construction it is close to (real − 0.50) and adds nothing to
-criterion 1. It is in balanced-accuracy points rather than the paper's plain
+same probe and hyperparameters, **reported but not gated on**. The control
+sits at chance in expectation, not in any one draw. A single mapping's score
+can land well off 0.50 with no leak at all (sd ≈ 0.056; change 16), so
+selectivity is (real − control) as measured, not (real − 0.50), and it is read
+with that spread in mind. It is in balanced-accuracy points rather than the paper's plain
 accuracy because of the 75.7/24.3 imbalance. Hewitt & Liang state no absolute
 selectivity threshold anywhere; they use it only to compare probes and layers.
 
 **Registered baseline: MFCC.** The same linear probe on MFCC features. The
-sites, excerpts, frames, pooling, class weighting and 25 cells are all the
-same as for WavJEPA, and it is scored the same pooled way. It plays the role
-of Hewitt & Liang's random-representation baseline (their Proj0, §4; Zhang &
-Bowman 2018): features with no learned structure. That shows how much of the
-probe's result is available from the acoustics alone. Criterion 1 is
-measured against it. *(Feature configuration, meaning coefficients, deltas and
-MFCC vs log-mel, is still to be fixed in this revision.)*
+sites, excerpts, pooling rule, class weighting and folds are all the same as
+for WavJEPA, in every condition, and it is scored the same pooled way. It
+plays the role of Hewitt & Liang's random-representation baseline (their
+Proj0, §4; Zhang & Bowman 2018): features with no learned structure. That shows
+how much of the probe's result is available from the acoustics alone.
+Criterion 1 is measured against it.
+
+The **frames are not the same, and cannot be**: MFCC frames sit on a uniform
+10 ms grid, and the encoder's sit on its own staircase (§2). Nor is the rule
+for which frames belong to a site the same (see *Pooling* below). What is the
+same is the reduction: a mean over the frames that describe the site.
+Configuration:
+
+- **13 cepstral coefficients including c0, plus first and second deltas: 39
+  dimensions.** Computed with librosa (0.11.0 in the lock) on the site's 16 kHz
+  §2 excerpt, the same samples the encoder receives.
+- **25 ms Hann window (400 samples), 10 ms hop (160), 40 mel filters,
+  uncentred frames** (`center=False`), so frame *t* spans 10*t* to 10*t* + 25 ms
+  of the excerpt and no padding is invented.
+- **Deltas over the whole excerpt, before pooling**, with librosa's default
+  9-frame regression window, so a site's deltas see the context the excerpt
+  provides.
+- **Pooling: mean over the frames whose centre lies in the site's interval.**
+  WavJEPA's frames are selected by onset (§2). MFCC frames are selected by
+  centre, because an MFCC frame is a 25 ms Hann window weighted toward its
+  middle. Its onset sits 12.5 ms before the audio it mostly describes, and
+  with sites a median 27 ms long, an onset rule would skew each site's frames
+  toward the audio after it. Every eligible excerpt starts exactly 200 ms
+  before its flap, so the first frame centre falls 2.5 ms into every site. The shortest eligible site is
+  6.25 ms, so every site has at least one frame, by construction. The run
+  asserts this, and stops rather than excluding a site if it ever fails.
+- Max and midpoint pooling run as the same pre-declared secondary as for
+  WavJEPA (§2).
 
 **Speaker-leakage check.** A probe trained on the same representations to
-predict speaker identity, reported alongside. Diagnostic, not a gate.
+predict speaker identity, reported alongside. Diagnostic, not a gate. **It runs
+under `random` and `word_disjoint` only.** It needs every test speaker to occur
+in training, and those are the two conditions where every speaker does. Under
+`speaker_disjoint` and `joint` a speaker-ID probe is asked to name speakers it
+never saw, so the check is undefined there, not merely weak.
 
 ## 5. Criteria — what counts as the pilot failing
 
-All are scored on the pooled out-of-fold set (10,389 sites, 2,529 /d/). "Best
-layer" is WavJEPA's layer with the highest balanced accuracy.
+**All four are scored on the `joint` condition only**, on its pooled
+out-of-fold set (10,389 sites, 2,529 /d/), in the headline run. "Best layer" is
+WavJEPA's layer with the highest balanced accuracy under `joint`. `random`,
+`speaker_disjoint` and `word_disjoint`, the secondary run, and the exploratory
+encoder are reported, not gated.
+
+**Why only `joint`.** Under `random` and `speaker_disjoint`, word types recur
+between train and test. The control task can memorize per-type labels there,
+so it cannot sit at chance, and criterion 2 would fire on a design that is
+working correctly (§4). Real labels are 99.5% type-determined (§1a), so
+criterion 1 there would mostly measure word identification. The drop from
+`random` to `joint` is the result, not a gate.
 
 | # | Criterion | Threshold |
 |---|---|---|
 | 1 | Best layer beats the MFCC baseline | gap **≥ 0.05** balanced accuracy, **and** bootstrap 95% lower bound of the gap **> 0** |
-| 2 | Control task shows no leak | control balanced accuracy within **0.50 ± 0.03** at **every** layer |
+| 2 | Control task shows no leak | the control's highest balanced accuracy over the 13 layers does **not exceed the 95th percentile** of the same maximum under 10,000 redrawn mappings |
 | 3 | Layer-wise curve is not flat | best − worst **≥ 0.05** balanced accuracy |
 | 4 | Minority-class F1 (/d/), best layer | **≥ 0.45** |
 
@@ -286,18 +530,39 @@ was set for a task where word types recurred, and nothing calibrates it for
 unseen words. Beating features with no learned structure is the claim the
 project actually needs. The gap uses the same 0.05 as criterion 3, the
 smallest difference this design treats as meaningful. The bootstrap resamples
-**word types** (10,000 resamples, seed recorded) because word types are the
+**word types** (10,000 resamples, **seed 20260928**) because word types are the
 unit this design generalizes over, and it **re-selects the best layer inside
 every resample**, so that picking the best of 13 layers cannot inflate the
 gap. Sampling noise on a single balanced accuracy at this *n* is about ±0.011
 (95%, independent sites); the word-type bootstrap will be wider, and that is
 the conservative direction.
 
-**Criterion 2 is a leak bound.** Under this split the control should sit at
-chance (§4). ±0.03 is about three times the ±0.011 sampling band, wide enough
-not to fire on noise. It applies at every layer, not only the best, because a
-leak at any layer means information is reaching the probe by a route this
-design does not account for.
+**Criterion 2 is a randomization test for a leak.** With no leak, the control
+probe's predictions on held-out types are independent of those types' control
+labels. So the distribution of its score with no leak is known exactly: keep
+the predictions fixed and redraw the labels.
+
+- **Statistic:** the control's pooled balanced accuracy under `joint`, at each
+  of WavJEPA's 13 layers. Take the maximum over layers.
+- **Null:** for each of the 10,000 null mappings (§4, seed 20260929), score
+  the same fixed predictions at all 13 layers against that mapping, and keep
+  the maximum. The probes are not retrained.
+- **Fires** if the real maximum exceeds the 95th percentile of the 10,000
+  null maxima.
+
+The maximum over layers is used rather than a per-layer Bonferroni
+correction. It holds the chance of a false alarm across all 13 layers at 5%
+exactly, where Bonferroni would treat 13 strongly correlated layers as
+independent and be needlessly conservative. It is one-sided: a leak raises
+the control's score, and a score below the null is not a leak. It still covers
+every layer, because a leak at any layer means information is reaching the
+probe by a route this design does not account for.
+
+**Why the ±0.03 of earlier drafts was dropped.** It was justified as three
+times a ±0.011 band that assumes independent sites. Control labels are shared
+by every token of a type, and the head is heavy, so a leak-free probe's score
+on a single mapping has sd ≈ 0.056. ±0.03 would fire 59–80% of the time on a
+design that is working (change 16).
 
 **Criterion 4 is a guard, not a second performance bar.** It exists so an
 aggregate cannot hide a probe that has quietly stopped predicting /d/. Trivial
@@ -305,6 +570,27 @@ floors at 24.3% /d/: always answering /d/ gives F1 **0.391**, a coin flip
 **0.327**, and guessing /d/ at its base rate **0.243**. For reference, a probe
 at balanced accuracy 0.60 with errors split evenly between the classes reaches
 F1 0.42, so 0.45 is not lenient.
+
+**Per-layer confidence intervals, reported and not gated.** Every balanced
+accuracy on a layer-wise curve, in every condition and for every
+representation, carries a 95% interval from the same word-type bootstrap as
+criterion 1 (10,000 resamples of word types, seed 20260928), computed layer by
+layer. The curves are the RQ3 deliverable, and a curve without intervals
+invites reading differences between adjacent layers that the data cannot
+support.
+
+**Criterion 1 re-scored on unseen lemmas, reported and not gated.** A quarter
+of `joint`'s test sites have their lemma in their probe's training set (§1a).
+So criterion 1's statistic is also computed on the **7,586 sites (1,735 /d/)
+whose lemma occurs nowhere in their probe's training set**. The subset is
+fixed before the run, as the rows of
+`results/flapping/lemma-overlap-joint-20260926.tsv` with
+`lemma_in_train = false`. It uses the same predictions, with no new probes:
+the best-layer gap to MFCC, the same word-type bootstrap (seed 20260928),
+and the best layer re-selected in every resample. If the gap holds on this
+subset, lemma memorization is not what produces it. If it shrinks, that
+share of the result is lemma-level, and is reported as such. Neither outcome
+changes whether criterion 1 passes.
 
 **If criteria are met:** proceed to the step-5 write-up, then the baseline
 encoders (RQ3).
@@ -329,7 +615,9 @@ Neither should be settled unilaterally:
 
 - **Is leaving ~32% of sites out of each probe's training acceptable**, or is
   there a split design that buys type-disjointness more cheaply? Every site is
-  still scored (§3). The cost is to training, not to the test set.
+  still scored (§3). The cost is to training, not to the test set. The §3
+  secondary run measures part of this: it shows how much the single-axis
+  conditions lose when trained at `joint`'s size.
 - **Do 10,389 pooled test sites (2,529 /d/) support a 13-layer comparison?**
   The layer-wise curve is the actual RQ3 deliverable, and this is the number
   that limits how finely layers can be distinguished.
