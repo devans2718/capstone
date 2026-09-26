@@ -168,10 +168,10 @@ Appended after work on §4 began. The text above is left as written, and this se
 | 1. `capstone.splits` + test | Done | `cb1369d` |
 | 2. Renames | Done. Slice tests pass, `count_t_realizations.py` passes | `edd98f3` |
 | Fold assignment over eligible sites (A1.2) | Done | `8a97660` |
-| Manifest re-recorded from a clean tree | Follows this amendment | — |
+| Manifest re-recorded from a clean tree | Done | `0563101` |
 | 3–5. Pre-registration text, status, push | **Not started** | — |
 
-Nothing is pushed. The branch is now 14 commits ahead of `origin` (15 once the manifest is re-recorded).
+Nothing is pushed.
 
 ### A1.2 Decided: folds are assigned over the 10,389 eligible sites
 
