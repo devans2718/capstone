@@ -3,14 +3,16 @@
 THE GRID FIGURES ARE HARD-CODED, AND THAT IS THE POINT HERE
     The slice tests recompute their ground truth a second way. These do not,
     because the numbers below are registered text: §3 of the pre-registration
-    and results/corpus-verification/buckeye-flap-lexical-structure-20260925.txt
+    and results/corpus-verification/buckeye-flap-lexical-structure-20260926.txt
     state them, and a change to the split that moves any of them is a change to
     the design, not a refactor. Failing loudly is the correct response.
 
-THE GRID IS OVER THE 10,389 ELIGIBLE SITES
+THE GRID IS OVER THE 10,389 ELIGIBLE SITES, KEYED BY type_key
     The 3 clamped sites are removed before folds are assigned (decided
-    2026-09-25). The 20260924 figures (test 281-535, diagonal 2,137 / 513) were
-    the same grid built over all 10,392 and are superseded, not wrong.
+    2026-09-25), and contracted forms are merged onto their host word before
+    ranking (decided 2026-09-26). The 20260924 figures (all sites, word forms)
+    and the 20260925 ones (eligible sites, word forms) are superseded, not
+    wrong.
 
 READ FROM THE PARQUET, BECAUSE THE CLAMP FLAG LIVES THERE
     The TSV has no excerpt_clamped column, so these tests need pyarrow and run
@@ -31,9 +33,12 @@ pq = pytest.importorskip("pyarrow.parquet", reason="the clamp flag is in the par
 
 from capstone.splits import (  # noqa: E402
     CONDITIONS,
+    CONTRACTIONS,
+    OWN_KEY,
     SUBSAMPLE_FRACTION,
     iter_splits,
     site_folds,
+    type_key,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -42,17 +47,17 @@ PARQUET = REPO / "results" / "flapping" / "sites-20260924.parquet"
 SEED = 12345  # a test seed; the registered one lives in the pre-registration
 
 # Test sites and test /d/ sites per cell, rows = speaker fold, cols = type fold.
-# Copied from the 20260925 analysis output.
-TEST_SITES = [[488, 371, 343, 333, 279],
-              [458, 484, 457, 381, 344],
-              [393, 428, 402, 344, 352],
-              [497, 494, 477, 377, 426],
-              [534, 485, 449, 408, 385]]
-TEST_D = [[90, 95, 70, 75, 88],
-          [95, 112, 136, 66, 135],
-          [86, 102, 100, 84, 78],
-          [96, 126, 149, 98, 142],
-          [97, 104, 91, 104, 110]]
+# Copied from the 20260926 analysis output.
+TEST_SITES = [[478, 356, 346, 324, 310],
+              [447, 492, 459, 353, 373],
+              [401, 438, 398, 363, 319],
+              [493, 506, 466, 421, 385],
+              [535, 478, 462, 388, 398]]
+TEST_D = [[66, 126, 69, 71, 86],
+          [82, 152, 111, 66, 133],
+          [70, 119, 98, 71, 92],
+          [94, 189, 96, 97, 135],
+          [93, 132, 94, 57, 130]]
 
 
 @pytest.fixture(scope="module")
@@ -88,14 +93,15 @@ def test_joint_reproduces_the_registered_grid(inv):
 
     n_train = [len(c.train) for c in cells]
     d_train = [int((lab[c.train] == "d").sum()) for c in cells]
-    d_types = [len(set(wrd[c.test][lab[c.test] == "d"])) for c in cells]
-    assert (min(n_train), max(n_train)) == (6245, 7068)
-    assert (min(d_train), max(d_train)) == (1505, 1759)
-    assert (min(d_types), max(d_types)) == (28, 46)
+    keys = np.array([type_key(w) for w in wrd])
+    d_types = [len(set(keys[c.test][lab[c.test] == "d"])) for c in cells]
+    assert (min(n_train), max(n_train)) == (6257, 7100)
+    assert (min(d_train), max(d_train)) == (1389, 1820)
+    assert (min(d_types), max(d_types)) == (25, 39)
 
     diag = [cells[6 * k] for k in range(5)]
-    assert sum(len(c.test) for c in diag) == 2136
-    assert sum(int((lab[c.test] == "d").sum()) for c in diag) == 510
+    assert sum(len(c.test) for c in diag) == 2187
+    assert sum(int((lab[c.test] == "d").sum()) for c in diag) == 543
     assert sum(len(c.test) for c in cells) == 10389
     assert sum(int((lab[c.test] == "d").sum()) for c in cells) == 2529
 
@@ -126,11 +132,12 @@ def test_train_and_test_never_overlap_or_touch_excluded_sites(inv, condition):
 ])
 def test_no_leakage_on_the_constrained_axes(inv, condition, speaker_held, word_held):
     spk, wrd, _, _ = inv
+    keys = np.array([type_key(w) for w in wrd])
     for s in splits(inv, condition):
         if speaker_held:
             assert not set(spk[s.test]) & set(spk[s.train]), s.fold
         if word_held:
-            assert not set(wrd[s.test]) & set(wrd[s.train]), s.fold
+            assert not set(keys[s.test]) & set(keys[s.train]), s.fold
 
 
 def test_random_lets_word_types_recur(inv):
@@ -170,8 +177,8 @@ def test_counting_the_clamped_sites_would_move_folds(inv):
     spk, wrd, _, eligible = inv
     over_all = site_folds("word_disjoint", spk, wrd)[eligible]
     over_eligible = site_folds("word_disjoint", spk[eligible], wrd[eligible])
-    moved = set(wrd[eligible][over_all != over_eligible])
-    assert len(moved) == 191
+    moved = {type_key(w) for w in wrd[eligible][over_all != over_eligible]}
+    assert len(moved) == 186
 
 
 def test_eligible_must_be_stated(inv):
@@ -237,3 +244,35 @@ def test_the_tsv_and_the_parquet_carry_the_same_sites(inv):
     assert [r["speaker"] for r in rows] == list(spk)
     assert [r["word"] for r in rows] == list(wrd)
     assert [r["underlying"] for r in rows] == list(lab)
+
+
+# ------------------------------------------------------------- the type key
+
+
+def test_every_contracted_form_is_classified(inv):
+    """A new contraction in the inventory must be placed, not silently keyed alone."""
+    forms = {w.lower() for w in inv[1] if "'" in w}
+    assert forms == set(CONTRACTIONS) | OWN_KEY
+    assert not set(CONTRACTIONS) & OWN_KEY
+
+
+def test_merged_forms_carry_their_hosts_labels(inv):
+    """Evidence the flap is in the host: a merged form's labels are the host's.
+
+    A subset rather than equality, because a host can carry two flaps
+    (`today` has /t/ and /d/; `today's` was only transcribed with /d/).
+    """
+    _, wrd, lab, _ = inv
+    labels = {}
+    for w, y in zip(wrd, lab):
+        labels.setdefault(w.lower(), set()).add(y)
+    for form, host in CONTRACTIONS.items():
+        if host in labels:
+            assert labels[form] <= labels[host], (form, host)
+
+
+def test_type_key_lowercases_then_merges():
+    assert type_key("Daddy") == type_key("daddy's") == "daddy"
+    assert type_key("don't") == "do"
+    assert type_key("i'd") == "i'd"
+    assert type_key("water") == "water"

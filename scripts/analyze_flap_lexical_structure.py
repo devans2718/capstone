@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from capstone.splits import rank_types, speaker_folds, type_folds  # noqa: E402
+from capstone.splits import rank_types, speaker_folds, type_folds, type_key  # noqa: E402
 
 DEFAULT_INVENTORY = (Path(__file__).resolve().parent.parent
                      / "results/flapping/sites-20260924.parquet")
@@ -133,15 +133,22 @@ for fold in range(5):
 #
 # Built over the eligible sites only. The clamped sites are excluded before
 # scoring (pre-registration §1), and since 2026-09-25 before fold assignment as
-# well, so they neither enter the ranking nor sit in any cell.
+# well, so they neither enter the ranking nor sit in any cell. Types are
+# type_key()s: lowercased, contracted forms merged onto the host word that
+# carries the flap (decided 2026-09-26), so `do` and `don't` share a fold.
 eligible = [r for r in rows if not r["excerpt_clamped"]]
+for r in eligible:
+    r["key"] = type_key(r["word"])
 spk_fold = speaker_folds(r["speaker"] for r in eligible)
 typ_fold = type_folds(r["word"] for r in eligible)
-cell_of = [(spk_fold[r["speaker"]], typ_fold[r["word"]]) for r in eligible]
+cell_of = [(spk_fold[r["speaker"]], typ_fold[r["key"]]) for r in eligible]
+merged = sum(r["key"] != r["word"] for r in eligible)
 
 print("\nfull 5 x 5 grid: speaker fold x type fold (§3's stratified assignment)")
 print(f"  eligible sites: {len(eligible)} of {total} "
       f"({total - len(eligible)} clamped, removed before folds are assigned)")
+print(f"  type keys: {len(typ_fold)} (from {len({r['word'] for r in eligible})} word forms; "
+      f"{merged} sites re-keyed by lowercasing or merging a contraction onto its host)")
 per_cell = Counter(cell_of)
 print(f"  cells populated: {len(per_cell)} of 25; "
       f"sites assigned to a cell: {sum(per_cell.values())} of {len(eligible)}")
@@ -152,18 +159,18 @@ for a in range(5):
         te = [r for r, c in zip(eligible, cell_of) if c == (a, b)]
         tr = [r for r, (sa, tb) in zip(eligible, cell_of) if sa != a and tb != b]
         leak = (len({r["speaker"] for r in te} & {r["speaker"] for r in tr})
-                + len({r["word"] for r in te} & {r["word"] for r in tr}))
+                + len({r["key"] for r in te} & {r["key"] for r in tr}))
         grid[a, b] = dict(
             n=len(te),
             d=sum(r["underlying"] == "d" for r in te),
-            d_types=len({r["word"] for r in te if r["underlying"] == "d"}),
+            d_types=len({r["key"] for r in te if r["underlying"] == "d"}),
             train=len(tr),
             train_d=sum(r["underlying"] == "d" for r in tr),
             leak=leak,
         )
 
 for field, title in (("n", "test sites"), ("d", "test /d/ sites"),
-                     ("d_types", "distinct /d/ word types in test")):
+                     ("d_types", "distinct /d/ type keys in test")):
     print(f"\n  {title} (rows = speaker fold, cols = type fold):")
     print("         " + "".join(f"{b:>6}" for b in range(5)))
     for a in range(5):
@@ -187,7 +194,7 @@ print(f"  scored, full grid:          {sum(c['n'] for c in cells)} sites, "
 # the TSV, so the fold assignment rode on the inventory's row order. This
 # measures how much would move back under that rule, over all 10,392 sites as
 # when it was first measured.
-typ_fold_all = type_folds(r["word"] for r in rows)
+typ_fold_all = type_folds((r["word"] for r in rows), key=str)
 row_order = by_type.most_common()
 typ_fold_row = {w: i % 5 for i, (w, _) in enumerate(row_order)}
 moved = {w for w in typ_fold_all if typ_fold_all[w] != typ_fold_row[w]}
@@ -198,6 +205,7 @@ print(f"  types whose fold would differ under the old row-order tie-break: "
 
 # Why the clamped sites leave before folds are assigned, not only before
 # scoring: counted, they would still decide where other sites go.
+typ_fold_all = type_folds(r["word"] for r in rows)
 moved = {w for w in typ_fold if typ_fold[w] != typ_fold_all[w]}
 dropped = set(typ_fold_all) - set(typ_fold)
 print(f"  types whose fold would differ if the clamped sites were counted: "

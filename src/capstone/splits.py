@@ -13,6 +13,21 @@ THE TWO AXES, AND WHY EVERY CONDITION BUT ONE REUSES THEM
     Type folds: word types ranked by site count, highest first, ties broken by
     spelling in code-point order; the i-th ranked type -> fold i mod 5.
 
+WHAT A "WORD TYPE" IS (decided 2026-09-26)
+    The type key, computed by type_key(), is the inventory's `word` column (the
+    orthographic word form), lowercased, with contracted forms merged onto the
+    host word that carries the flap: `don't` -> `do`, `city's` -> `city`.
+    Without the merge, `do` in training and `don't` in test would be the same
+    lexical item on both sides of a word-disjoint split. The merge is an
+    explicit table, not "cut at the apostrophe": that rule turns `don't` into
+    `don`, and it would also merge `i'd` onto `i`, whose flap is in the `'d`,
+    not the host. Forms whose flap lies in the clitic keep their own key.
+
+    The key is by word form, not lemma: `need` and `needed` are different
+    types. A lemma-disjoint split is not attempted. How often a test site's
+    lemma occurs in its probe's training set is measured instead, by
+    scripts/measure_lemma_overlap.py.
+
     speaker_disjoint holds out one speaker fold, word_disjoint one type fold,
     and joint one cell of their 5 x 5 grid. Joint's train set for cell (a, b)
     is then exactly the intersection of speaker_disjoint's train set for a and
@@ -68,19 +83,63 @@ def speaker_folds(speakers: Iterable[str]) -> dict[str, int]:
     return {s: i % N_FOLDS for i, s in enumerate(sorted(set(speakers)))}
 
 
+# Contracted forms in the inventory whose flap lies in the host word, mapped to
+# that host. Every contracted form in the inventory is listed, either here or in
+# OWN_KEY, so a new one cannot slip through unclassified (tests/test_splits.py
+# checks). Where the flap is: 's, 'll and 've contain no /t/ or /d/, so the flap
+# is in the host. For it'd and that'd the label is /t/, the host's. For the n't
+# forms, the phone index puts the flap in the host (don't: [dx ow n tq]).
+CONTRACTIONS = {
+    # 's
+    "adriatico's": "adriatico", "anybody's": "anybody", "body's": "body",
+    "building's": "building", "catalog's": "catalog", "city's": "city",
+    "computer's": "computer", "daddy's": "daddy", "daughter's": "daughter",
+    "doty's": "doty", "everybody's": "everybody", "it's": "it",
+    "media's": "media", "nobody's": "nobody", "reader's": "reader",
+    "somebody's": "somebody", "that's": "that", "title's": "title",
+    "today's": "today",
+    # 'll
+    "it'll": "it", "that'll": "that", "what'll": "what",
+    # 've
+    "could've": "could", "might've": "might", "should've": "should",
+    "that've": "that", "would've": "would",
+    # 'd after a /t/-final host: the flap is the host's /t/
+    "it'd": "it", "that'd": "that",
+    # n't: the flap is the host's /d/
+    "couldn't": "could", "didn't": "did", "doesn't": "does", "don't": "do",
+    "wouldn't": "would",
+}
+
+# Contracted forms whose flap is in the clitic, which keep their own key. The
+# 'd after a vowel-final pronoun is a reduced "would" or "had": a link at the
+# level of the lemma, which this key does not claim to cover.
+OWN_KEY = frozenset({"he'd", "i'd", "they'd", "there'd", "you'd", "haven't"})
+
+
+def type_key(word: str) -> str:
+    """The word type a site belongs to: lowercased, contractions onto their host."""
+    w = word.lower()
+    return CONTRACTIONS.get(w, w)
+
+
 def rank_types(words: Iterable[str]) -> list[tuple[str, int]]:
     """(word, site count), highest count first, ties by code-point order.
 
-    Not Counter.most_common(): that orders ties by first appearance, and 985 of
-    the 1,022 types share a count with another type, so the folds would ride on
-    the inventory's row order.
+    Ranks whatever strings it is given; type_folds keys them first. Not
+    Counter.most_common(): that orders ties by first appearance, and 985 of the
+    1,022 word forms share a count with another, so the folds would ride on the
+    inventory's row order.
     """
     return sorted(Counter(words).items(), key=lambda kv: (-kv[1], kv[0]))
 
 
-def type_folds(words: Iterable[str]) -> dict[str, int]:
-    """Word type -> type fold: the i-th ranked type goes to fold i mod 5."""
-    return {w: i % N_FOLDS for i, (w, _) in enumerate(rank_types(words))}
+def type_folds(words: Iterable[str], *, key=type_key) -> dict[str, int]:
+    """Type key -> type fold: the i-th ranked key goes to fold i mod 5.
+
+    Look a site up with typ[type_key(word)]. `key=str` ranks raw word forms, as
+    revision 2 did; it exists only so that history can still be measured.
+    """
+    return {w: i % N_FOLDS for i, (w, _) in enumerate(rank_types(map(key, words)))}
 
 
 # ------------------------------------------------------------- per-site folds
@@ -123,7 +182,7 @@ def site_folds(condition: str, speakers, words, labels=None, *, seed: int | None
 
     spk, typ = speaker_folds(speakers), type_folds(words)
     a = np.array([spk[s] for s in speakers], dtype=np.int64)
-    b = np.array([typ[w] for w in words], dtype=np.int64)
+    b = np.array([typ[type_key(w)] for w in words], dtype=np.int64)
     return {"speaker_disjoint": a, "word_disjoint": b, "joint": N_FOLDS * a + b}[condition]
 
 

@@ -32,6 +32,10 @@ from pathlib import Path
 import numpy as np
 import pyarrow.parquet as pq
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from capstone.splits import type_key  # noqa: E402
+
 DEFAULT_INVENTORY = (Path(__file__).resolve().parent.parent
                      / "results/flapping/sites-20260924.parquet")
 INVENTORY = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_INVENTORY
@@ -43,7 +47,9 @@ inv = pq.read_table(INVENTORY, columns=["word", "underlying",
                                         "excerpt_clamped"]).to_pandas()
 e = inv[~inv.excerpt_clamped].reset_index(drop=True)
 y = (e.underlying == "d").to_numpy()
-_, tix = np.unique(e.word.to_numpy(), return_inverse=True)
+# Control labels are drawn per type key (capstone.splits.type_key), the same
+# unit the split holds out.
+_, tix = np.unique([type_key(w) for w in e.word], return_inverse=True)
 n_types = tix.max() + 1
 p_d = y.mean()
 
@@ -62,7 +68,7 @@ patterns = {
     "random label, per site": rng.random(len(e)) < p_d,
 }
 
-print(f"eligible sites {len(e)}, word types {n_types}, /d/ share {p_d:.4f}")
+print(f"eligible sites {len(e)}, type keys {n_types}, /d/ share {p_d:.4f}")
 print(f"control mappings drawn per pattern: {N_MAPPINGS:,} (simulation seed {SEED})\n")
 print(f"{'prediction pattern':34s} {'mean':>6} {'sd':>6} {'95% range':>13} "
       f"{'P(|BA-.5|>' + str(BOUND) + ')':>16}")
