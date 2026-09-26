@@ -632,4 +632,34 @@ Revision 1 → 2 is **not** a deviation: nothing had been run, and the change wa
 driven by measuring the corpus, not by seeing a result. It is described at the
 top of this file and preserved in git.
 
-*(none yet)*
+### 2026-09-26 — Clarifications fixed before the first run
+
+Not deviations: revision 3 left these unspecified, and they are fixed here
+before any feature has been extracted or any probe trained. Nothing above is
+changed.
+
+- **Midpoint pooling (§2, §4).** For WavJEPA, the site's frame whose onset is
+  the last at or before the site's temporal midpoint. The target starts on an
+  onset, so this frame is always one of the site's own frames. For MFCC, the
+  site's frame whose centre is nearest the midpoint, with a tie going to the
+  earlier frame.
+- **The lookup on a type it never saw in training (§4).** It predicts the
+  training set's majority label, which is /t/ in every fold. A held-out type
+  therefore scores at chance in balanced accuracy, and that collapse is what
+  §4 expects under `word_disjoint` and `joint`.
+- **Speaker-ID metric (§4).** Balanced accuracy over the 40 speakers (chance
+  0.025), with the §3 probe and settings unchanged, multinomial over the 40
+  classes.
+- **Criterion 1's bootstrap is paired (§5).** Each of the 10,000 resamples of
+  word types scores WavJEPA's 13 layers and the MFCC baseline on the same
+  resampled types. The gap's interval is then the interval of a difference
+  measured on one sample, not of two independent intervals.
+
+### 2026-09-26 — A prediction recorded before extraction
+
+Stated by the author before any feature exists, and recorded so it cannot be
+revised after: WavJEPA's information "sits higher than wav2vec2-base's", per
+the argument from pretraining objectives in Pasad, Shi & Livescu 2023
+(*Comparative layer-wise analysis of self-supervised speech models*). It is a
+prediction, not a criterion. It gates nothing, and wav2vec2-base remains
+exploratory.
