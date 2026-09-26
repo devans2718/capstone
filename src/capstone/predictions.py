@@ -46,10 +46,9 @@ from pathlib import Path
 # that records a context width different from the one actually used is worse
 # than one that records nothing, because it looks like provenance.
 from .encoders.extraction import REVISION as CHECKPOINT_REVISION
+from .splits import CONDITIONS, site_folds
 
 CONTEXT_MS = 200.0
-
-CONDITIONS = ("ordinary", "word_disjoint", "combined")
 
 
 def prediction_schema():
@@ -197,10 +196,10 @@ def build_manifest(inventory: Path, *, split_scheme: str, random_seed: int,
 # trained — but chosen so the differential question in the brief's §7 has a
 # non-empty answer, and so the gap runs in the direction a lexical shortcut
 # predicts: a probe leaning on word identity loses more when word types stop
-# recurring between train and test than it loses to anything else.
-P_CORRECT = {"ordinary": 0.85, "word_disjoint": 0.62, "combined": 0.70}
-
-N_FOLDS = 5
+# recurring between train and test than it loses to anything else. Holding out
+# speakers costs a little; holding out word types costs most of it.
+P_CORRECT = {"random": 0.85, "speaker_disjoint": 0.82,
+             "word_disjoint": 0.62, "joint": 0.60}
 
 
 def select_sites(inventory, n: int, seed: int):
@@ -257,7 +256,7 @@ def select_sites(inventory, n: int, seed: int):
 
 def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
                encoder: str = "wavjepa", layer: int = 8):
-    """Generate the three conditions over one selected set of sites.
+    """Generate the four conditions over one selected set of sites.
 
     SYNTHETIC, AND THE SCHEMA SAYS SO ON EVERY ROW
         No probe has been trained. These probabilities carry no information
@@ -276,25 +275,30 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
         The sites pre-registration §1 excludes before any probe runs. Today
         that is the 3 clamped excerpts, whose window runs off the recording.
         That holds in every condition, because the exclusion happens before
-        the split. `combined` is the pre-registered speaker- and
-        type-disjoint split. It scores all 25 cells of its 5 x 5 grid, so the
-        split itself discards nothing. Until 2026-09-24 this condition was
-        `combined_diagonal` and marked ~80% of sites ineligible to match the
-        diagonal-only design. The full grid retired that, and select_sites
-        already draws two clamped sites, so the state stays reachable from
-        real exclusions rather than an invented rate.
+        the split. `joint` is the pre-registered speaker- and type-disjoint
+        split. It scores all 25 cells of its 5 x 5 grid, so the split itself
+        discards nothing. It was `combined` until revision 3, and
+        `combined_diagonal` before 2026-09-24, when it marked ~80% of sites
+        ineligible to match the diagonal-only design. select_sites takes every
+        clamped site, so the state stays reachable from real exclusions rather
+        than an invented rate.
+
+    THE FOLDS ARE THE REGISTERED ONES
+        Each row's fold is the site's real fold under capstone.splits, assigned
+        over the WHOLE inventory and then looked up for the selected sites.
+        Assigning over the 40 alone would rank 40 sites' word types and
+        describe a split nobody runs. `random` is seeded with `seed`.
     """
     import numpy as np
 
     rng = np.random.default_rng(seed)
     sites = select_sites(inventory, n_sites, seed)
-    # TODO(pre-reg rev 3, before the run): take folds from the registered
-    # split instead of drawing them. Under `combined` a site's fold is its
-    # (speaker fold, type fold) cell, 0-24, fixed by pre-registration §3; the
-    # construction lives only in scripts/analyze_flap_lexical_structure.py
-    # today and moves into src/ as shared code. Random 0-4 is harmless while
-    # every row is synthetic, but it does not describe the design.
-    folds = rng.integers(0, N_FOLDS, size=len(sites))
+    picked = inventory.site_id.isin(sites.site_id).to_numpy()
+    folds = {
+        cond: site_folds(cond, inventory.speaker, inventory.word,
+                         inventory.underlying, seed=seed)[picked]
+        for cond in CONDITIONS
+    }
 
     # One correctness draw per site per condition, then a probability CONSISTENT
     # with it. Drawing p_t independently and deriving correctness from it would
@@ -308,7 +312,7 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
             if not eligible:
                 rows.append({
                     "site_id": site.site_id, "encoder": encoder, "layer": layer,
-                    "condition": cond, "fold": int(folds[i]),
+                    "condition": cond, "fold": int(folds[cond][i]),
                     "eligible": False, "scored": False,
                     "p_t": None, "pred": None, "correct": None, "synthetic": True,
                 })
@@ -321,7 +325,7 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
             p_t = 0.5 + margin if pred == "t" else 0.5 - margin
             rows.append({
                 "site_id": site.site_id, "encoder": encoder, "layer": layer,
-                "condition": cond, "fold": int(folds[i]),
+                "condition": cond, "fold": int(folds[cond][i]),
                 "eligible": True, "scored": True,
                 "p_t": round(p_t, 6), "pred": pred, "correct": correct,
                 "synthetic": True,

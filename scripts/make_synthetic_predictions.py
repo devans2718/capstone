@@ -2,7 +2,7 @@
 """Generate the synthetic prediction cell for the Challenge 2 slice.
 
 WHAT THIS PRODUCES, AND WHAT IT DOES NOT
-    Three conditions over 40 deliberately chosen sites, with probabilities drawn
+    Four conditions over 40 deliberately chosen sites, with probabilities drawn
     from a seeded generator. NO PROBE HAS BEEN TRAINED. Every p_t here is noise,
     every row carries synthetic=true, and the manifest records it a fourth time.
 
@@ -47,7 +47,10 @@ DEFAULT_MANIFEST_COPY = Path("results/flapping/run-manifest.json")
 
 # Recorded in the manifest rather than described in prose, so the split the
 # predictions claim to come from is a field a reader can compare against.
-SPLIT_SCHEME = ("combined: speaker x word-type 5x5 grid, all 25 cells scored; "
+SPLIT_SCHEME = ("capstone.splits, folds over the whole inventory. "
+                "random: stratified 5-fold by label, seeded; "
+                "speaker_disjoint: 5 speaker folds; word_disjoint: 5 type folds; "
+                "joint: speaker x word-type 5x5 grid, all 25 cells scored; "
                 "clamped sites excluded before scoring in every condition")
 
 

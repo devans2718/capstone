@@ -238,11 +238,13 @@ st.caption(
 
 with st.sidebar:
     st.header("Query")
-    condition = st.selectbox("How train/test was split", CONDITIONS, index=1)
+    condition = st.selectbox("How train/test was split", CONDITIONS,
+                             index=CONDITIONS.index("word_disjoint"))
     st.caption(
-        "`ordinary` — words can appear in both train and test.  \n"
+        "`random` — words and speakers can appear in both train and test.  \n"
+        "`speaker_disjoint` — a speaker is in one or the other, never both.  \n"
         "`word_disjoint` — a word type is in one or the other, never both.  \n"
-        "`combined` — word-split *and* speaker-split: the pre-registered design."
+        "`joint` — word-split *and* speaker-split: the pre-registered design."
     )
     encoder = st.selectbox("Encoder", ["wavjepa"])
     layer = st.selectbox("Encoder layer", list(range(13)), index=8)
@@ -357,8 +359,10 @@ with tab_compare:
         "what was going on — and the sites that flipped are the evidence."
     )
     a, b = st.columns(2)
-    cond_a = a.selectbox("Compare this split…", CONDITIONS, index=0)
-    cond_b = b.selectbox("…against this one", CONDITIONS, index=1)
+    cond_a = a.selectbox("Compare this split…", CONDITIONS,
+                         index=CONDITIONS.index("random"))
+    cond_b = b.selectbox("…against this one", CONDITIONS,
+                         index=CONDITIONS.index("word_disjoint"))
     cmp_u = st.selectbox("Underlying sound ", ["either", "t", "d"], key="cmp_u",
                          format_func=lambda v: {"either": "either",
                                                 "t": "/t/ (water, city)",
@@ -456,7 +460,8 @@ with tab_state:
         "blank cell — or worse, as a zero — is the specific mistake this view "
         "exists to make impossible."
     )
-    cond = st.selectbox("Under which split", CONDITIONS, index=2, key="state_cond")
+    cond = st.selectbox("Under which split", CONDITIONS,
+                        index=CONDITIONS.index("joint"), key="state_cond")
 
     groups = load_states(STAMP, cond)
     kinds = {

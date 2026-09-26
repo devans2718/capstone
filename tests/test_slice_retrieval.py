@@ -108,15 +108,15 @@ def test_case_1_basic_filter_matches_an_independent_count(slice_fixture):
 
 @needs_inventory
 def test_case_2_condition_differential_is_set_equal_to_pandas(slice_fixture):
-    """/d/ sites correct under ordinary and incorrect under word_disjoint."""
+    """/d/ sites correct under random and incorrect under word_disjoint."""
     store, inventory, preds, _ = slice_fixture
 
-    comp = store.compare_conditions("ordinary", "word_disjoint",
+    comp = store.compare_conditions("random", "word_disjoint",
                                     underlying="d", layer=8)
     got = set(comp.rows[comp.rows.correct_a & ~comp.rows.correct_b].site_id)
 
     d_sites = set(inventory[inventory.underlying == "d"].site_id)
-    o = preds[(preds.condition == "ordinary") & preds.scored].set_index("site_id")
+    o = preds[(preds.condition == "random") & preds.scored].set_index("site_id")
     w = preds[(preds.condition == "word_disjoint") & preds.scored].set_index("site_id")
     shared = o.index.intersection(w.index)
     expected = {s for s in shared
@@ -191,12 +191,12 @@ def test_case_4_excluded_site_is_never_rendered_as_a_number(slice_fixture):
     """
     store, _, preds, sites = slice_fixture
 
-    off = preds[(preds.condition == "combined") & (~preds.eligible)]
+    off = preds[(preds.condition == "joint") & (~preds.eligible)]
     assert len(off) > 0, "fixture produced no ineligible sites — nothing tested"
     assert set(off.site_id) == set(sites[sites.excerpt_clamped].site_id)
 
     for site_id in off.site_id:
-        state = store.site_state(site_id, "combined")
+        state = store.site_state(site_id, "joint")
         assert state["eligible"] is False
         assert state["scored"] is False
         assert state["status"] == NOT_SCORED
@@ -207,8 +207,8 @@ def test_case_4_excluded_site_is_never_rendered_as_a_number(slice_fixture):
         assert state["p_t"] != 0 and state["p_t"] is not False
 
     # The third state is distinct from the second, and from "does not exist".
-    scored_id = preds[(preds.condition == "ordinary") & preds.scored].site_id.iloc[0]
-    assert store.site_state(scored_id, "ordinary")["status"] == "scored"
+    scored_id = preds[(preds.condition == "random") & preds.scored].site_id.iloc[0]
+    assert store.site_state(scored_id, "random")["status"] == "scored"
 
 
 @needs_inventory
@@ -217,7 +217,7 @@ def test_case_4b_unscored_site_is_distinct_from_excluded(slice_fixture):
     store, inventory, preds, _ = slice_fixture
 
     never = inventory[~inventory.site_id.isin(preds.site_id)].site_id.iloc[0]
-    state = store.site_state(never, "ordinary")
+    state = store.site_state(never, "random")
     assert state["eligible"] is True
     assert state["scored"] is False
     assert state["status"] == NOT_REACHED
@@ -257,7 +257,7 @@ def test_case_6_unknown_identifier_raises_and_names_itself(slice_fixture):
     assert "s9999z:00000" in str(exc.value)
 
     with pytest.raises(UnknownSite) as exc:
-        store.site_state("s9999z:00000", "ordinary")
+        store.site_state("s9999z:00000", "random")
     assert "s9999z:00000" in str(exc.value)
 
 
@@ -280,15 +280,38 @@ def test_case_7_zero_onset_site_is_returned_not_dropped(slice_fixture):
     assert len(zero) > 0, "fixture selected no zero-onset site — nothing tested"
 
     for site_id in zero.site_id:
-        state = store.site_state(site_id, "ordinary")
+        state = store.site_state(site_id, "random")
         assert state["n_frame_onsets_abs"] == 0
         assert state["n_frame_onsets"] >= 1
         assert state["status"] in ("scored", NOT_SCORED, NOT_REACHED)
 
-    result = store.query_sites(condition="ordinary",
+    result = store.query_sites(condition="random",
                                site_ids=zero.site_id.tolist())
     assert set(result.rows.site_id) == set(zero.site_id)
     assert (result.rows.n_frame_onsets >= 1).all()
+
+
+# ------------------------------------------------------- folds are registered
+
+
+@needs_inventory
+def test_synthetic_rows_carry_the_registered_folds(slice_fixture):
+    """Every row's fold is its site's fold under capstone.splits, not a draw.
+
+    Assigned over the whole inventory, then looked up: the 40 sites' own word
+    counts would rank types differently and describe a split nobody runs.
+    """
+    from capstone.predictions import CONDITIONS
+    from capstone.splits import site_folds
+
+    _, inventory, preds, _ = slice_fixture
+    for cond in CONDITIONS:
+        fold = dict(zip(inventory.site_id,
+                        site_folds(cond, inventory.speaker, inventory.word,
+                                   inventory.underlying, seed=20260919)))
+        rows = preds[preds.condition == cond]
+        assert len(rows) > 0, cond
+        assert all(r.fold == fold[r.site_id] for r in rows.itertuples()), cond
 
 
 # ------------------------------------------------------ corpus-dependent extra
