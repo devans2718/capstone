@@ -216,3 +216,31 @@ These are needed by later steps in §4:
 - **Prediction schema:** it has no subsample column yet (§2.2).
 - **App refusal:** `app/streamlit_app.py:79` refuses to render any manifest that isn't `synthetic`. Sunday's data-driven banner replaces that refusal. The banner is not a second flag to add on top of it.
 - **Pre-reg §6:** the 64% secondary run partly answers its first advisor question, about the ~32% training discard. Worth a cross-reference in step 3.
+
+---
+
+## Amendment 2 — 2026-09-26
+
+**Revision 3 is on `origin` at `43b2896`**, pushed 2026-09-26 before any run. §4 steps 3–5 are done, and invariant 1 is satisfied: the run may start. From here the pre-registration is append-only (§7 *Deviations*).
+
+**Invariant 4 moved a second time.** A review of the draft on 2026-09-26 found that "word type" was never defined and that contractions split one word across two keys (`do` in training, `don't` in test). The split now keys on `capstone.splits.type_key()`: the word form, lowercased, with 34 contracted forms merged onto their host (187 sites). That supersedes A1.2's figures:
+
+| | A1.2 (10,389, word forms) | **Registered (10,389, type keys)** |
+| --- | --- | --- |
+| Test sites per cell | 279–534 | **310–535** |
+| /d/ per cell | 66–149 | **57–189** |
+| Distinct /d/ types per cell | 28–46 | **25–39** |
+| Train per cell | 6,245–7,068 | **6,257–7,100** |
+| Train /d/ per cell | 1,505–1,759 | **1,389–1,820** |
+| Diagonal | 2,136 / 510 | **2,187 / 543** |
+| Full grid | 10,389 / 2,529 | **10,389 / 2,529** |
+| Leakage | 0 | **0** |
+
+**Settled since Amendment 1** (all registered in revision 3):
+- Speaker-leakage check under `random` and `word_disjoint`.
+- Seeds 20260926 (folds and subsample), 20260927 (control mapping), 20260928 (bootstrap), 20260929 (criterion 2's null mappings).
+- Probe hyperparameters: L2, C = 1.0, per-probe standardization, no tuning.
+- Criterion 2 replaced by a max-over-layers randomization test, because ±0.03 fired 59–80% of the time with no leak.
+- Lemma overlap measured (25.1% of `joint` test sites, same label), plus a reported re-score of criterion 1 on the 7,586 sites whose lemma is unseen.
+
+**For the run**, beyond A1.6: the probe harness should read the four seeds from one place in code, not take each as an argument. The control task and lookup are keyed by `type_key`, not the raw `word` column.
