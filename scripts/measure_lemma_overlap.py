@@ -70,7 +70,7 @@ def lemma(word: str, tag: str) -> str:
     return lemmatizer.lemmatize(key, pos) if pos else key
 
 
-inv = pq.read_table(INVENTORY, columns=["speaker", "word", "underlying", "pos",
+inv = pq.read_table(INVENTORY, columns=["site_id", "speaker", "word", "underlying", "pos",
                                         "excerpt_clamped"]).to_pandas()
 eligible = ~inv.excerpt_clamped.to_numpy()
 keys = np.array([type_key(w) for w in inv.word])
@@ -119,3 +119,21 @@ for condition in ("word_disjoint", "joint"):
     top = Counter(lemmas[seen_same])
     print("  same label, by lemma: "
           + ", ".join(f"{l} {c}" for l, c in top.most_common(10)))
+    if condition == "joint":
+        joint_seen_any, joint_seen_same = seen_any, seen_same
+
+# The per-site record under `joint`, committed so the lemma-unseen subset that
+# pre-registration §5 re-scores is fixed now rather than re-derived after the
+# run, when a different NLTK or WordNet could lemmatize differently.
+OUT = (Path(__file__).resolve().parent.parent
+       / "results/flapping/lemma-overlap-joint-20260926.tsv")
+with open(OUT, "w") as fh:
+    fh.write("site_id\ttype_key\tlemma\tlemma_in_train\tlemma_in_train_same_label\n")
+    for i in np.flatnonzero(eligible):
+        fh.write(f"{inv.site_id.iloc[i]}\t{keys[i]}\t{lemmas[i]}\t"
+                 f"{str(bool(joint_seen_any[i])).lower()}\t"
+                 f"{str(bool(joint_seen_same[i])).lower()}\n")
+unseen = eligible & ~joint_seen_any
+print(f"\nlemma-unseen subset under joint (lemma nowhere in the probe's training): "
+      f"{int(unseen.sum())} sites, /d/ {int((unseen & (y == 'd')).sum())}")
+print(f"wrote {OUT.relative_to(OUT.parents[2])}")
