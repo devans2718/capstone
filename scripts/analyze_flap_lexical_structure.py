@@ -11,8 +11,14 @@ Word types are ranked by site count, ties broken alphabetically, so every fold
 assignment here is a function of the inventory's contents and not its row order.
 The ranking and the §5 folds come from capstone.splits, the same code the probe
 run and the slice use, so this report describes the split that is actually run.
+
+§1-§4 describe the whole inventory, 10,392 sites. §5 builds the registered grid
+over the 10,389 eligible ones: the 3 clamped sites are removed before any fold
+is assigned (decided 2026-09-25). That needs the excerpt_clamped column, which
+only the parquet inventory carries, so this reads the parquet and runs in
+.venv-app. Until 2026-09-25 it read the TSV, which lists the same sites in the
+same order (tests/test_splits.py checks that).
 """
-import csv
 import random
 import sys
 from collections import Counter, defaultdict
@@ -22,12 +28,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from capstone.splits import rank_types, speaker_folds, type_folds  # noqa: E402
 
-DEFAULT_TSV = (Path(__file__).resolve().parent.parent
-               / "results/corpus-verification/buckeye-flap-sites-20260821.tsv")
-TSV = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_TSV
+DEFAULT_INVENTORY = (Path(__file__).resolve().parent.parent
+                     / "results/flapping/sites-20260924.parquet")
+INVENTORY = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_INVENTORY
 
-with open(TSV, newline="") as fh:
-    rows = list(csv.DictReader(fh, delimiter="\t"))
+import pyarrow.parquet as pq  # noqa: E402
+
+rows = pq.read_table(INVENTORY, columns=["speaker", "word", "underlying",
+                                         "excerpt_clamped"]).to_pylist()
 
 print(f"sites: {len(rows)}")
 print(f"class counts: {Counter(r['underlying'] for r in rows)}")
@@ -122,20 +130,27 @@ for fold in range(5):
 # partitions, so each site sits in exactly one cell, and scoring all 25 gives
 # every site one out-of-fold prediction. Cell (k, k)'s train set is §3's fold k
 # train set exactly, so no probe sees less data than under the diagonal design.
-spk_fold = speaker_folds(r["speaker"] for r in rows)
-typ_fold = type_folds(r["word"] for r in rows)
-cell_of = [(spk_fold[r["speaker"]], typ_fold[r["word"]]) for r in rows]
+#
+# Built over the eligible sites only. The clamped sites are excluded before
+# scoring (pre-registration §1), and since 2026-09-25 before fold assignment as
+# well, so they neither enter the ranking nor sit in any cell.
+eligible = [r for r in rows if not r["excerpt_clamped"]]
+spk_fold = speaker_folds(r["speaker"] for r in eligible)
+typ_fold = type_folds(r["word"] for r in eligible)
+cell_of = [(spk_fold[r["speaker"]], typ_fold[r["word"]]) for r in eligible]
 
 print("\nfull 5 x 5 grid: speaker fold x type fold (§3's stratified assignment)")
+print(f"  eligible sites: {len(eligible)} of {total} "
+      f"({total - len(eligible)} clamped, removed before folds are assigned)")
 per_cell = Counter(cell_of)
 print(f"  cells populated: {len(per_cell)} of 25; "
-      f"sites assigned to a cell: {sum(per_cell.values())} of {total}")
+      f"sites assigned to a cell: {sum(per_cell.values())} of {len(eligible)}")
 
 grid = {}
 for a in range(5):
     for b in range(5):
-        te = [r for r, c in zip(rows, cell_of) if c == (a, b)]
-        tr = [r for r, (sa, tb) in zip(rows, cell_of) if sa != a and tb != b]
+        te = [r for r, c in zip(eligible, cell_of) if c == (a, b)]
+        tr = [r for r, (sa, tb) in zip(eligible, cell_of) if sa != a and tb != b]
         leak = (len({r["speaker"] for r in te} & {r["speaker"] for r in tr})
                 + len({r["word"] for r in te} & {r["word"] for r in tr}))
         grid[a, b] = dict(
@@ -170,11 +185,21 @@ print(f"  scored, full grid:          {sum(c['n'] for c in cells)} sites, "
 # Why the tie-break is registered rather than left implicit. Until 2026-09-24
 # `ranked` was most_common(), which orders equal counts by first appearance in
 # the TSV, so the fold assignment rode on the inventory's row order. This
-# measures how much would move back under that rule.
+# measures how much would move back under that rule, over all 10,392 sites as
+# when it was first measured.
+typ_fold_all = type_folds(r["word"] for r in rows)
 row_order = by_type.most_common()
 typ_fold_row = {w: i % 5 for i, (w, _) in enumerate(row_order)}
-moved = {w for w in typ_fold if typ_fold[w] != typ_fold_row[w]}
+moved = {w for w in typ_fold_all if typ_fold_all[w] != typ_fold_row[w]}
 tied = sum(n for n in Counter(by_type.values()).values() if n > 1)
 print(f"\n  types sharing a site count with another type: {tied} of {len(by_type)}")
 print(f"  types whose fold would differ under the old row-order tie-break: "
       f"{len(moved)} ({sum(by_type[w] for w in moved)} sites)")
+
+# Why the clamped sites leave before folds are assigned, not only before
+# scoring: counted, they would still decide where other sites go.
+moved = {w for w in typ_fold if typ_fold[w] != typ_fold_all[w]}
+dropped = set(typ_fold_all) - set(typ_fold)
+print(f"  types whose fold would differ if the clamped sites were counted: "
+      f"{len(moved)} ({sum(by_type[w] for w in moved)} sites); "
+      f"types with no eligible site: {len(dropped)} {sorted(dropped)}")

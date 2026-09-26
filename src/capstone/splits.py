@@ -23,14 +23,19 @@ THE TWO AXES, AND WHY EVERY CONDITION BUT ONE REUSES THEM
     underlying label. Tokens of one word landing in both train and test is what
     it exists to show, not a defect.
 
-FOLDS ARE ASSIGNED OVER WHAT IS PASSED; EXCLUSION IS A SEPARATE STEP
-    Every function here assigns folds over the sites it is handed. Sites
-    excluded before scoring (pre-registration §1) are removed afterwards through
-    `eligible`, from train and test alike, without moving any fold. Which set
-    the assignment should run over is not decided here, and it is not
-    cosmetic: dropping the 3 clamped sites before ranking removes `nineties`
-    from the ranking and moves the 191 singleton types behind it. Passing the
-    full 10,392-site inventory is what reproduces the figures §3 quotes.
+FOLDS ARE ASSIGNED OVER THE ELIGIBLE SITES ONLY (decided 2026-09-25)
+    Sites excluded before scoring (pre-registration §1; today the 3 clamped
+    excerpts) are removed BEFORE any fold is assigned: they are not ranked, not
+    counted, and belong to no fold. A site that is never scored should not
+    decide where other sites go, and it would: counting the clamped sites keeps
+    `nineties` in the ranking and moves the 191 singleton types behind it. The
+    grid is therefore built over 10,389 sites, not 10,392.
+
+    iter_splits takes the whole inventory plus an `eligible` mask and returns
+    indices into the whole inventory, so a caller holding one array per site
+    indexes it directly. `eligible` has no default: a caller that forgets it
+    would get the rejected assignment over every site, silently. site_folds
+    assigns over exactly what it is handed, so its callers filter first.
 
 THE AXES ARE PURE PYTHON
     speaker_folds, rank_types and type_folds use only the standard library, so
@@ -92,6 +97,9 @@ def site_folds(condition: str, speakers, words, labels=None, *, seed: int | None
     0-4 for the single-axis conditions and random; 0-24 for joint, where cell
     (a, b) is 5a + b. This is the `fold` column of predictions.parquet.
 
+    Assigns over every site passed in. Pass the eligible sites only; see the
+    module docstring for why that is the registered set.
+
     random needs `labels` and `seed`, and refuses to run without them rather
     than falling back to a default: a seed nobody chose is a seed nobody
     recorded.
@@ -133,8 +141,8 @@ class Split:
     subsampled: bool
 
 
-def iter_splits(condition: str, speakers, words, labels, *, seed: int | None = None,
-                subsample: bool = False, eligible=None) -> Iterator[Split]:
+def iter_splits(condition: str, speakers, words, labels, *, eligible,
+                seed: int | None = None, subsample: bool = False) -> Iterator[Split]:
     """(train, test) for every probe of a condition: 5, or 25 for joint.
 
     Single-axis conditions and random train on every other fold. Joint trains
@@ -148,8 +156,10 @@ def iter_splits(condition: str, speakers, words, labels, *, seed: int | None = N
     iterated in. Joint is the level the others are brought down to, so asking
     to subsample it is refused rather than quietly obeyed.
 
-    `eligible`, a boolean per site, drops excluded sites from train and test
-    after the folds are assigned.
+    `eligible`, a boolean per site, is required: ineligible sites are removed
+    before folds are assigned and appear in no train or test set. Pass None
+    only when every site passed in is already eligible. Indices always refer
+    to the arrays as passed, ineligible sites included.
     """
     import numpy as np
 
@@ -167,25 +177,27 @@ def iter_splits(condition: str, speakers, words, labels, *, seed: int | None = N
     keep = np.ones(n, dtype=bool) if eligible is None else np.asarray(list(eligible), dtype=bool)
     if len(keep) != n:
         raise ValueError(f"eligible has {len(keep)} entries for {n} sites")
+    idx = np.flatnonzero(keep)                    # position in the subset -> in the input
+    spk = [speakers[i] for i in idx]
+    wrd = [words[i] for i in idx]
 
     if condition == "joint":
-        a = site_folds("speaker_disjoint", speakers, words)
-        b = site_folds("word_disjoint", speakers, words)
+        a = site_folds("speaker_disjoint", spk, wrd)
+        b = site_folds("word_disjoint", spk, wrd)
         for i in range(N_FOLDS):
             for j in range(N_FOLDS):
                 yield Split(condition, N_FOLDS * i + j,
-                            train=np.flatnonzero((a != i) & (b != j) & keep),
-                            test=np.flatnonzero((a == i) & (b == j) & keep),
+                            train=idx[(a != i) & (b != j)],
+                            test=idx[(a == i) & (b == j)],
                             subsampled=False)
         return
 
-    fold = site_folds(condition, speakers, words, labels, seed=seed)
+    fold = site_folds(condition, spk, wrd, y[idx], seed=seed)
     for k in range(N_FOLDS):
-        train = np.flatnonzero((fold != k) & keep)
+        train = idx[fold != k]
         if subsample:
             train = _subsample(train, y, seed, k)
-        yield Split(condition, k, train=train,
-                    test=np.flatnonzero((fold == k) & keep), subsampled=subsample)
+        yield Split(condition, k, train=train, test=idx[fold == k], subsampled=subsample)
 
 
 def _subsample(idx, y, seed: int, fold: int):

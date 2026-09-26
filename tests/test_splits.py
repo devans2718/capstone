@@ -3,14 +3,19 @@
 THE GRID FIGURES ARE HARD-CODED, AND THAT IS THE POINT HERE
     The slice tests recompute their ground truth a second way. These do not,
     because the numbers below are registered text: §3 of the pre-registration
-    and results/corpus-verification/buckeye-flap-lexical-structure-20260924.txt
+    and results/corpus-verification/buckeye-flap-lexical-structure-20260925.txt
     state them, and a change to the split that moves any of them is a change to
     the design, not a refactor. Failing loudly is the correct response.
 
-READ FROM THE TSV, NOT THE PARQUET
-    The registered figures were computed from the TSV inventory, and reading it
-    needs only csv, so the grid tests run in the CUDA image as well as .venv-app.
-    One test checks the parquet the slice reads yields the same folds.
+THE GRID IS OVER THE 10,389 ELIGIBLE SITES
+    The 3 clamped sites are removed before folds are assigned (decided
+    2026-09-25). The 20260924 figures (test 281-535, diagonal 2,137 / 513) were
+    the same grid built over all 10,392 and are superseded, not wrong.
+
+READ FROM THE PARQUET, BECAUSE THE CLAMP FLAG LIVES THERE
+    The TSV has no excerpt_clamped column, so these tests need pyarrow and run
+    in .venv-app. The CUDA image skips them. One test checks the TSV and the
+    parquet carry the same sites, so figures measured on either still hold.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ import pytest
 
 np = pytest.importorskip("numpy")
 pytest.importorskip("sklearn", reason="the random condition uses StratifiedKFold")
+pq = pytest.importorskip("pyarrow.parquet", reason="the clamp flag is in the parquet")
 
 from capstone.splits import (  # noqa: E402
     CONDITIONS,
@@ -36,32 +42,32 @@ PARQUET = REPO / "results" / "flapping" / "sites-20260924.parquet"
 SEED = 12345  # a test seed; the registered one lives in the pre-registration
 
 # Test sites and test /d/ sites per cell, rows = speaker fold, cols = type fold.
-# Copied from the 20260924 analysis output.
-TEST_SITES = [[479, 381, 339, 335, 281],
-              [456, 487, 458, 376, 347],
-              [395, 424, 405, 346, 350],
-              [505, 492, 475, 379, 421],
-              [535, 481, 451, 407, 387]]
-TEST_D = [[87, 99, 69, 73, 90],
-          [95, 115, 135, 67, 132],
-          [88, 99, 102, 85, 76],
-          [101, 121, 151, 96, 142],
-          [95, 101, 94, 103, 113]]
+# Copied from the 20260925 analysis output.
+TEST_SITES = [[488, 371, 343, 333, 279],
+              [458, 484, 457, 381, 344],
+              [393, 428, 402, 344, 352],
+              [497, 494, 477, 377, 426],
+              [534, 485, 449, 408, 385]]
+TEST_D = [[90, 95, 70, 75, 88],
+          [95, 112, 136, 66, 135],
+          [86, 102, 100, 84, 78],
+          [96, 126, 149, 98, 142],
+          [97, 104, 91, 104, 110]]
 
 
 @pytest.fixture(scope="module")
 def inv():
-    if not TSV.exists():
-        pytest.skip(f"no inventory at {TSV}")
-    with open(TSV, newline="") as fh:
-        rows = list(csv.DictReader(fh, delimiter="\t"))
-    return (np.array([r["speaker"] for r in rows]),
-            np.array([r["word"] for r in rows]),
-            np.array([r["underlying"] for r in rows]))
+    if not PARQUET.exists():
+        pytest.skip(f"no inventory at {PARQUET}")
+    t = pq.read_table(PARQUET, columns=["speaker", "word", "underlying",
+                                        "excerpt_clamped"]).to_pandas()
+    return (t.speaker.to_numpy(), t.word.to_numpy(), t.underlying.to_numpy(),
+            ~t.excerpt_clamped.to_numpy())
 
 
 def splits(inv, condition, **kw):
-    spk, wrd, lab = inv
+    spk, wrd, lab, eligible = inv
+    kw.setdefault("eligible", eligible)
     if condition == "random":
         kw.setdefault("seed", SEED)
     return list(iter_splits(condition, spk, wrd, lab, **kw))
@@ -71,7 +77,7 @@ def splits(inv, condition, **kw):
 
 
 def test_joint_reproduces_the_registered_grid(inv):
-    spk, wrd, lab = inv
+    spk, wrd, lab, _ = inv
     cells = splits(inv, "joint")
     assert [c.fold for c in cells] == list(range(25))
 
@@ -83,14 +89,14 @@ def test_joint_reproduces_the_registered_grid(inv):
     n_train = [len(c.train) for c in cells]
     d_train = [int((lab[c.train] == "d").sum()) for c in cells]
     d_types = [len(set(wrd[c.test][lab[c.test] == "d"])) for c in cells]
-    assert (min(n_train), max(n_train)) == (6255, 7072)
-    assert (min(d_train), max(d_train)) == (1504, 1760)
-    assert (min(d_types), max(d_types)) == (27, 48)
+    assert (min(n_train), max(n_train)) == (6245, 7068)
+    assert (min(d_train), max(d_train)) == (1505, 1759)
+    assert (min(d_types), max(d_types)) == (28, 46)
 
     diag = [cells[6 * k] for k in range(5)]
-    assert sum(len(c.test) for c in diag) == 2137
-    assert sum(int((lab[c.test] == "d").sum()) for c in diag) == 513
-    assert sum(len(c.test) for c in cells) == 10392
+    assert sum(len(c.test) for c in diag) == 2136
+    assert sum(int((lab[c.test] == "d").sum()) for c in diag) == 510
+    assert sum(len(c.test) for c in cells) == 10389
     assert sum(int((lab[c.test] == "d").sum()) for c in cells) == 2529
 
 
@@ -98,15 +104,19 @@ def test_joint_reproduces_the_registered_grid(inv):
 
 
 @pytest.mark.parametrize("condition", CONDITIONS)
-def test_every_site_is_tested_exactly_once(inv, condition):
+def test_every_eligible_site_is_tested_exactly_once(inv, condition):
+    eligible = inv[3]
     tested = np.concatenate([s.test for s in splits(inv, condition)])
-    assert np.array_equal(np.sort(tested), np.arange(len(inv[0])))
+    assert np.array_equal(np.sort(tested), np.flatnonzero(eligible))
 
 
 @pytest.mark.parametrize("condition", CONDITIONS)
-def test_train_and_test_never_overlap(inv, condition):
+def test_train_and_test_never_overlap_or_touch_excluded_sites(inv, condition):
+    excluded = set(np.flatnonzero(~inv[3]))
+    assert len(excluded) == 3
     for s in splits(inv, condition):
         assert not set(s.train) & set(s.test)
+        assert not excluded & (set(s.train) | set(s.test))
 
 
 @pytest.mark.parametrize("condition, speaker_held, word_held", [
@@ -115,7 +125,7 @@ def test_train_and_test_never_overlap(inv, condition):
     ("joint", True, True),
 ])
 def test_no_leakage_on_the_constrained_axes(inv, condition, speaker_held, word_held):
-    spk, wrd, _ = inv
+    spk, wrd, _, _ = inv
     for s in splits(inv, condition):
         if speaker_held:
             assert not set(spk[s.test]) & set(spk[s.train]), s.fold
@@ -125,7 +135,7 @@ def test_no_leakage_on_the_constrained_axes(inv, condition, speaker_held, word_h
 
 def test_random_lets_word_types_recur(inv):
     """The condition's purpose, checked so it cannot become constrained by accident."""
-    _, wrd, _ = inv
+    wrd = inv[1]
     for s in splits(inv, "random"):
         assert set(wrd[s.test]) & set(wrd[s.train])
 
@@ -138,12 +148,44 @@ def test_joint_train_is_the_intersection_of_the_single_axis_trains(inv):
         assert set(c.train) == spk_train[a] & wrd_train[b]
 
 
+# ---------------------------------------------------- exclusion before folds
+
+
+@pytest.mark.parametrize("condition", CONDITIONS)
+def test_folds_are_assigned_as_if_excluded_sites_never_existed(inv, condition):
+    """Masking in place equals building the split over the filtered arrays."""
+    spk, wrd, lab, eligible = inv
+    idx = np.flatnonzero(eligible)
+    kw = {"seed": SEED} if condition == "random" else {}
+    masked = splits(inv, condition)
+    filtered = list(iter_splits(condition, spk[idx], wrd[idx], lab[idx],
+                                eligible=None, **kw))
+    for m, f in zip(masked, filtered):
+        assert np.array_equal(m.test, idx[f.test])
+        assert np.array_equal(m.train, idx[f.train])
+
+
+def test_counting_the_clamped_sites_would_move_folds(inv):
+    """Why the order matters: the record behind the 2026-09-25 decision."""
+    spk, wrd, _, eligible = inv
+    over_all = site_folds("word_disjoint", spk, wrd)[eligible]
+    over_eligible = site_folds("word_disjoint", spk[eligible], wrd[eligible])
+    moved = set(wrd[eligible][over_all != over_eligible])
+    assert len(moved) == 191
+
+
+def test_eligible_must_be_stated(inv):
+    spk, wrd, lab, _ = inv
+    with pytest.raises(TypeError, match="eligible"):
+        list(iter_splits("joint", spk, wrd, lab))
+
+
 # ------------------------------------------------------------------ random
 
 
 def test_random_is_stratified_seeded_and_needs_its_seed(inv):
-    spk, wrd, lab = inv
-    n_d = int((lab == "d").sum())
+    spk, wrd, lab, eligible = inv
+    n_d = int((lab[eligible] == "d").sum())
     for s in splits(inv, "random"):
         assert abs(int((lab[s.test] == "d").sum()) - n_d / 5) <= 1
 
@@ -160,7 +202,7 @@ def test_random_is_stratified_seeded_and_needs_its_seed(inv):
 
 @pytest.mark.parametrize("condition", ["random", "speaker_disjoint", "word_disjoint"])
 def test_subsample_is_a_stratified_fraction_of_the_training_set(inv, condition):
-    _, _, lab = inv
+    lab = inv[2]
     full = splits(inv, condition, seed=SEED)
     sub = splits(inv, condition, seed=SEED, subsample=True)
     again = splits(inv, condition, seed=SEED, subsample=True)
@@ -182,33 +224,16 @@ def test_subsample_refuses_joint_and_a_missing_seed(inv):
         splits(inv, "word_disjoint", subsample=True)
 
 
-# ------------------------------------------------------------- eligibility
+# --------------------------------------------------- the two inventory files
 
 
-@pytest.mark.parametrize("condition", CONDITIONS)
-def test_excluded_sites_leave_without_moving_any_fold(inv, condition):
-    n = len(inv[0])
-    eligible = np.arange(n) % 97 != 0
-    full = splits(inv, condition)
-    kept = splits(inv, condition, eligible=eligible)
-
-    for f, k in zip(full, kept):
-        assert np.array_equal(k.test, f.test[eligible[f.test]])
-        assert np.array_equal(k.train, f.train[eligible[f.train]])
-    tested = np.concatenate([s.test for s in kept])
-    assert np.array_equal(np.sort(tested), np.flatnonzero(eligible))
-
-
-# ------------------------------------------------------ the slice's inventory
-
-
-@pytest.mark.parametrize("condition", ["speaker_disjoint", "word_disjoint", "joint"])
-def test_the_slice_parquet_gives_the_same_folds(inv, condition):
-    pq = pytest.importorskip("pyarrow.parquet")
-    if not PARQUET.exists():
-        pytest.skip(f"no inventory at {PARQUET}")
-    sites = pq.read_table(PARQUET, columns=["speaker", "word"]).to_pandas()
-    assert np.array_equal(
-        site_folds(condition, sites.speaker, sites.word),
-        site_folds(condition, inv[0], inv[1]),
-    )
+def test_the_tsv_and_the_parquet_carry_the_same_sites(inv):
+    """Figures measured on the TSV (§1, §1a) hold for the parquet the run reads."""
+    if not TSV.exists():
+        pytest.skip(f"no inventory at {TSV}")
+    with open(TSV, newline="") as fh:
+        rows = list(csv.DictReader(fh, delimiter="\t"))
+    spk, wrd, lab, _ = inv
+    assert [r["speaker"] for r in rows] == list(spk)
+    assert [r["word"] for r in rows] == list(wrd)
+    assert [r["underlying"] for r in rows] == list(lab)

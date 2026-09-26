@@ -69,7 +69,7 @@ def prediction_schema():
         ("encoder", pa.string()),        # 'wavjepa'; the lookup baseline is 'lookup'
         ("layer", pa.int32()),           # nullable: not every encoder has layers
         ("condition", pa.string()),
-        ("fold", pa.int32()),
+        ("fold", pa.int32()),            # NULL when eligible is false: in no fold
         ("eligible", pa.bool_()),        # false = excluded before scoring
         ("scored", pa.bool_()),          # false = eligible but not scored this run
         ("p_t", pa.float64()),           # NULL whenever scored is false
@@ -285,18 +285,20 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
 
     THE FOLDS ARE THE REGISTERED ONES
         Each row's fold is the site's real fold under capstone.splits, assigned
-        over the WHOLE inventory and then looked up for the selected sites.
-        Assigning over the 40 alone would rank 40 sites' word types and
-        describe a split nobody runs. `random` is seeded with `seed`.
+        over every ELIGIBLE site in the inventory and then looked up for the
+        selected sites. Assigning over the 40 alone would rank 40 sites' word
+        types and describe a split nobody runs. An excluded site belongs to no
+        fold, so its fold is null, for the same reason its p_t is.
+        `random` is seeded with `seed`.
     """
     import numpy as np
 
     rng = np.random.default_rng(seed)
     sites = select_sites(inventory, n_sites, seed)
-    picked = inventory.site_id.isin(sites.site_id).to_numpy()
+    pool = inventory[~inventory.excerpt_clamped]
     folds = {
-        cond: site_folds(cond, inventory.speaker, inventory.word,
-                         inventory.underlying, seed=seed)[picked]
+        cond: dict(zip(pool.site_id, site_folds(cond, pool.speaker, pool.word,
+                                                pool.underlying, seed=seed)))
         for cond in CONDITIONS
     }
 
@@ -312,7 +314,7 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
             if not eligible:
                 rows.append({
                     "site_id": site.site_id, "encoder": encoder, "layer": layer,
-                    "condition": cond, "fold": int(folds[cond][i]),
+                    "condition": cond, "fold": None,
                     "eligible": False, "scored": False,
                     "p_t": None, "pred": None, "correct": None, "synthetic": True,
                 })
@@ -325,7 +327,7 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
             p_t = 0.5 + margin if pred == "t" else 0.5 - margin
             rows.append({
                 "site_id": site.site_id, "encoder": encoder, "layer": layer,
-                "condition": cond, "fold": int(folds[cond][i]),
+                "condition": cond, "fold": int(folds[cond][site.site_id]),
                 "eligible": True, "scored": True,
                 "p_t": round(p_t, 6), "pred": pred, "correct": correct,
                 "synthetic": True,

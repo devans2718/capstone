@@ -47,11 +47,11 @@ DEFAULT_MANIFEST_COPY = Path("results/flapping/run-manifest.json")
 
 # Recorded in the manifest rather than described in prose, so the split the
 # predictions claim to come from is a field a reader can compare against.
-SPLIT_SCHEME = ("capstone.splits, folds over the whole inventory. "
+SPLIT_SCHEME = ("capstone.splits. Clamped sites excluded before fold assignment "
+                "and scoring in every condition; folds over the 10,389 eligible. "
                 "random: stratified 5-fold by label, seeded; "
                 "speaker_disjoint: 5 speaker folds; word_disjoint: 5 type folds; "
-                "joint: speaker x word-type 5x5 grid, all 25 cells scored; "
-                "clamped sites excluded before scoring in every condition")
+                "joint: speaker x word-type 5x5 grid, all 25 cells scored")
 
 
 def main() -> int:

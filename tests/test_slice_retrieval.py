@@ -296,22 +296,31 @@ def test_case_7_zero_onset_site_is_returned_not_dropped(slice_fixture):
 
 @needs_inventory
 def test_synthetic_rows_carry_the_registered_folds(slice_fixture):
-    """Every row's fold is its site's fold under capstone.splits, not a draw.
+    """Every row's fold is the test fold its site lands in, not a draw.
 
-    Assigned over the whole inventory, then looked up: the 40 sites' own word
-    counts would rank types differently and describe a split nobody runs.
+    Checked through iter_splits, the route the probe run takes, rather than
+    site_folds, the route synthesize() takes. Assigned over the eligible
+    inventory: the 40 sites' own word counts would rank types differently and
+    describe a split nobody runs. An excluded site is in no fold, so null.
     """
     from capstone.predictions import CONDITIONS
-    from capstone.splits import site_folds
+    from capstone.splits import iter_splits
 
     _, inventory, preds, _ = slice_fixture
+    ids = inventory.site_id.to_numpy()
     for cond in CONDITIONS:
-        fold = dict(zip(inventory.site_id,
-                        site_folds(cond, inventory.speaker, inventory.word,
-                                   inventory.underlying, seed=20260919)))
+        fold = {}
+        for s in iter_splits(cond, inventory.speaker, inventory.word,
+                             inventory.underlying, seed=20260919,
+                             eligible=~inventory.excerpt_clamped):
+            fold.update(dict.fromkeys(ids[s.test], s.fold))
         rows = preds[preds.condition == cond]
-        assert len(rows) > 0, cond
-        assert all(r.fold == fold[r.site_id] for r in rows.itertuples()), cond
+        assert rows.eligible.sum() > 0 and (~rows.eligible).sum() > 0, cond
+        for r in rows.itertuples():
+            if r.eligible:
+                assert r.fold == fold[r.site_id], (cond, r.site_id)
+            else:
+                assert pd.isna(r.fold) and r.site_id not in fold, (cond, r.site_id)
 
 
 # ------------------------------------------------------ corpus-dependent extra
