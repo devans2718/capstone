@@ -13,7 +13,7 @@ interface. Research questions, scope, and design live in the Obsidian vault
 | `configs/` | `local.yaml` / `cloud.yaml` — differ only in values, never structure | yes |
 | `src/capstone/` | Package: `encoders/` (4-model layer-wise interface), `data/`, `alignment/`, `probes/` | yes |
 | `scripts/` | Thin entrypoints (encode, probe, eda), plus `smoke_*` / `probe_*` diagnostics that establish facts about a checkpoint | yes |
-| `app/` | Streamlit interface for the Challenge 2 slice. Runs on `requirements-app.txt` alone — no GPU, no CUDA image. | yes |
+| `app/` | Streamlit interface over the flapping pilot (Challenge 2). Runs on `requirements-app.txt` alone — no GPU, no CUDA image. | yes |
 | `tests/` | Frame arithmetic and other pure logic. Deliberately torch-free so it runs in seconds anywhere. | yes |
 | `stimuli/` | Self-recorded audio stimuli (код/кот). Deliberately committed — irreplaceable, GitHub is their offsite backup. | yes |
 | `results/` | Promoted metrics and figures | yes |
@@ -39,82 +39,211 @@ The repo bind-mounts to `/workspace`, data to `/data`. Configs reference
 `/data` by absolute path, so a cloud instance with the same mounts runs the
 same code with `configs/cloud.yaml` and zero edits.
 
-## Challenge 2 — the flapping evidence slice
+## Challenge 2 — can a speech model hear what a flap was?
 
-**What it does.** Answers questions about which flap sites a probe got wrong,
-and hands back the evidence rather than a summary: the rows, the denominators
-they must be read against, and the audio each row describes. The worked
-question is the condition differential — *which /d/ sites are classified
-correctly when word types recur between train and test, and stop being correct
-when they do not?* — because that is the one a probe leaning on word identity
-should fail.
+In American English the *t* in **water** and the *d* in **ladder** are both
+said as the same quick tap, a *flap*. The research question: **does a
+self-supervised speech encoder (WavJEPA) keep a trace of whether a flap
+was underlyingly /t/ or /d/, once memorised words and speakers are ruled
+out, and does it do better than plain acoustic features (MFCC)?** The
+pre-registration, fixed before any probe was trained, is
+`experiments/pilot-flapping/README.md`. The run and its result are recorded
+in `docs/challenges/challenge-2-enhancement-brief.md`, Amendments 3 and 4.
 
-**How to run it.**
+### What the application does
+
+A Streamlit app (`app/streamlit_app.py`) over the pilot run. It takes a
+reader from the pre-registered result to the individual sites behind it, the
+audio of each one, and a human judgement of that audio. Every answer carries
+its provenance: the run, the code commit, and the denominator it has to be
+read against.
+
+| Tab | What it shows |
+|---|---|
+| **Result** | The four pre-registered criteria parsed from `results/flapping/criteria-20260926.txt`, the committed figures, and a split selector that moves every other tab to that split |
+| **Browse and listen** | The sites matching a filter (split, layer, pooling, /t/ or /d/, right or wrong), each playable as the exact audio samples the encoder read |
+| **Compare two splits** | Sites whose prediction changed between two splits, e.g. right under `random`, wrong under `joint` |
+| **What this can and can't tell you** | What the inventory left out, and per-layer 95% intervals from the run |
+| **Look up one site** | One site's state: scored, excluded before scoring, or not reached, never shown as a zero |
+| **Audit (blind)** | The human review: a pre-registered random sample of sites, judged by ear with nothing from the model on screen |
+
+### The Human–AI workflow
+
+**Human input → tools → result + evidence → human review.**
+
+1. The human picks a split, a layer and filters. They are shown the
+   pre-registered result first: *PILOT: FAILED, 1 of 4 criteria pass*.
+2. Typed, tested tools (`capstone.retrieval.SliceStore`, DuckDB over parquet)
+   return the matching sites. There is no language model and no free-form
+   query path.
+3. Every table comes with its denominators (shown / scored / eligible / in
+   the corpus), and every site with its clip. The clip is planned through
+   the same function the encoder used, so what you hear is what the model
+   read.
+4. The human reviews the **data** behind the result: is there a flap, is the
+   word the one transcribed, is the clip centred? Doing this blind on a random
+   sample, registered before listening (pre-registration §7), makes the review
+   a measurement rather than a widget. Verdicts recorded while browsing are
+   kept but never counted.
+
+### Data used
+
+- **Buckeye Corpus** of conversational American English (Pitt et al., 2007),
+  40 speakers. The inventory holds **10,392 flap sites (7,863 /t/, 2,529
+  /d/)**, built by `scripts/count_flap_sites.py` from the hand-corrected phone
+  tier. It is committed as `results/flapping/sites-20260924.parquet`:
+  identifiers, times and labels, no audio.
+- **The audio stays local.** Buckeye's license restricts redistributing its
+  audio, so the corpus, features and predictions live under `/data`, outside
+  the repository. What is committed: the inventory, the results CSVs, the
+  criteria report, the figures, run manifests with seeds and commits, and
+  the audit sample.
+
+### AI capability
+
+- **Encoder:** WavJEPA, a joint-embedding predictive architecture trained on
+  raw waveforms, frozen. Its 13 layers are read at each flap site, pooled
+  over the site (mean, max or midpoint).
+- **Probes:** a logistic-regression probe per layer, trained under four splits
+  that close the shortcuts one at a time:
+  - `random`;
+  - `speaker_disjoint` (no test speaker seen in training);
+  - `word_disjoint` (no test word form seen);
+  - `joint` (neither). This is the pre-registered test.
+
+  Predictions are out-of-fold, so every site is scored by a probe that never
+  trained on it.
+- **The app:** typed retrieval with enforced provenance. Every response carries a
+  coverage block. Three eligibility states stay distinct. The run's own
+  manifest decides the banner (real or synthetic). And a query that fails to
+  pin one prediction per site raises an error instead of double-counting.
+
+### Baseline and evaluation
+
+- **Baselines:**
+  - **MFCC** features through the same probe: acoustics with no learned
+    structure.
+  - A **word-identity lookup**, which uses no audio at all. It scores 0.94 on
+    `random` because the label is almost always determined by the word
+    (pre-registration §1a), and collapses to exactly 0.50 under `joint`.
+  - The **Hewitt & Liang control task**, used here as a leak check.
+- **Metric:** balanced accuracy (chance 0.50), plus /d/ F1. Intervals come from a
+  10,000-resample bootstrap over word types.
+- **Pre-registered criteria**, all scored on `joint` (§5):
+  1. The best layer beats MFCC by ≥ 0.05, with the interval's lower bound
+     above 0.
+  2. The control task shows no leak.
+  3. The layer curve is not flat.
+  4. /d/ F1 is at least 0.45.
+- **Result: the pilot failed, 1 of 4.** Only the leak check passed. The
+  numbers, figures and full report are on the app's **Result** tab and in
+  `results/flapping/`. Closing word identity costs most of the score, and
+  closing speakers much less (brief, A3.2).
+- **Human evaluation:** the blind listening audit of 80 sampled sites (40 /t/,
+  40 /d/) is **in progress, 4 of 80 reviewed**. Its report will appear on the
+  Result tab when finished; no rates are quoted here until then.
+- **Tests:** `pytest`, in two environments:
+  - the app environment runs retrieval, splits, probes and audit;
+  - the CUDA image runs frame geometry and the checkpoint tests (`-m model`).
+
+### How to run the application
+
+**Deployment:** runs locally because Buckeye's license restricts
+redistributing its audio. A live demo is available in person.
+
+It needs no GPU and no CUDA image:
 
 ```bash
 uv venv .venv-app && uv pip install --python .venv-app/bin/python -r requirements-app.txt
-.venv-app/bin/python scripts/count_flap_sites.py --parquet results/flapping/sites-20260924.parquet
-.venv-app/bin/python scripts/make_synthetic_predictions.py
-.venv-app/bin/streamlit run app/streamlit_app.py
+.venv-app/bin/streamlit run app/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+.venv-app/bin/python -m pytest tests          # app-environment tests
 ```
 
-No GPU and no CUDA image. `plan_excerpt`, `Excerpt` and `FrameGeometry` import
-torch only under `TYPE_CHECKING` and inside function bodies, so the alignment
-arithmetic the interface depends on is reachable from a plain virtualenv.
-(`python -m venv` needs `python3.12-venv` installed; `uv` does not.)
+- **Inputs it expects under `/data`:**
+  - the corpus at `/data/corpora/buckeye`, obtained from its distributor under
+    its license;
+  - the pilot's predictions and manifest at
+    `/data/embeddings/probe-run-20260926/`.
+- **Rebuilding the predictions:** the docstrings of
+  `scripts/extract_site_features.py`, `scripts/run_probes.py` and
+  `scripts/plot_layer_curves.py` say how (extraction runs in the CUDA image).
+- **Without `/data`:** the Result tab, figures and criteria still render from
+  the committed files.
+- **The audit:** after listening, `.venv-app/bin/python
+  scripts/summarize_audit.py` writes the audit report under
+  `results/flapping/`.
 
-**What data it uses.** The Buckeye inventory of 10,392 flap sites — 7,863
-underlying /t/, 2,529 /d/ — built by `scripts/count_flap_sites.py` and
-committed as `results/flapping/sites-20260924.parquet`. Predictions are written
-to `/data/embeddings/`, never into the repository; the run manifest is
-committed beside the inventory so a figure can be traced to a seed, an
-inventory hash and a commit. Corpus audio mounts at `/data` and stays there —
-Buckeye is distributed under a registration agreement with OSU.
+### Limitations
 
-**Every probability in this slice is synthetic.** No probe has been trained.
-The pre-registration in `experiments/pilot-flapping/README.md` finalizes three
-provisional thresholds in a revision that has not been written, and running
-before it is pushed voids the pre-registration. Synthetic predictions cost
-nothing that matters here: retrieval is exactly as testable against noise as
-against a real result, because retrieval does not depend on whether a
-probability is meaningful — only on whether it round-trips with its provenance
-intact.
+- **The pilot failed.** On `joint`, the best WavJEPA layer (3) reaches 0.544
+  balanced accuracy against MFCC's 0.527. The gap is +0.016, its interval
+  includes 0, and the layer curve spans only 0.025. This does not show the
+  encoder lacks the information, but this design did not find it.
+- **"Unseen words" means unseen word forms.** The split is disjoint by word
+  form, not lemma: under `joint`, **25.1% of test sites** have their lemma
+  (`get` / `got`, `do` / `did`) in the probe's training set with the same
+  label. Criterion 1 re-scored on the other 7,586 sites does not pass either.
+- **Limited power.** At this size, MFCC's own interval under `joint` is about
+  **±0.05** balanced accuracy, as wide as the effect criterion 1 asks for. A
+  real but small advantage would not be distinguishable.
+- **One encoder so far.** WavJEPA only. wav2vec 2.0 was registered as
+  exploratory and has not run, so nothing here compares training objectives.
+- **The inventory is the tidy half.** 21% of flap-bearing words were excluded
+  because their transcribed and canonical pronunciations differ in length.
+  These are the most reduced tokens.
+- **The audit is unfinished, and it has one untrained listener.** Its rates
+  will bound what one ear agrees with, nothing more.
 
-**What AI capability it demonstrates.** Tool-mediated retrieval with enforced
-provenance. A language model may do exactly two things: turn a question into a
-typed tool call, and narrate rows in prose where every number is traceable to a
-returned field. It computes no statistic, infers no label, and asserts no
-cause; if the tools return no rows the answer is "no rows". The mechanisms that
-make that more than an intention:
+### Next steps
 
-- A **coverage block on every response**, including uninformative ones. 40 of
-  10,392 sites are scored, and a 40-row table with no denominator reads exactly
-  like a complete result.
-- **Three eligibility states kept distinct** — excluded before scoring, scored,
-  and never reached. The third is the *absence* of a row, and collapsing any
-  two of them into "no data" is the defect test case 4 exists to catch.
-- **Clips planned, never re-derived.** `plan_clip` goes through `plan_excerpt`
-  and `excerpt_samples`, the same call `encode_excerpt` makes, so what you hear
-  is what the encoder would consume. Planning from the rounded integer anchor
-  instead disagrees on 13% of windows.
-- **`synthetic` asserted in four places**, one of them a guard that raises
-  rather than a flag callers must remember.
-- **Two uncertainty channels, never merged.** Label-and-population uncertainty
-  is real and citable today; probe uncertainty is noise. A blended figure would
-  be unfixable, because you could not tell which half had moved.
+Each is a new registration. §5 forbids adjusting this one and rerunning
+it.
 
-**What remains.** Deferred by design and all additive — `group_errors` and
-contingency tables, bootstrap confidence intervals, feature-space nearest
-neighbours, manifest hash *refusal*, the word-identity lookup baseline,
-cross-encoder comparison, and any trained probe. Grouping errors by word is
-deliberately not offered at all: under a word-disjoint condition it
-hand-reconstructs the 99.5% lexical lookup the split exists to prevent.
+- **A lemma-disjoint split.**
+- **A different site:** wider than 2–4 frames, or with context beyond the
+  flap interval.
+- **A stronger probe.**
+- **The comparison encoders** (wav2vec 2.0, then HuBERT and WavLM), for the
+  layer-wise comparison across training objectives.
+- **ABX discrimination** as a probe-free measure.
+- **Short term:** finish the audit, and report its rates as a limit on the
+  inventory.
 
-Open decisions are tracked in
-`docs/challenges/challenge-2-slice-decisions.md`. D1 is the one that reaches
-beyond the slice: `frames_for_interval` disagrees with its own docstring when a
-target starts exactly on a frame onset, which `plan_excerpt`'s 200 ms centring
-makes true of every site.
+## References
+
+**Dataset**
+- Pitt, M. A., Dilley, L., Johnson, K., Kiesling, S., Raymond, W., Hume, E.,
+  & Fosler-Lussier, E. (2007). *Buckeye Corpus of Conversational Speech*
+  (2nd release). Department of Psychology, Ohio State University. Distributed
+  under a license; not redistributed here.
+
+**Papers**
+- Pasad, A., Chou, J.-C., & Livescu, K. (2022). Layer-wise analysis of a
+  self-supervised speech representation model. ASRU 2021;
+  [arXiv:2107.04734](https://arxiv.org/abs/2107.04734). The layer-wise method
+  this project applies to a JEPA encoder.
+- Pasad, A., Shi, B., & Livescu, K. (2023). Comparative layer-wise analysis
+  of self-supervised speech models. ICASSP 2023;
+  [arXiv:2211.03929](https://arxiv.org/abs/2211.03929). The cross-model
+  comparison that the encoder baselines extend.
+- Hewitt, J., & Liang, P. (2019). Designing and interpreting probes with
+  control tasks. EMNLP 2019; [arXiv:1909.03368](https://arxiv.org/abs/1909.03368).
+  The source of the control task. Under this design it becomes a leak check
+  (pre-registration §5).
+- WavJEPA: Semantic learning unlocks robust audio foundation models for raw
+  waveforms (2025). [arXiv:2509.23238](https://arxiv.org/abs/2509.23238). The
+  primary encoder.
+
+**Code**
+- [labhamlet/wavjepa](https://github.com/labhamlet/wavjepa): WavJEPA code and
+  checkpoints.
+- [s3prl/s3prl](https://github.com/s3prl/s3prl): a toolkit for self-supervised
+  speech models and the SUPERB benchmark; a reference for loading
+  encoders layer by layer.
+- [ankitapasad/layerwise-analysis](https://github.com/ankitapasad/layerwise-analysis):
+  code for the Pasad et al. layer-wise analyses.
+- [zerospeech/libri-light-abx2](https://github.com/zerospeech/libri-light-abx2):
+  ABX evaluation, the probe-free measure listed under next steps.
 
 ## Cloud
 
