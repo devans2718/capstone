@@ -314,3 +314,59 @@ These results give the *Feedback → What Changed → Evidence* slides their evi
 ### A3.5 Noticed, not acted on
 
 `src/capstone/data/` is gitignored, probably by a blanket `data/` rule, so its `__init__.py` is not in the repo. Nothing imports it today.
+
+## Amendment 4 — 2026-09-26, night
+
+**The app now shows the pilot run, and the per-site verdicts are replaced by a blind listening audit.** This closes A3.4's *App swap*. Nothing was rerun or retuned (§5).
+
+### A4.1 What changed, in order
+
+| Step | Commit |
+| --- | --- |
+| `SliceStore` pins one slice: layer (required, no default), pooling and `subsampled`. Counts are taken within the slice, and a site returned twice raises an error | `c4ca2b8` |
+| App reads `/data/embeddings/probe-run-20260926/`. `render_guard` is replaced by a banner chosen by the manifest's own `synthetic` field. The sidebar sets the whole slice, and its default layer is labelled as the run's highest, picked after the fact. Uncertainty §2 shows per-layer intervals from the CSV | `5221ac1` |
+| Verdict lines record which prediction was on screen | `f3397be` |
+| Result tab, first in the reading order: the criteria table parsed from the report, the committed PNGs, A3.2's one line of reading, and a split selector linked to the site view | `4320b3f` |
+| Co-Design fix: the `label` verdict was misread as judging the model | `a440624`, superseded by `5bdc95e` (A4.2) |
+| Co-Design fix: coverage captions printed raw `**` | `a63f8e7` |
+| Pre-registration §7: the audit registered before listening, with its sample committed | `f92e503` |
+| Audit (blind) tab. Browse verdicts are kept and never counted. `retrieval` and `grounding` are removed | `5bdc95e` |
+| `scripts/summarize_audit.py` writes the audit report; the Result tab shows it | `961cd16` |
+| Compare tab counted sites compared as rows shown ("10,389" over 639) | `53c4ed6` |
+
+### A4.2 Why the verdicts became an audit
+
+The four per-site verdicts did no research work:
+- They went to a log nothing read, on sites picked from filtered tables with the model's guess on screen.
+- `label` asked whether the /t/ or /d/ under a flap was right, which cannot be heard. That is the project's premise.
+- `retrieval` and `grounding` checked the app, not the data.
+
+The failed pilot gives human review a real question. §5's first reading of a result near chance is the alignment path: are the sites what the inventory says? The audit answers it by ear:
+- 40 /t/ + 40 /d/ sites, seed 20260930, blind to the probe;
+- the questions `flap`, `word` and `clip`, each answered yes, no or can't tell;
+- per-class rates with Wilson intervals.
+
+All of it was registered in pre-registration §7 before any listening. **Status: 4 of 80 sites reviewed.** The report (`results/flapping/audit-<date>.txt`) and the README's limitations line wait on the rest.
+
+**For slide 2:** the `label` row's *What Changed* is two steps. The first, `a440624`, reworded the prompt. The second, `5bdc95e`, is the real change: the question could not be answered by ear, so `word` replaced it, inside a blind audit. Cite both.
+
+### A4.3 The real parquet against the synthetic one
+
+- **The columns and types are identical.** The difference is one row per site for every encoder × layer × pooling × condition × subsampled combination: 3,127,992 rows.
+- **The lookup rows have NULL layer and pooling, and MFCC has only layer 0.** The app shows WavJEPA only.
+- **`joint` has no subsampled rows.** The app falls back to the headline run there and says so.
+- **Every site has a row**: 10,389 scored and 3 excluded, so the "not reached" state is empty for this run.
+
+### A4.4 Slide 3
+
+Four crops, not whole tabs:
+1. The Result tab: the verdict box, the criteria table and the layer curves.
+2. Compare, `random` against `joint`, /d/, layer 3: 482 sites went from right to wrong.
+3. Browse, one site: `sNNNNx:NNNNN`, "[utterance]", with P(/t/) 0.854 at `joint` layer 3 against 0.25 under `random`.
+4. The Audit (blind) tab.
+
+### A4.5 Noticed, not acted on
+
+- **Result tab selector and caption disagreed once.** In one browser screenshot, the selector read `random` while the caption below it said the site view showed `joint` at layer 3. 40 random headless interactions did not reproduce it. It is most likely a screenshot taken while the page was rerunning, but that is unconfirmed.
+- **Listen picks from the first 200 rows only.** Browse's Listen picker lists the first 200 matching rows (`LOOKUP_LIMIT`). A site beyond them can be reached by narrowing the filters, or by identifier in the lookup tab, which has no audio.
+- **A3.5 was resolved before this amendment** (`34da84a`).
