@@ -269,6 +269,21 @@ def coverage_sentence(cov) -> str:
             f"{d['n_total']:,}.")
 
 
+def compare_sentence(comp) -> str:
+    """The Compare tab's denominators: rows shown, against sites compared.
+
+    coverage_sentence says "showing N" with N = compared_on, which in a query
+    is the number of rows. In a comparison, compared_on is the number of sites
+    scored under both splits, and the table holds only those that changed. So
+    the general sentence read "Showing 10,389 sites" over a table of 639.
+    """
+    d = comp.coverage.as_dict()
+    return (f"Showing **{comp.n:,}** sites whose result differs, out of "
+            f"**{d['compared_on']:,}** scored under both splits. This run "
+            f"scored **{d['n_scored']:,}** sites, out of **{d['n_total']:,}** "
+            "in the corpus.")
+
+
 def coverage_line(cov) -> str:
     d = cov.as_dict()
     return (f"**{d['compared_on']:,}** shown · **{d['n_scored']:,}** scored · "
@@ -636,8 +651,8 @@ with tab_compare:
     comp = store.compare_conditions(cond_a, cond_b, encoder=encoder, layer=layer,
                                     pooling=pooling, subsampled=cmp_sub,
                                     underlying=None if cmp_u == "either" else cmp_u)
-    st.info(coverage_sentence(comp.coverage))
-    st.caption(f"{comp.note} · {coverage_line(comp.coverage)}")
+    st.info(compare_sentence(comp))
+    st.caption(comp.note)
     if comp.n == 0:
         st.warning("**No site changed.** Every site the two splits share was "
                    "judged the same way by both. That is an answer too.")
