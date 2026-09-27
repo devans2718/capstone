@@ -501,8 +501,8 @@ with tab_evidence:
                                underlying=u, correct=c)
     st.info(coverage_sentence(result.coverage))
     st.caption(
-        f"`{coverage_line(result.coverage)}` — shown on every answer, even when "
-        "it tells you nothing new. It is the only thing stopping a 40-row table "
+        f"{coverage_line(result.coverage)} — shown on every answer, even when "
+        "it tells you nothing new. It is the only thing stopping a partial table "
         "from reading like the whole corpus."
     )
     if result.n == 0:
@@ -639,7 +639,7 @@ with tab_compare:
                                     pooling=pooling, subsampled=cmp_sub,
                                     underlying=None if cmp_u == "either" else cmp_u)
     st.info(coverage_sentence(comp.coverage))
-    st.caption(f"{comp.note} · `{coverage_line(comp.coverage)}`")
+    st.caption(f"{comp.note} · {coverage_line(comp.coverage)}")
     if comp.n == 0:
         st.warning("**No site changed.** Every site the two splits share was "
                    "judged the same way by both. That is an answer too.")
