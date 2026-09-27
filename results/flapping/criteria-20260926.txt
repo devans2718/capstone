@@ -1,0 +1,33 @@
+Pilot: English flapping probe — §5 criteria, revision 3
+Run 20260926. Scored on `joint`, mean pooling, headline run, pooled over 10,389 sites (2,529 /d/). Chance is 0.50 balanced accuracy.
+
+code commit       4881f42aeace451db228510dad3bf2d01e877108
+features          /data/embeddings/features-b378c303ca90 (extracted at afb58116a04788ae1c5b76debef7455a888617ba)
+inventory sha256  b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162
+checkpoint        6be4a50
+seeds             folds 20260926, subsample 20260926, control 20260927, bootstrap 20260928, control_null 20260929
+non-converged     WavJEPA real 0/325, control 0/325; MFCC real 0/25
+
+Criterion 1 — best layer beats the MFCC baseline: FAIL
+  best layer 3: 0.5438; MFCC 0.5274; gap +0.0163 (needs >= 0.05); paired word-type bootstrap 95% CI [-0.0154, +0.0561] (lower bound needs > 0)
+
+Criterion 2 — control task shows no leak: PASS
+  control max over layers 0.5377 (layer 9); 95th percentile of 10,000 null maxima 0.5502; permutation p = 0.1336
+
+Criterion 3 — layer-wise curve is not flat: FAIL
+  best 0.5438 (layer 3) - worst 0.5185 (layer 2) = 0.0253 (needs >= 0.05)
+
+Criterion 4 — minority-class F1 at best layer: FAIL
+  /d/ F1 at layer 3 0.3563 (needs >= 0.45; trivial floors 0.391 always-/d/, 0.327 coin, 0.243 base rate)
+
+PILOT: FAILED — see §5 for how to read a failure
+
+Reported, not gated
+-------------------
+WavJEPA balanced accuracy by layer (joint, mean):
+  0:0.5220  1:0.5222  2:0.5185  3:0.5438  4:0.5416  5:0.5406  6:0.5388  7:0.5369  8:0.5373  9:0.5266  10:0.5234  11:0.5287  12:0.5233
+Control balanced accuracy by layer:
+  0:0.5250  1:0.5224  2:0.5139  3:0.5255  4:0.5131  5:0.5184  6:0.5151  7:0.5282  8:0.5300  9:0.5377  10:0.5316  11:0.5339  12:0.5306
+Word-identity lookup under joint: 0.5000
+Criterion 1 on the 7,586 lemma-unseen sites (1,735 /d/, 805 type keys): best layer 5: 0.5394; MFCC 0.5090; gap +0.0304 (needs >= 0.05); paired word-type bootstrap 95% CI [-0.0042, +0.0731] (lower bound needs > 0)
+  (would not pass criterion 1's thresholds; this does not change whether criterion 1 passes)

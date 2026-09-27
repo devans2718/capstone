@@ -16,7 +16,9 @@ wandb/
 # Data never lives in the repo — it mounts at /data (see README).
 # Audio is blanket-ignored, then stimuli/ is re-included: self-recorded
 # stimuli are irreplaceable and the repo is their offsite backup.
-data/
+# Anchored to the root: an unanchored data/ also swallowed the
+# src/capstone/data package.
+/data/
 *.wav
 *.mp3
 *.flac

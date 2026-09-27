@@ -1,0 +1,20 @@
+Control-task balanced accuracy under no leak — spread from type-level labels
+Generated 2026-09-26T17:09:29-05:00 by scripts/simulate_control_spread.py
+Source: results/flapping/sites-20260924.parquet
+
+eligible sites 10389, type keys 991, /d/ share 0.2434
+control mappings drawn per pattern: 10,000 (simulation seed 0)
+
+prediction pattern                   mean     sd     95% range  P(|BA-.5|>0.03)
+real label (~constant per type)     0.507  0.056  0.411- 0.630             0.59
+random label, constant per type     0.499  0.082  0.385- 0.677             0.80
+random label, per site              0.500  0.005  0.490- 0.511             0.00
+
+control /d/ site share across mappings: 95% range 0.130-0.383 (real 0.243)
+
+averaging K independent mappings (real-label pattern), sd of the mean:
+  K=  1: sd 0.0561, 95% half-width 0.110
+  K=  5: sd 0.0251, 95% half-width 0.049
+  K= 10: sd 0.0178, 95% half-width 0.035
+  K= 20: sd 0.0126, 95% half-width 0.025
+  K= 50: sd 0.0079, 95% half-width 0.016

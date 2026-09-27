@@ -5,6 +5,13 @@ services:
     build: .
     image: capstone:dev
     working_dir: /workspace
+    # The container runs as root over a bind mount owned by the host user, so
+    # git refuses the repo as "dubious ownership" and every manifest written
+    # in here records code_commit "unknown". Trust exactly this one path.
+    environment:
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /workspace
     volumes:
       - .:/workspace     # live code shadows the baked-in copy during dev
       - /data:/data      # corpora / embeddings / checkpoints (see README)

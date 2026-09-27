@@ -1,3 +1,10 @@
+[2026-09-24] Superseded for frame counts by results/flapping/sites-20260924.txt.
+  The frame figures below count onsets in the recording's own timebase,
+  which extraction does not use, under frames_for_interval before its D1
+  off-by-one fix. Excerpt-local, as extraction indexes: 33,079 frames,
+  0 sites with none. Every other figure here is unaffected. Nothing below
+  this note has been edited (decision D4).
+
 ==================================================================
 Buckeye flapping sites — RQ1 English arm
 ==================================================================

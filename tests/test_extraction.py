@@ -8,7 +8,7 @@ visible — if a test needs the checkpoint, it should be obvious why.
 
 import pytest
 
-from capstone.encoders.extraction import Excerpt, plan_excerpt
+from capstone.encoders.extraction import Excerpt, excerpt_samples, plan_excerpt
 from capstone.encoders.wavjepa import FrameGeometry
 
 from .test_frame_geometry import WAVJEPA
@@ -82,16 +82,71 @@ def test_target_stays_findable_through_the_staircase():
         assert ex.target_start_local_ms <= onset < ex.target_end_local_ms
 
 
-def test_very_short_target_can_yield_no_frames():
-    """4 of Buckeye's 10,392 flap sites are shorter than the frame hop.
+def test_very_short_centred_target_still_gets_its_onset_frame():
+    """A target shorter than the frame hop, centred by plan_excerpt, keeps a frame.
 
-    Documented as a test because callers must handle an empty range; discovering
-    it at probe time would look like a data bug.
+    Centring puts the target's start exactly on a frame onset, and that onset
+    is inside [start, end). This test used to assert the opposite (zero frames),
+    which pinned the off-by-one resolved as D1 rather than the docstring's
+    contract.
     """
     g = WAVJEPA
     ex = plan_excerpt(1_000.0, 1_006.0, recording_duration_ms=60_000, context_ms=200)
     frames = g.frames_for_interval(ex.target_start_local_ms, ex.target_end_local_ms)
+    assert len(frames) == 1
+    assert g.frame_to_ms(frames[0]) == pytest.approx(ex.target_start_local_ms, abs=1e-6)
+
+
+def test_short_target_off_an_onset_can_yield_no_frames():
+    """Empty ranges are still possible, so callers must still handle them.
+
+    A 6 ms target starting 2 ms after an onset contains no onset at all.
+    Nothing plan_excerpt produces lands here, but a raw timestamp can.
+    """
+    frames = WAVJEPA.frames_for_interval(1_002.0, 1_008.0)
     assert len(frames) == 0
+
+
+def test_generic_phase_excludes_the_frame_that_started_before_the_target():
+    """The other half of D1: a frame whose onset precedes start is not inside."""
+    frames = WAVJEPA.frames_for_interval(1_003.0, 1_033.0)
+    assert [WAVJEPA.frame_to_ms(i) for i in frames] == pytest.approx([1010.0, 1020.0, 1030.0])
+
+
+def test_excerpt_samples_matches_what_the_encoder_consumes():
+    """One window, one arithmetic. Anything else cutting audio calls this.
+
+    encode_excerpt used to carry these two lines inline, which made them
+    impossible to reuse from a torch-free caller — so a clip exporter would have
+    had to restate them, and a restatement that drifts shows a human audio the
+    model never saw.
+    """
+    ex = plan_excerpt(5_000.0, 5_030.0, recording_duration_ms=60_000, context_ms=200)
+    start, end = excerpt_samples(ex)
+    assert start == int(round(ex.offset_ms / 1000 * 16_000))
+    assert end - start == int(round(ex.duration_ms / 1000 * 16_000))
+
+
+def test_end_is_not_derived_from_target_end_plus_context():
+    """The restatement that looks right and lands one sample away.
+
+    `end` is start PLUS a separately rounded duration. Deriving it from
+    target_end_ms + context_ms rounds differently, and the two disagree on 40%
+    of windows — measured over 200,000 offsets, not estimated. At 16 kHz one
+    sample is 62.5 us, which sounds like nothing and is not: identical audio
+    shifted within its segment differs by cosine 0.394 at layer 0.
+    """
+    disagreements = 0
+    for i in range(2_000):
+        t0 = 1_000.0 + i * 0.0137
+        ex = plan_excerpt(t0, t0 + 27.4, recording_duration_ms=600_000, context_ms=200)
+        naive_end = int(round((ex.target_end_ms + 200.0) / 1000 * 16_000))
+        if excerpt_samples(ex)[1] != naive_end:
+            disagreements += 1
+    assert disagreements > 0, (
+        "the naive derivation agreed everywhere, which means this test no longer "
+        "guards anything — check whether the rounding changed"
+    )
 
 
 # ------------------------------------------------------------- checkpoint-bound

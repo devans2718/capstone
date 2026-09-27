@@ -84,9 +84,17 @@ excluded frame is the one whose receptive field *begins* at the flap onset —
 the best-aligned frame in the span — option (b) requires writing down a reason
 to drop the best frame. No such reason exists, which is the tell.
 
-**Decision:**
+**Decision:** (a), 2026-09-24. Fix the implementation.
 
-**Notes:**
+**Notes:** `frames_for_interval` now uses the first onset at or after each end.
+The pinned test was replaced by one asserting the centred 6 ms target keeps
+its onset frame, plus two covering the cases that can still be empty or were
+wrong at a generic phase. Rebuilt inventory: excerpt-local total **33,079**
+onsets, 0 sites with none. That was checked by brute-force enumeration against
+every site, with 0 mismatches. It is not the 33,216 estimated above; the
+brute-force figure is the definition. The absolute timebase moved too, from
+28,392 to 28,382 total, still 4 sites with none, because slack-sample handling
+changed with it.
 
 ---
 
@@ -121,9 +129,12 @@ silently removed exclusion reads like an oversight to anyone auditing later;
 "this exclusion no longer selects anything, and here is the measurement that
 emptied it" reads like the finding it actually is.
 
-**Decision:**
+**Decision:** (a), 2026-09-24. Folded into revision 3, which is still in
+progress and not yet pushed.
 
-**Notes:**
+**Notes:** Per the reviewer's amendment, the pre-registration says the
+no-onset exclusion now selects nothing and cites the measurement that emptied
+it, rather than dropping the sentence.
 
 ---
 
@@ -150,9 +161,14 @@ lands after today the filename and its contents disagree about the date. If
 this slips past tonight, use a fresh date for the corrected pair rather than
 regenerating `20260919` on the 20th.
 
-**Decision:**
+**Decision:** (a) with the reviewer's fresh-date caveat, 2026-09-24. Claude
+applied it under the go-ahead to fix D1, and it was confirmed the same day.
+The corrected inventory is `sites-20260924.{parquet,stats.json,txt}`, and the
+`20260919` trio is removed from the tree and kept in git history. D5's column
+was added in a second rebuild the same day, once D5 was decided.
 
-**Notes:**
+**Notes:** Only `n_frame_onsets` and `n_frame_onsets_abs` changed. Every
+other column is identical, and the 2026-08-21 TSV regenerates byte-identical.
 
 ---
 
@@ -178,9 +194,15 @@ newer report — which is the same discipline as a dated supersession header.
 It changes no reported figure, so the pre-registration's citation stays
 honest.
 
-**Decision:**
+**Decision:** (b), 2026-09-24.
 
-**Notes:**
+**Notes:** Added a six-line dated note above the report's header, pointing to
+`results/flapping/sites-20260924.txt`. Nothing below it was edited. D1's fix
+also moved the absolute-timebase total itself, from 28,392 to 28,382, because
+slack samples now resolve forward. The published figure is therefore wrong
+under the current code as well as describing the wrong timebase. The note
+says it is superseded rather than quoting the new absolute number, since
+nothing downstream uses that timebase.
 
 ---
 
@@ -228,9 +250,14 @@ label granularity, not about the audio. If the figure reaches a slide without
 the caveat it becomes "a third of the data is ambiguous," which is a
 different statement and a false one.
 
-**Decision:**
+**Decision:** (b) + (a), 2026-09-24. Not (c) yet.
 
-**Notes:**
+**Notes:** `surface_ambiguous` (bool) is appended to
+`sites-20260924.parquet` by `mark_surface_ambiguous` in
+`scripts/count_flap_sites.py`: 3,173 sites (2,601 /t/, 572 /d/) in 59 cells,
+matching the figures above. All existing columns are unchanged, the TSV is
+still byte-identical, and `n_surface_ambiguous` is in the stats JSON. Recorded
+in pre-registration §1a with the caveat attached.
 
 ---
 

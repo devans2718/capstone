@@ -1,23 +1,41 @@
 #!/usr/bin/env python3
 """Is a word-type-disjoint split feasible on the Buckeye flap inventory?
 
-Read-only. Answers four questions: how many word types carry the 10,392 sites,
+Read-only. Answers five questions: how many word types carry the 10,392 sites,
 how concentrated they are, whether `underlying` is a deterministic function of
-the word type, and what survives a split that is type-disjoint and
-speaker-disjoint at the same time.
+the word type, what survives a split that is type-disjoint and
+speaker-disjoint at the same time, and whether the full 5 x 5 grid behind that
+split can score every site instead of only the diagonal.
+
+Word types are ranked by site count, ties broken alphabetically, so every fold
+assignment here is a function of the inventory's contents and not its row order.
+The ranking and the §5 folds come from capstone.splits, the same code the probe
+run and the slice use, so this report describes the split that is actually run.
+
+§1-§4 describe the whole inventory, 10,392 sites. §5 builds the registered grid
+over the 10,389 eligible ones: the 3 clamped sites are removed before any fold
+is assigned (decided 2026-09-25). That needs the excerpt_clamped column, which
+only the parquet inventory carries, so this reads the parquet and runs in
+.venv-app. Until 2026-09-25 it read the TSV, which lists the same sites in the
+same order (tests/test_splits.py checks that).
 """
-import csv
 import random
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-DEFAULT_TSV = (Path(__file__).resolve().parent.parent
-               / "results/corpus-verification/buckeye-flap-sites-20260821.tsv")
-TSV = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_TSV
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-with open(TSV, newline="") as fh:
-    rows = list(csv.DictReader(fh, delimiter="\t"))
+from capstone.splits import rank_types, speaker_folds, type_folds, type_key  # noqa: E402
+
+DEFAULT_INVENTORY = (Path(__file__).resolve().parent.parent
+                     / "results/flapping/sites-20260924.parquet")
+INVENTORY = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_INVENTORY
+
+import pyarrow.parquet as pq  # noqa: E402
+
+rows = pq.read_table(INVENTORY, columns=["speaker", "word", "underlying",
+                                         "excerpt_clamped"]).to_pylist()
 
 print(f"sites: {len(rows)}")
 print(f"class counts: {Counter(r['underlying'] for r in rows)}")
@@ -27,7 +45,11 @@ print(f"speakers: {len({r['speaker'] for r in rows})}")
 by_type = Counter(r["word"] for r in rows)
 print(f"\ndistinct word types: {len(by_type)}")
 
-ranked = by_type.most_common()
+# Count descending, ties broken by spelling in code-point order (Python's own
+# string order, so 'Daddy' sorts before every lowercase word). Not
+# most_common(): that orders ties by first appearance in the TSV, which would
+# make the §3 and §5 fold assignment depend on row order. See §5.
+ranked = rank_types(r["word"] for r in rows)
 total = len(rows)
 for n in (10, 50, 100, 200):
     share = sum(c for _, c in ranked[:n]) / total
@@ -99,3 +121,93 @@ for fold in range(5):
     tr_c, te_c = Counter(r["underlying"] for r in tr), Counter(r["underlying"] for r in te)
     print(f"  fold {fold}: train {len(tr):>5} (t={tr_c['t']:>4} d={tr_c['d']:>4})  "
           f"test {len(te):>5} (t={te_c['t']:>4} d={te_c['d']:>4})")
+
+# --- 5. the full 5 x 5 grid behind §3's stratified split -----------------
+# §3 tests only the diagonal: fold k holds out speaker fold k AND type fold k,
+# so 5 of the 25 (speaker fold, type fold) cells are ever scored. Every cell can
+# serve as a test set the same way: test = the cell, train = sites sharing
+# neither its speaker fold nor its type fold. Speaker and type folds are both
+# partitions, so each site sits in exactly one cell, and scoring all 25 gives
+# every site one out-of-fold prediction. Cell (k, k)'s train set is §3's fold k
+# train set exactly, so no probe sees less data than under the diagonal design.
+#
+# Built over the eligible sites only. The clamped sites are excluded before
+# scoring (pre-registration §1), and since 2026-09-25 before fold assignment as
+# well, so they neither enter the ranking nor sit in any cell. Types are
+# type_key()s: lowercased, contracted forms merged onto the host word that
+# carries the flap (decided 2026-09-26), so `do` and `don't` share a fold.
+eligible = [r for r in rows if not r["excerpt_clamped"]]
+for r in eligible:
+    r["key"] = type_key(r["word"])
+spk_fold = speaker_folds(r["speaker"] for r in eligible)
+typ_fold = type_folds(r["word"] for r in eligible)
+cell_of = [(spk_fold[r["speaker"]], typ_fold[r["key"]]) for r in eligible]
+merged = sum(r["key"] != r["word"] for r in eligible)
+
+print("\nfull 5 x 5 grid: speaker fold x type fold (§3's stratified assignment)")
+print(f"  eligible sites: {len(eligible)} of {total} "
+      f"({total - len(eligible)} clamped, removed before folds are assigned)")
+print(f"  type keys: {len(typ_fold)} (from {len({r['word'] for r in eligible})} word forms; "
+      f"{merged} sites re-keyed by lowercasing or merging a contraction onto its host)")
+per_cell = Counter(cell_of)
+print(f"  cells populated: {len(per_cell)} of 25; "
+      f"sites assigned to a cell: {sum(per_cell.values())} of {len(eligible)}")
+
+grid = {}
+for a in range(5):
+    for b in range(5):
+        te = [r for r, c in zip(eligible, cell_of) if c == (a, b)]
+        tr = [r for r, (sa, tb) in zip(eligible, cell_of) if sa != a and tb != b]
+        leak = (len({r["speaker"] for r in te} & {r["speaker"] for r in tr})
+                + len({r["key"] for r in te} & {r["key"] for r in tr}))
+        grid[a, b] = dict(
+            n=len(te),
+            d=sum(r["underlying"] == "d" for r in te),
+            d_types=len({r["key"] for r in te if r["underlying"] == "d"}),
+            train=len(tr),
+            train_d=sum(r["underlying"] == "d" for r in tr),
+            leak=leak,
+        )
+
+for field, title in (("n", "test sites"), ("d", "test /d/ sites"),
+                     ("d_types", "distinct /d/ type keys in test")):
+    print(f"\n  {title} (rows = speaker fold, cols = type fold):")
+    print("         " + "".join(f"{b:>6}" for b in range(5)))
+    for a in range(5):
+        print(f"    {a:>3}  " + "".join(f"{grid[a, b][field]:>6}" for b in range(5)))
+
+cells = grid.values()
+diag = [grid[k, k] for k in range(5)]
+print(f"\n  test sites per cell {min(c['n'] for c in cells)}-{max(c['n'] for c in cells)}, "
+      f"/d/ per cell {min(c['d'] for c in cells)}-{max(c['d'] for c in cells)}, "
+      f"/d/ types per cell {min(c['d_types'] for c in cells)}-{max(c['d_types'] for c in cells)}")
+print(f"  train sites per cell {min(c['train'] for c in cells)}-{max(c['train'] for c in cells)}, "
+      f"train /d/ {min(c['train_d'] for c in cells)}-{max(c['train_d'] for c in cells)}")
+print(f"  speakers or types shared between a cell's test and train: {sum(c['leak'] for c in cells)}")
+print(f"  scored, diagonal only (§3): {sum(c['n'] for c in diag)} sites, "
+      f"{sum(c['d'] for c in diag)} /d/")
+print(f"  scored, full grid:          {sum(c['n'] for c in cells)} sites, "
+      f"{sum(c['d'] for c in cells)} /d/")
+
+# Why the tie-break is registered rather than left implicit. Until 2026-09-24
+# `ranked` was most_common(), which orders equal counts by first appearance in
+# the TSV, so the fold assignment rode on the inventory's row order. This
+# measures how much would move back under that rule, over all 10,392 sites as
+# when it was first measured.
+typ_fold_all = type_folds((r["word"] for r in rows), key=str)
+row_order = by_type.most_common()
+typ_fold_row = {w: i % 5 for i, (w, _) in enumerate(row_order)}
+moved = {w for w in typ_fold_all if typ_fold_all[w] != typ_fold_row[w]}
+tied = sum(n for n in Counter(by_type.values()).values() if n > 1)
+print(f"\n  types sharing a site count with another type: {tied} of {len(by_type)}")
+print(f"  types whose fold would differ under the old row-order tie-break: "
+      f"{len(moved)} ({sum(by_type[w] for w in moved)} sites)")
+
+# Why the clamped sites leave before folds are assigned, not only before
+# scoring: counted, they would still decide where other sites go.
+typ_fold_all = type_folds(r["word"] for r in rows)
+moved = {w for w in typ_fold if typ_fold[w] != typ_fold_all[w]}
+dropped = set(typ_fold_all) - set(typ_fold)
+print(f"  types whose fold would differ if the clamped sites were counted: "
+      f"{len(moved)} ({sum(by_type[w] for w in moved)} sites); "
+      f"types with no eligible site: {len(dropped)} {sorted(dropped)}")

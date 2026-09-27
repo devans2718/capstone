@@ -114,6 +114,14 @@ person does. The review step is only meaningful at this scale.
 
 ### 3.2 The failure case has no reachable target
 
+> **Amended 2026-09-24.** Pre-registration revision 3 scores all 25 cells of
+> the speaker × type grid, so the joint split no longer discards anything. The
+> condition is renamed **`combined`**, and `eligible = false` now marks the
+> sites §1 of the pre-registration excludes before any split: the 3 clamped
+> excerpts, in every condition, all 3 in the demo run. Test case 4 targets
+> those. The text below is left as written; it is the reasoning that held
+> under the diagonal design.
+
 The AI Design, §8, designates evaluation question 5 — a site "not scored, discarded
 by the split" — as the failure case, and the assignment requires at least one
 difficult or failure case.
