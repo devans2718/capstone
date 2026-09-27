@@ -663,3 +663,21 @@ the argument from pretraining objectives in Pasad, Shi & Livescu 2023
 (*Comparative layer-wise analysis of self-supervised speech models*). It is a
 prediction, not a criterion. It gates nothing, and wav2vec2-base remains
 exploratory.
+
+### 2026-09-26 — Written after the run: the lookup's rule for tied types
+
+**This entry was written after the run, not before it.** The run's code made
+a choice that nothing above registers. It is recorded here so the file says
+what was done, and does not appear to have been settled in advance.
+
+The first clarification above says what the lookup predicts for a type it
+never saw in training. It does not say what it predicts for a type seen
+equally often as /t/ and /d/ in training. The code (`lookup_predict` in
+`capstone.probes.controls`) gives such a type the same fallback: the training
+set's majority label, /t/.
+
+Measured effect: no test site under `word_disjoint` or `joint` belongs to a
+tied type, because held-out types never occur in training. So the lookup's
+0.5000 under both is untouched. Under `random` the rule reaches 6 of 10,389
+test sites (8 in the subsampled run), and under `speaker_disjoint` 18 (20
+subsampled). The lookup gates nothing (§5), and no criterion reads it.
