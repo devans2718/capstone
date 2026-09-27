@@ -16,6 +16,25 @@ DIVISION OF LABOUR
     So: no language model inside this file, and no cleverness either. DuckDB
     over two parquet files.
 
+ONE SLICE AT A TIME, AND THE LAYER IS NEVER ASSUMED
+    A real run has one prediction row per site for every encoder × layer ×
+    pooling × condition × subsampled — 3,127,992 rows for the pilot, 78 or so
+    per site. A query that pins the condition and nothing else returns every
+    one of them, and a coverage block counted the same way reports a
+    denominator 78 times too large. Neither looks wrong on screen.
+
+    So every method takes the full slice. `layer` has no default: there is no
+    layer that is right to fall back to, and a default of 8 — what the
+    synthetic run happened to use — would quietly show `joint` at layer 8 to
+    any caller that forgot to say. pooling and subsampled do default, to the
+    headline run (mean, not subsampled), because that is what pre-registration
+    §5 scores and there is one right answer when the caller does not care.
+
+    And every method checks the slice it got was one: a site that comes back
+    twice means the filter did not pin a single prediction, and the method
+    raises AmbiguousSlice rather than returning a table where one site counts
+    as several.
+
 EVERY RESPONSE CARRIES A COVERAGE BLOCK
     Including responses where it is uninformative and the denominators are
     equal. It costs one dictionary, and it is the only mechanism that makes a
@@ -61,6 +80,15 @@ CONTEXT_MS = 200.0
 # a chart axis or an average.
 NOT_SCORED = "not scored — excluded before scoring"
 NOT_REACHED = "not scored — this run did not reach this site"
+
+
+class AmbiguousSlice(ValueError):
+    """Raised when a slice's filters leave more than one prediction per site.
+
+    Its own class because the fix is on the caller's side — pin the missing
+    dimension — and because silently returning the duplicates is the failure
+    the class exists to rule out.
+    """
 
 
 class UnknownSite(KeyError):
@@ -151,31 +179,56 @@ class SliceStore:
 
     # ------------------------------------------------------------- denominators
 
-    def coverage(self, condition: str | None = None, compared_on: int | None = None) -> Coverage:
+    @staticmethod
+    def _slice(alias: str, *, encoder: str, layer: int, pooling: str,
+               subsampled: bool) -> tuple[list[str], list]:
+        """WHERE clauses and parameters pinning one prediction per site."""
+        return ([f"{alias}.encoder = ?", f"{alias}.layer = ?",
+                 f"{alias}.pooling = ?", f"{alias}.subsampled = ?"],
+                [encoder, layer, pooling, subsampled])
+
+    @staticmethod
+    def _check_one_per_site(rows, what: str) -> None:
+        if rows.site_id.duplicated().any():
+            n = int(rows.site_id.duplicated().sum())
+            raise AmbiguousSlice(
+                f"{what}: {n} site(s) came back more than once, so the filters "
+                "did not pin one prediction per site. Pass encoder, layer, "
+                "pooling and subsampled."
+            )
+
+    def coverage(self, condition: str, *, encoder: str = "wavjepa", layer: int,
+                 pooling: str = "mean", subsampled: bool = False,
+                 compared_on: int | None = None) -> Coverage:
+        """Denominators for one slice: inventory, eligible, scored.
+
+        Counted within the slice, never across it. Counted per condition only,
+        the pilot's joint would report 135,057 scored against 10,392 sites.
+        A slice the run never produced (a layer an encoder does not have)
+        reports 0 scored, which is true and visibly so.
+        """
         n_total = self.db.execute("SELECT count(*) FROM sites").fetchone()[0]
-        if condition is None:
-            n_eligible, n_scored = n_total, self.db.execute(
-                "SELECT count(DISTINCT site_id) FROM preds WHERE scored"
-            ).fetchone()[0]
-        else:
-            # n_eligible counts the whole inventory minus those this condition
-            # explicitly excluded. Sites with no row are eligible-but-unreached,
-            # not ineligible — that is the distinction the brief exists to keep.
-            excluded = self.db.execute(
-                "SELECT count(*) FROM preds WHERE condition = ? AND NOT eligible",
-                [condition],
-            ).fetchone()[0]
-            n_eligible = n_total - excluded
-            n_scored = self.db.execute(
-                "SELECT count(*) FROM preds WHERE condition = ? AND scored", [condition]
-            ).fetchone()[0]
+        where, params = self._slice("p", encoder=encoder, layer=layer,
+                                    pooling=pooling, subsampled=subsampled)
+        where = ["p.condition = ?"] + where
+        params = [condition] + params
+        # n_eligible counts the whole inventory minus those this slice
+        # explicitly excluded. Sites with no row are eligible-but-unreached,
+        # not ineligible — that is the distinction the brief exists to keep.
+        excluded, n_scored = self.db.execute(f"""
+            SELECT count(*) FILTER (WHERE NOT p.eligible),
+                   count(*) FILTER (WHERE p.scored)
+            FROM preds p WHERE {' AND '.join(where)}
+        """, params).fetchone()
+        n_eligible = n_total - excluded
         return Coverage(n_total, n_eligible, n_scored,
                         n_scored if compared_on is None else compared_on)
 
     # ------------------------------------------------------------------ queries
 
-    def query_sites(self, *, condition: str, encoder: str = "wavjepa",
-                    layer: int | None = 8, underlying: str | None = None,
+    def query_sites(self, *, condition: str, layer: int, encoder: str = "wavjepa",
+                    pooling: str = "mean", subsampled: bool = False,
+                    underlying: str | None = None,
                     correct: bool | None = None, site_ids=None) -> Result:
         """Scored observations matching the filters, plus a coverage block.
 
@@ -184,10 +237,10 @@ class SliceStore:
         denominator matters more than usual — an empty table with no n is
         indistinguishable from a broken query.
         """
-        where = ["p.condition = ?", "p.encoder = ?"]
-        params: list = [condition, encoder]
-        if layer is not None:
-            where.append("p.layer = ?"); params.append(layer)
+        where, params = self._slice("p", encoder=encoder, layer=layer,
+                                    pooling=pooling, subsampled=subsampled)
+        where = ["p.condition = ?"] + where
+        params = [condition] + params
         if underlying is not None:
             where.append("s.underlying = ?"); params.append(underlying)
         if correct is not None:
@@ -202,15 +255,20 @@ class SliceStore:
                    s.start_sample, s.end_sample, s.duration_ms,
                    s.n_frame_onsets, s.n_frame_onsets_abs, s.excerpt_clamped,
                    s.prev_phone, s.next_phone, s.prev_word, s.next_word,
-                   p.condition, p.fold, p.eligible, p.scored, p.p_t, p.pred,
+                   p.condition, p.encoder, p.layer, p.pooling, p.subsampled,
+                   p.fold, p.eligible, p.scored, p.p_t, p.pred,
                    p.correct, p.synthetic
             FROM sites s JOIN preds p ON p.site_id = s.site_id
             WHERE {' AND '.join(where)} AND p.scored
             ORDER BY s.site_id
         """, params).df()
-        return Result(rows, self.coverage(condition, compared_on=len(rows)))
+        self._check_one_per_site(rows, "query_sites")
+        return Result(rows, self.coverage(
+            condition, encoder=encoder, layer=layer, pooling=pooling,
+            subsampled=subsampled, compared_on=len(rows)))
 
-    def sites_by_state(self, condition: str) -> dict:
+    def sites_by_state(self, condition: str, *, layer: int, encoder: str = "wavjepa",
+                       pooling: str = "mean", subsampled: bool = False) -> dict:
         """Every site in the inventory, grouped by which of the three states it is in.
 
         This is the one query in the module where the LEFT JOIN is doing the
@@ -223,16 +281,23 @@ class SliceStore:
         see a state. Being asked to type one is being asked to already know the
         answer to the question the view is meant to answer.
 
+        The slice filter sits in the ON clause, not in WHERE. In WHERE it would
+        discard the NULL rows and take "not reached" with them.
+
         Returns {"scored": df, "excluded": df, "not_reached": df}, each ordered
         by site_id and carrying enough to render a transcript.
         """
-        rows = self.db.execute("""
+        on, params = self._slice("p", encoder=encoder, layer=layer,
+                                 pooling=pooling, subsampled=subsampled)
+        rows = self.db.execute(f"""
             SELECT s.site_id, s.word, s.prev_word, s.next_word, s.underlying,
                    p.eligible, p.scored
             FROM sites s
             LEFT JOIN preds p ON p.site_id = s.site_id AND p.condition = ?
+                              AND {' AND '.join(on)}
             ORDER BY s.site_id
-        """, [condition]).df()
+        """, [condition] + params).df()
+        self._check_one_per_site(rows, "sites_by_state")
 
         absent = rows.eligible.isna()
         return {
@@ -241,7 +306,9 @@ class SliceStore:
             "not_reached": rows[absent],
         }
 
-    def site_state(self, site_id: str, condition: str) -> dict:
+    def site_state(self, site_id: str, condition: str, *, layer: int,
+                   encoder: str = "wavjepa", pooling: str = "mean",
+                   subsampled: bool = False) -> dict:
         """What is known about one site under one condition — all three states.
 
         This is the method the failure case exercises. It never returns a number
@@ -257,12 +324,17 @@ class SliceStore:
                 f"{site_id!r} is not in the inventory at {self.inventory}. "
                 "Site identifiers are 'track:phone_index', e.g. 'sNNNNx:NNNNN'."
             )
+        where, params = self._slice("p", encoder=encoder, layer=layer,
+                                    pooling=pooling, subsampled=subsampled)
         pred = self.db.execute(
-            "SELECT * FROM preds WHERE site_id = ? AND condition = ?",
-            [site_id, condition],
+            f"SELECT * FROM preds p WHERE p.site_id = ? AND p.condition = ? "
+            f"AND {' AND '.join(where)}",
+            [site_id, condition] + params,
         ).df()
+        self._check_one_per_site(pred, "site_state")
 
-        base = {"site_id": site_id, "condition": condition,
+        base = {"site_id": site_id, "condition": condition, "encoder": encoder,
+                "layer": layer, "pooling": pooling, "subsampled": subsampled,
                 "word": site.word.iloc[0], "underlying": site.underlying.iloc[0],
                 "prev_word": site.prev_word.iloc[0],
                 "next_word": site.next_word.iloc[0],
@@ -281,8 +353,9 @@ class SliceStore:
                 "status": "scored", "p_t": float(r.p_t), "pred": str(r.pred),
                 "correct": bool(r.correct), "synthetic": bool(r.synthetic)}
 
-    def compare_conditions(self, cond_a: str, cond_b: str, *,
-                           encoder: str = "wavjepa", layer: int | None = 8,
+    def compare_conditions(self, cond_a: str, cond_b: str, *, layer: int,
+                           encoder: str = "wavjepa", pooling: str = "mean",
+                           subsampled: bool = False,
                            underlying: str | None = None,
                            changed_only: bool = True) -> Result:
         """Sites whose correctness changed between two conditions.
@@ -292,10 +365,12 @@ class SliceStore:
         denominators behind one difference, which is how a split artefact turns
         into a finding.
         """
-        where = ["a.encoder = ?", "b.encoder = ?"]
-        params: list = [encoder, encoder]
-        if layer is not None:
-            where += ["a.layer = ?", "b.layer = ?"]; params += [layer, layer]
+        pin = dict(encoder=encoder, layer=layer, pooling=pooling,
+                   subsampled=subsampled)
+        on_a, p_a = self._slice("a", **pin)
+        on_b, p_b = self._slice("b", **pin)
+        where: list = []
+        params: list = []
         if underlying is not None:
             where.append("s.underlying = ?"); params.append(underlying)
         if changed_only:
@@ -310,18 +385,22 @@ class SliceStore:
                    a.pred AS pred_a, b.pred AS pred_b,
                    a.synthetic
             FROM sites s
-            JOIN preds a ON a.site_id = s.site_id AND a.condition = '{cond_a}' AND a.scored
-            JOIN preds b ON b.site_id = s.site_id AND b.condition = '{cond_b}' AND b.scored
-            WHERE {' AND '.join(where)}
+            JOIN preds a ON a.site_id = s.site_id AND a.condition = ? AND a.scored
+                         AND {' AND '.join(on_a)}
+            JOIN preds b ON b.site_id = s.site_id AND b.condition = ? AND b.scored
+                         AND {' AND '.join(on_b)}
+            {'WHERE ' + ' AND '.join(where) if where else ''}
             ORDER BY s.site_id
         """
-        rows = self.db.execute(sql, params).df()
+        rows = self.db.execute(sql, [cond_a] + p_a + [cond_b] + p_b + params).df()
+        self._check_one_per_site(rows, "compare_conditions")
 
-        both = self.db.execute("""
+        both = self.db.execute(f"""
             SELECT count(*) FROM preds a JOIN preds b USING (site_id)
             WHERE a.condition = ? AND b.condition = ? AND a.scored AND b.scored
-        """, [cond_a, cond_b]).fetchone()[0]
-        cov = self.coverage(cond_a, compared_on=both)
+              AND {' AND '.join(on_a + on_b)}
+        """, [cond_a, cond_b] + p_a + p_b).fetchone()[0]
+        cov = self.coverage(cond_a, compared_on=both, **pin)
         return Result(rows, cov,
                       note=f"intersected on the {both} sites scored under both "
                            f"{cond_a!r} and {cond_b!r}")

@@ -45,7 +45,9 @@ import pyarrow.parquet as pq  # noqa: E402
 
 from capstone.encoders.extraction import excerpt_samples, plan_excerpt  # noqa: E402
 from capstone.predictions import synthesize, write_predictions  # noqa: E402
-from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite  # noqa: E402
+from capstone.retrieval import (  # noqa: E402
+    NOT_REACHED, NOT_SCORED, AmbiguousSlice, SliceStore, UnknownSite,
+)
 
 REPO = Path(__file__).resolve().parents[1]
 INVENTORY = REPO / "results" / "flapping" / "sites-20260924.parquet"
@@ -196,7 +198,7 @@ def test_case_4_excluded_site_is_never_rendered_as_a_number(slice_fixture):
     assert set(off.site_id) == set(sites[sites.excerpt_clamped].site_id)
 
     for site_id in off.site_id:
-        state = store.site_state(site_id, "joint")
+        state = store.site_state(site_id, "joint", layer=8)
         assert state["eligible"] is False
         assert state["scored"] is False
         assert state["status"] == NOT_SCORED
@@ -208,7 +210,7 @@ def test_case_4_excluded_site_is_never_rendered_as_a_number(slice_fixture):
 
     # The third state is distinct from the second, and from "does not exist".
     scored_id = preds[(preds.condition == "random") & preds.scored].site_id.iloc[0]
-    assert store.site_state(scored_id, "random")["status"] == "scored"
+    assert store.site_state(scored_id, "random", layer=8)["status"] == "scored"
 
 
 @needs_inventory
@@ -217,7 +219,7 @@ def test_case_4b_unscored_site_is_distinct_from_excluded(slice_fixture):
     store, inventory, preds, _ = slice_fixture
 
     never = inventory[~inventory.site_id.isin(preds.site_id)].site_id.iloc[0]
-    state = store.site_state(never, "random")
+    state = store.site_state(never, "random", layer=8)
     assert state["eligible"] is True
     assert state["scored"] is False
     assert state["status"] == NOT_REACHED
@@ -235,7 +237,13 @@ def test_case_5_empty_result_is_an_answer_with_a_denominator(slice_fixture):
     """A filter matching nothing: n = 0 plus coverage, not an exception."""
     store, inventory, preds, _ = slice_fixture
 
-    result = store.query_sites(condition="word_disjoint", layer=11)
+    # Empty because the filter matches nothing inside a slice that exists —
+    # a site this run never reached. (Until the slice filters, this asked for
+    # layer 11, a slice that does not exist; that now reports 0 scored, which
+    # is its own test below.)
+    never = inventory[~inventory.site_id.isin(preds.site_id)].site_id.iloc[0]
+    result = store.query_sites(condition="word_disjoint", layer=8,
+                               site_ids=[never])
     assert result.n == 0
     assert result.coverage.n_total == len(inventory)
     assert result.coverage.n_scored == int(
@@ -257,7 +265,7 @@ def test_case_6_unknown_identifier_raises_and_names_itself(slice_fixture):
     assert "s9999z:00000" in str(exc.value)
 
     with pytest.raises(UnknownSite) as exc:
-        store.site_state("s9999z:00000", "random")
+        store.site_state("s9999z:00000", "random", layer=8)
     assert "s9999z:00000" in str(exc.value)
 
 
@@ -280,15 +288,139 @@ def test_case_7_zero_onset_site_is_returned_not_dropped(slice_fixture):
     assert len(zero) > 0, "fixture selected no zero-onset site — nothing tested"
 
     for site_id in zero.site_id:
-        state = store.site_state(site_id, "random")
+        state = store.site_state(site_id, "random", layer=8)
         assert state["n_frame_onsets_abs"] == 0
         assert state["n_frame_onsets"] >= 1
         assert state["status"] in ("scored", NOT_SCORED, NOT_REACHED)
 
-    result = store.query_sites(condition="random",
+    result = store.query_sites(condition="random", layer=8,
                                site_ids=zero.site_id.tolist())
     assert set(result.rows.site_id) == set(zero.site_id)
     assert (result.rows.n_frame_onsets >= 1).all()
+
+
+# ------------------------------------------------------------ one slice only
+
+SLICES = [(layer, pooling, sub) for layer in (3, 8)
+          for pooling in ("mean", "max") for sub in (False, True)]
+
+
+@pytest.fixture(scope="module")
+def multi_slice(tmp_path_factory):
+    """The synthetic rows copied into eight slices, each distinguishable.
+
+    A real run has one row per site per layer × pooling × subsampled, and the
+    40-site fixture above has exactly one slice, so it cannot tell a query that
+    pins the slice from one that does not. Here every slice has its own p_t
+    (k / 100 for slice k) and its own correctness (flipped on odd k), so a
+    query that leaks a second slice either duplicates sites or returns the
+    wrong one's values.
+    """
+    if not INVENTORY.exists():
+        pytest.skip(f"no site inventory at {INVENTORY}")
+
+    tmp = tmp_path_factory.mktemp("multi")
+    inventory = pq.read_table(INVENTORY).to_pandas()
+    _, base = synthesize(inventory, n_sites=40, seed=20260919, layer=8)
+    rows = []
+    for k, (layer, pooling, sub) in enumerate(SLICES):
+        for r in base:
+            r = dict(r, layer=layer, pooling=pooling, subsampled=sub)
+            if r["scored"]:
+                r["p_t"] = k / 100
+                if k % 2:
+                    r["correct"] = not r["correct"]
+            rows.append(r)
+    path = tmp / "predictions.parquet"
+    write_predictions(rows, path)
+    return SliceStore(INVENTORY, path, corpus_root=CORPUS), inventory, pd.DataFrame(rows)
+
+
+def _in_slice(preds, condition, layer, pooling, sub):
+    return preds[(preds.condition == condition) & (preds.layer == layer)
+                 & (preds.pooling == pooling) & (preds.subsampled == sub)]
+
+
+@needs_inventory
+@pytest.mark.parametrize("layer,pooling,sub", SLICES)
+def test_query_sites_returns_one_slice(multi_slice, layer, pooling, sub):
+    """Each site once, with that slice's values, and that slice's denominator."""
+    store, inventory, preds = multi_slice
+    result = store.query_sites(condition="joint", layer=layer, pooling=pooling,
+                               subsampled=sub, correct=False)
+
+    mine = _in_slice(preds, "joint", layer, pooling, sub)
+    expected = mine[mine.scored & (mine.correct == False)]  # noqa: E712
+    assert not result.rows.site_id.duplicated().any()
+    assert set(result.rows.site_id) == set(expected.site_id)
+    assert (result.rows.p_t == SLICES.index((layer, pooling, sub)) / 100).all()
+    assert result.coverage.n_scored == int(mine.scored.sum())
+    assert result.coverage.n_eligible == len(inventory) - int((~mine.eligible).sum())
+
+
+@needs_inventory
+def test_site_state_and_sites_by_state_read_the_slice_asked_for(multi_slice):
+    store, inventory, preds = multi_slice
+    for k, (layer, pooling, sub) in enumerate(SLICES):
+        mine = _in_slice(preds, "random", layer, pooling, sub)
+        scored_id = mine[mine.scored].site_id.iloc[0]
+        state = store.site_state(scored_id, "random", layer=layer,
+                                 pooling=pooling, subsampled=sub)
+        assert state["p_t"] == k / 100
+        assert state["correct"] == bool(mine.set_index("site_id").loc[scored_id, "correct"])
+
+        groups = store.sites_by_state("random", layer=layer, pooling=pooling,
+                                      subsampled=sub)
+        assert sum(len(g) for g in groups.values()) == len(inventory)
+        assert set(groups["scored"].site_id) == set(mine[mine.scored].site_id)
+        assert set(groups["excluded"].site_id) == set(mine[~mine.eligible].site_id)
+        assert len(groups["not_reached"]) == len(inventory) - len(mine)
+
+
+@needs_inventory
+def test_compare_conditions_honours_layer_and_pooling(multi_slice):
+    """Both sides of the comparison come from the slice that was asked for."""
+    store, _, preds = multi_slice
+    for layer, pooling, sub in SLICES:
+        comp = store.compare_conditions("random", "word_disjoint", layer=layer,
+                                        pooling=pooling, subsampled=sub,
+                                        changed_only=False)
+        a = _in_slice(preds, "random", layer, pooling, sub)
+        b = _in_slice(preds, "word_disjoint", layer, pooling, sub)
+        shared = set(a[a.scored].site_id) & set(b[b.scored].site_id)
+        assert set(comp.rows.site_id) == shared
+        assert not comp.rows.site_id.duplicated().any()
+        assert comp.coverage.compared_on == len(shared)
+
+
+@needs_inventory
+def test_a_slice_the_run_never_produced_reports_zero_scored(multi_slice):
+    """Layer 11 does not exist here: 0 scored, said as 0, not borrowed."""
+    store, inventory, _ = multi_slice
+    result = store.query_sites(condition="joint", layer=11)
+    assert result.n == 0
+    assert result.coverage.n_scored == 0
+    assert result.coverage.n_total == len(inventory)
+
+
+@needs_inventory
+def test_layer_has_no_default(multi_slice):
+    """A caller that forgets the layer is told, not shown layer 8."""
+    store, _, _ = multi_slice
+    with pytest.raises(TypeError):
+        store.query_sites(condition="joint")
+    with pytest.raises(TypeError):
+        store.site_state("sNNNNx:NNNNN", "joint")
+
+
+@needs_inventory
+def test_a_filter_that_does_not_pin_the_slice_raises(multi_slice, monkeypatch):
+    """The duplicate check fires if a slice dimension is ever dropped."""
+    store, _, _ = multi_slice
+    monkeypatch.setattr(SliceStore, "_slice", staticmethod(
+        lambda alias, **kw: ([f"{alias}.encoder = ?"], [kw["encoder"]])))
+    with pytest.raises(AmbiguousSlice):
+        store.query_sites(condition="joint", layer=8)
 
 
 # ------------------------------------------------------- folds are registered
