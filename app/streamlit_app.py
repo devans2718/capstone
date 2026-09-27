@@ -58,6 +58,9 @@ PREDICTIONS = RUN_DIR / "predictions.parquet"
 MANIFEST = RUN_DIR / "run-manifest.json"
 PROBE_RESULTS = ROOT / "results" / "flapping" / "probe-results-20260926.csv"
 CRITERIA = ROOT / "results" / "flapping" / "criteria-20260926.txt"
+# Shown as committed, never redrawn here: one plotting implementation
+# (scripts/plot_layer_curves.py), so this page and the slides cannot disagree.
+FIGURES = ROOT / "results" / "flapping" / "figures"
 REVIEWS = Path("/data/reviews/reviewed.jsonl")
 CLIPS = Path("/data/clips")
 
@@ -128,6 +131,35 @@ def render_banner(manifest: Manifest, criteria_text: str | None) -> None:
         f"`{manifest.code_commit[:7]}` (run manifest); criteria report committed "
         f"in `{criteria_commit()}`.  \n**{verdict}**"
     )
+
+
+def parse_criteria(text: str) -> list[dict]:
+    """The criteria report's four criteria as rows: statistic, threshold, result.
+
+    Split out of the report's own lines rather than retyped, so the table
+    cannot drift from the file. A detail line's `(needs …)` parentheticals are
+    the threshold, and the rest is the statistic. Criterion 2 states its
+    threshold as a quantity instead (the null's 95th percentile), so when
+    there is no `needs` the first clause is the statistic and the rest is what
+    it was held against.
+    """
+    rows, lines = [], text.splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r"^Criterion (\d+) — (.+): (PASS|FAIL)$", line)
+        if not m:
+            continue
+        detail = lines[i + 1].strip() if i + 1 < len(lines) else ""
+        needs = re.findall(r"\(((?:[\w ]+ )?needs [^)]*)\)", detail)
+        if needs:
+            statistic = re.sub(r"\s*\((?:[\w ]+ )?needs [^)]*\)", "", detail)
+            threshold = "; ".join(needs)
+        else:
+            first, _, rest = detail.partition("; ")
+            statistic, threshold = first, rest
+        rows.append({"#": int(m.group(1)), "criterion": m.group(2),
+                     "statistic": statistic, "threshold": threshold,
+                     "result": m.group(3)})
+    return rows
 
 
 def best_layers(results) -> dict:
@@ -351,6 +383,16 @@ st.session_state.setdefault("pooling", "mean")
 
 def to_default_layer() -> None:
     st.session_state.layer = BEST[st.session_state.condition]["layer"]
+    st.session_state.result_condition = st.session_state.condition
+
+
+def from_result_view() -> None:
+    """The Result tab's selector drives the site view: same condition, its layer."""
+    st.session_state.condition = st.session_state.result_condition
+    st.session_state.layer = BEST[st.session_state.condition]["layer"]
+
+
+st.session_state.setdefault("result_condition", st.session_state.condition)
 
 
 with st.sidebar:
@@ -393,10 +435,62 @@ with st.sidebar:
 u = None if underlying == "either" else underlying
 c = None if correctness == "either" else (correctness == "correct")
 
-tab_evidence, tab_compare, tab_uncertainty, tab_state = st.tabs(
-    ["Browse and listen", "Compare two splits",
+tab_result, tab_evidence, tab_compare, tab_uncertainty, tab_state = st.tabs(
+    ["Result", "Browse and listen", "Compare two splits",
      "What this can and can't tell you", "Look up one site"]
 )
+
+# --------------------------------------------------------------------- result
+
+with tab_result:
+    if criteria_text is None:
+        st.warning(f"No criteria report at `{CRITERIA}`.")
+    else:
+        lines = criteria_text.splitlines()
+        verdict = next((x for x in lines if x.startswith("PILOT:")), "")
+        crit = parse_criteria(criteria_text)
+        n_pass = sum(r["result"] == "PASS" for r in crit)
+        st.subheader("The pre-registered result")
+        st.error(f"**{verdict}**  \n{n_pass} of {len(crit)} criteria pass.")
+        # The report's second line states what was scored, on what, over
+        # how many sites. Quoted, not paraphrased.
+        st.caption(lines[1] if len(lines) > 1 else "")
+        st.dataframe(crit, hide_index=True, width="stretch",
+                     column_config={"#": st.column_config.NumberColumn(width="small"),
+                                    "result": st.column_config.TextColumn(width="small")})
+
+        st.image(str(FIGURES / "layer-curves-mean.png"),
+                 caption="Balanced accuracy by layer, mean pooling, each "
+                         "condition (figures/layer-curves-mean.png)")
+        fig, reading = st.columns([3, 2])
+        fig.image(str(FIGURES / "condition-drop.png"),
+                  caption="Best layer per condition (figures/condition-drop.png)")
+        with reading:
+            st.markdown(
+                "**Reading, from Amendment 3 (A3.2):** closing word identity "
+                "costs most of the score (−0.093, `random` → `word_disjoint`); "
+                "closing speakers costs −0.025."
+            )
+            st.caption("Interpretation beyond that line is in the report, "
+                       "not on this page.")
+        with st.expander("Controls and pooling"):
+            st.image(str(FIGURES / "controls.png"),
+                     caption="Probe vs control task (figures/controls.png)")
+            st.image(str(FIGURES / "pooling.png"),
+                     caption="Mean, max and midpoint pooling (figures/pooling.png)")
+        with st.expander("The full criteria report, verbatim"):
+            st.code(criteria_text, language=None)
+
+    st.divider()
+    st.markdown("#### From the result to the sites behind it")
+    st.selectbox("Look at the sites under this split", CONDITIONS,
+                 key="result_condition", on_change=from_result_view)
+    st.caption(
+        f"The other tabs now show `{condition}` at layer {layer}, "
+        f"{pooling} pooling — the same slice as the sidebar. Choosing a split "
+        "here moves both to it, at the layer where that split scored highest "
+        "on this run."
+    )
 
 # ------------------------------------------------------------------- evidence
 
