@@ -494,6 +494,18 @@ with tab_result:
         with st.expander("The full criteria report, verbatim"):
             st.code(criteria_text, language=None)
 
+    # The audit checks the sites behind this result, by ear (§7). Its report
+    # is written by scripts/summarize_audit.py from the Audit tab's verdicts.
+    reports = sorted(p for p in FIGURES.parent.glob("audit-*.txt"))
+    st.markdown("#### Are the sites what the inventory says?")
+    if reports:
+        with st.expander(f"Listening audit, blind to the probe ({reports[-1].name})"):
+            st.code(reports[-1].read_text(), language=None)
+    else:
+        st.caption("A blind listening audit of 80 sampled sites is registered "
+                   "(pre-registration §7) and not yet reported. It checks the "
+                   "data, not the model: see the Audit tab.")
+
     st.divider()
     st.markdown("#### From the result to the sites behind it")
     st.selectbox("Look at the sites under this split", CONDITIONS,
