@@ -249,7 +249,7 @@ def coverage_line(cov) -> str:
 
 
 def record_verdict(site_id: str, target: str, verdict: str, note: str,
-                   manifest: Manifest) -> None:
+                   manifest: Manifest, view: dict) -> None:
     """Append one verdict to reviewed.jsonl.
 
     inventory_hash travels on every line. A verdict about a site is a verdict
@@ -257,6 +257,14 @@ def record_verdict(site_id: str, target: str, verdict: str, note: str,
     admits 754 further sites and changes the hash, and a verdict recorded
     against the old one should stop applying rather than silently attach itself
     to different audio.
+
+    run_id and synthetic keep verdicts from different runs apart: the file
+    holds verdicts made on the synthetic run (20260920T000056Z) as well as
+    this one. The view (encoder, condition, layer, pooling, subsampled) says
+    which prediction was on screen. In the real run a site has one per slice,
+    ~78 of them, and a retrieval or grounding verdict is about the one shown.
+    Append-only: earlier lines, which predate these fields, are never
+    rewritten.
     """
     REVIEWS.parent.mkdir(parents=True, exist_ok=True)
     line = {
@@ -266,11 +274,35 @@ def record_verdict(site_id: str, target: str, verdict: str, note: str,
         "note": note,
         "inventory_hash": manifest.inventory_hash,
         "run_id": manifest.run_id,
+        "code_commit": manifest.code_commit,
         "synthetic": manifest.synthetic,
+        **view,
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     with REVIEWS.open("a") as fh:
         fh.write(json.dumps(line) + "\n")
+
+
+def verdict_counts(run_id: str) -> tuple[int, int, int]:
+    """(verdicts on this run, sites they cover, lines from other runs).
+
+    Counts only lines whose run_id is this run's. The file also holds the
+    synthetic run's verdicts, and a count that mixed them in would credit
+    this run with reviews made on random numbers.
+    """
+    if not REVIEWS.exists():
+        return 0, 0, 0
+    mine, other, sites = 0, 0, set()
+    for raw in REVIEWS.read_text().splitlines():
+        if not raw.strip():
+            continue
+        line = json.loads(raw)
+        if line.get("run_id") == run_id:
+            mine += 1
+            sites.add(line["site_id"])
+        else:
+            other += 1
+    return mine, len(sites), other
 
 
 # --------------------------------------------------------------------- layout
@@ -453,17 +485,26 @@ with tab_evidence:
                 "can be cut correctly while the label is wrong. There is no "
                 "single approve button on purpose: " + why
             )
+            view = {"encoder": encoder, "condition": condition, "layer": layer,
+                    "pooling": pooling, "subsampled": subsampled}
             for target, question in REVIEW_TARGETS.items():
                 cols = st.columns([3, 1, 1, 2])
                 cols[0].markdown(f"**{target}** — {question}")
                 note = cols[3].text_input("note", key=f"n_{target}_{pick}",
                                           label_visibility="collapsed")
                 if cols[1].button("✓", key=f"y_{target}_{pick}"):
-                    record_verdict(pick, target, "pass", note, manifest)
+                    record_verdict(pick, target, "pass", note, manifest, view)
                     st.toast(f"{target}: pass")
                 if cols[2].button("✗", key=f"x_{target}_{pick}"):
-                    record_verdict(pick, target, "fail", note, manifest)
+                    record_verdict(pick, target, "fail", note, manifest, view)
                     st.toast(f"{target}: fail")
+            mine, n_sites, other = verdict_counts(manifest.run_id)
+            st.caption(
+                f"{mine} verdicts on {n_sites} sites recorded against run "
+                f"`{manifest.run_id}`. "
+                + (f"{other} lines from other runs are in the same file and "
+                   "are not counted here." if other else "")
+            )
 
 # ---------------------------------------------------------------- differential
 
