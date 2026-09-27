@@ -29,6 +29,8 @@ scikit-learn==1.9.0  # capstone.splits' `random` condition (StratifiedKFold).
                      # Pinned to match requirements.lock.txt: the slice's folds
                      # and the probe run's must come from the same shuffle.
 streamlit==1.50.0    # the presentation layer
+matplotlib==3.11.2   # scripts/plot_layer_curves.py: the pilot's figures.
+                     # What resolved on 2026-09-26; no other environment uses it.
 
 # Testing. Not in §11's list, which names only what the application imports,
 # but the slice's acceptance is seven test cases (brief §9), and a test suite
