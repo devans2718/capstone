@@ -681,3 +681,48 @@ tied type, because held-out types never occur in training. So the lookup's
 0.5000 under both is untouched. Under `random` the rule reaches 6 of 10,389
 test sites (8 in the subsampled run), and under `speaker_disjoint` 18 (20
 subsampled). The lookup gates nothing (§5), and no criterion reads it.
+
+### 2026-09-26 — Registered before listening: an audit of the sites by ear
+
+**Written after the run, before any of the audit below has been listened to.**
+It adds a measurement; it changes nothing above, and no criterion reads it.
+
+**Why.** §5's first reading of a failure near chance is the alignment path:
+the sites may not be what the inventory says. The `random` layer curve argues
+against a broken pipeline, but only indirectly. This checks the sites
+directly, by ear. It measures the inventory, not the probe.
+
+**Sample.** 40 /t/ and 40 /d/ sites, drawn uniformly without replacement from
+the 10,389 eligible sites (clamped sites excluded, as in §1), with numpy's
+`default_rng(20260930)` (`capstone.seeds.AUDIT`), in a shuffled review order.
+The draw sees the inventory only, never a prediction. Code:
+`capstone.audit.draw_sample`; the sample is committed as
+`results/flapping/audit-sample-20260926.tsv` in the same commit as this entry,
+and a test checks the file equals the seeded draw.
+
+**Questions**, each answered yes, no, or can't tell:
+
+- `flap` — is there a flap: a quick tap, not a full stop, a deletion or a
+  glottal stop? This checks the transcribers' `[dx]`.
+- `word` — is the word the one the transcript shows? The /t/ or /d/ label
+  follows from the word, and cannot itself be heard under a flap.
+- `clip` — is the flap roughly centred in the 200 ms-context clip, and not
+  cut off?
+
+**Blind.** The audit view shows the clip, the word and its neighbours, and
+nothing from the probe: no guess, no score, no condition.
+
+**Listener.** One listener, the author, not a trained phonetician, on
+headphones. The rates bound what one untrained ear agrees with, and are
+reported as that.
+
+**Counting.** The log is append-only; the last verdict for a site and question
+is the verdict. Only lines recorded in the audit view, for run
+`pilot-20260926`, on sampled sites are counted. Verdicts recorded while
+browsing are kept but never counted.
+
+**Reported.** Per question and per class: yes / (yes + no) with a Wilson 95%
+interval, with the can't-tell count reported beside it and never folded in,
+and how many of the 40 were reviewed. The sample is balanced and the
+inventory is not (75.7 / 24.3), so no pooled rate is reported. Output:
+`results/flapping/audit-<date>.txt` from `scripts/summarize_audit.py`.

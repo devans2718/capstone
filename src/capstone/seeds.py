@@ -21,6 +21,11 @@ CONTROL_NULL = 20260929  # criterion 2's 10,000 null mappings
 # The demo slice's synthetic draw. Not part of the registered design.
 SYNTHETIC = 20260919
 
+# The listening audit's sample (pre-registration §7, 2026-09-26 entry on the
+# audit). Registered in §7 before anyone listened, not part of the probe run,
+# so not in REGISTERED, which is the probe run's manifest.
+AUDIT = 20260930
+
 REGISTERED = {
     "folds": FOLDS,
     "subsample": SUBSAMPLE,
