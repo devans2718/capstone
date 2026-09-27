@@ -391,7 +391,9 @@ def assemble() -> int:
                     pred_cols.append((rep, pooling, cond, sub, z["fold"], z["real"]))
                     ctrl_cols.append((rep, pooling, cond, sub, z["fold"], z["control"]))
                 if pooling == POOLINGS[0]:
-                    pd_ = np.where(lz["pred_d"], 1.0, 0.0)[None]
+                    # A hard 0/1 for eligible sites; NaN for the excluded,
+                    # which the lookup never scored.
+                    pd_ = np.where(d.eligible, np.where(lz["pred_d"], 1.0, 0.0), np.nan)[None]
                     pred_cols.append(("lookup", None, cond, sub, lz["fold"], pd_))
 
     res = pd.DataFrame(rows)
