@@ -230,9 +230,9 @@ it.
   control tasks. EMNLP 2019; [arXiv:1909.03368](https://arxiv.org/abs/1909.03368).
   The source of the control task. Under this design it becomes a leak check
   (pre-registration §5).
-- WavJEPA: Semantic learning unlocks robust audio foundation models for raw
-  waveforms (2025). [arXiv:2509.23238](https://arxiv.org/abs/2509.23238). The
-  primary encoder.
+- Yuksel, Guetschel, Tangermann, van Gerven, & van der Heijden (2025). WavJEPA:
+  Semantic learning unlocks robust audio foundation models for raw waveforms.
+  [arXiv:2509.23238](https://arxiv.org/abs/2509.23238). The primary encoder.
 
 **Code**
 - [labhamlet/wavjepa](https://github.com/labhamlet/wavjepa): WavJEPA code and
