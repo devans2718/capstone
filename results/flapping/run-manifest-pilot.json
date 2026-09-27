@@ -1,0 +1,22 @@
+{
+  "checkpoint_revision": "6be4a50",
+  "code_commit": "3a11c94bf2aeb707ac623278466a5b09af1348f8",
+  "context_ms": 200.0,
+  "encoders": [
+    "wavjepa",
+    "mfcc",
+    "lookup"
+  ],
+  "inventory_hash": "b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162",
+  "n_sites_scored": 10389,
+  "run_id": "pilot-20260926",
+  "seeds": {
+    "bootstrap": 20260928,
+    "control": 20260927,
+    "control_null": 20260929,
+    "folds": 20260926,
+    "subsample": 20260926
+  },
+  "split_scheme": "capstone.splits, pre-registration revision 3 \u00a73. Clamped sites excluded before fold assignment and scoring; folds over the 10,389 eligible, keyed by type_key. random: stratified 5-fold by label, seed 20260926; speaker_disjoint: 5 speaker folds; word_disjoint: 5 type folds; joint: 5x5 grid, all 25 cells. Secondary: single-axis training subsampled to 80% per class, keyed on (20260926, fold).",
+  "synthetic": false
+}
