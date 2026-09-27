@@ -244,3 +244,73 @@ These are needed by later steps in §4:
 - Lemma overlap measured (25.1% of `joint` test sites, same label), plus a reported re-score of criterion 1 on the 7,586 sites whose lemma is unseen.
 
 **For the run**, beyond A1.6: the probe harness should read the four seeds from one place in code, not take each as an argument. The control task and lookup are keyed by `type_key`, not the raw `word` column.
+
+---
+
+## Amendment 3 — 2026-09-26, evening
+
+**The pilot has run, and it failed.** WavJEPA and MFCC ran through every registered probe, and the §5 criteria are scored on `joint`. Everything is on `origin`. From here the pre-registration's §7 records what was done. It changes nothing above it.
+
+### A3.1 What ran, in order
+
+| Step | Commit |
+| --- | --- |
+| §7 clarifications, pushed before any feature existed: midpoint pooling, the lookup on unseen types, the speaker-ID metric, and the paired bootstrap. Also the author's wav2vec2 prediction, under its own heading | `8d1630b` |
+| Seeds in `capstone.seeds`, a manifest with seeds by name and a required `synthetic` flag, and `subsampled` and `pooling` columns (closes A1.6's first three items) | `647ec90`, `003235f` |
+| Feature extraction: WavJEPA and MFCC, mean/max/midpoint, float32 | `c53d4c7`, run at `afb5811` |
+| Probe harness, `capstone.probes`, with tests | `4881f42` |
+| **Criteria report** | `6915b83` |
+| Results CSV, folds CSV, manifest | `2d61fba` |
+| Figures | `459565f` |
+| §7 note, written after the run: the lookup's tie rule (reaches 0 sites under the type-disjoint conditions) | `2847927` |
+
+### A3.2 The result
+
+On `joint`, mean pooling, pooled over 10,389 sites (2,529 /d/), from `results/flapping/criteria-20260926.txt`:
+
+| # | Criterion | Result |
+| --- | --- | --- |
+| 1 | Best layer beats MFCC by ≥ 0.05, with the CI's lower bound > 0 | **FAIL**: layer 3 scores 0.5438 against MFCC's 0.5274, gap +0.016, CI [−0.015, +0.056] |
+| 2 | Control shows no leak | **PASS**: 0.5377, under the null 95th percentile of 0.5502 (p = 0.13) |
+| 3 | Curve not flat, spread ≥ 0.05 | **FAIL**: 0.025 |
+| 4 | /d/ F1 ≥ 0.45 | **FAIL**: 0.356 |
+
+Reported, not gated (mean pooling, best WavJEPA layer; from `probe-results-20260926.csv`):
+
+| Condition | WavJEPA | MFCC | Lookup | Control |
+| --- | --- | --- | --- | --- |
+| `random` | 0.652 (L6) | 0.582 | 0.941 | up to 0.648 |
+| `speaker_disjoint` | 0.627 (L7) | 0.574 | 0.930 | up to 0.631 |
+| `word_disjoint` | 0.559 (L3) | 0.534 | 0.500 | up to 0.534 |
+| `joint` | 0.544 (L3) | 0.527 | 0.500 | up to 0.538 |
+
+- **The pipeline is not obviously broken.** §5's first reading of "near chance at every layer" is the alignment path. Under `random`, though, there is a real layer curve (0.567 at L0, 0.652 at L6). The lookup collapses to exactly 0.500 under both type-disjoint conditions. Extraction checked every site's clamp flag and frame count against the inventory.
+- **Closing word identity costs most of the score** (−0.093, random to word_disjoint). Closing speakers costs −0.025.
+- The subsample secondary costs only 0.006–0.012, so training size is not the story.
+- Pooling barely matters under `joint`: 0.5438 / 0.5409 / 0.5438 for mean / max / midpoint.
+- Speaker-ID reaches 0.92 for WavJEPA, 0.69 for MFCC (chance 0.025).
+- Lemma-unseen re-score (7,586 sites): gap +0.030, CI [−0.004, +0.073].
+
+These results give the *Feedback → What Changed → Evidence* slides their evidence: random / speaker-disjoint / word-disjoint / joint, layer by layer, with an MFCC baseline. A failed pilot is a real result, and §5 says how to read it.
+
+### A3.3 Where things are
+
+- **Repo, committed:** `results/flapping/`: `criteria-20260926.txt`, `probe-results-20260926.csv` (294 rows), `probe-folds-20260926.csv`, `run-manifest-pilot.json`, and `figures/` (layer curves, condition drop, controls, pooling).
+- **`/data` only (invariant 5):**
+  - `features-b378c303ca90/`: pooled features and their extraction manifest.
+  - `probe-run-20260926/`: cached fits, `predictions.parquet` (3,127,992 rows, `synthetic = false`), `control-predictions.parquet`, `run-manifest.json`.
+- **How to rerun:** in the docstrings of `scripts/extract_site_features.py`, `scripts/run_probes.py` and `scripts/plot_layer_curves.py`. Extraction needs both environments, because the CUDA image has no pyarrow. `compose.yaml` now sets git's `safe.directory` for `/workspace`, so manifests written in the container record a commit (`afb5811`).
+
+### A3.4 Not done from §4
+
+- **wav2vec2-base (exploratory).** Not started. It still needs its own frame geometry, derived and verified (§4's warning stands). Its checkpoint is not cached under `/data/checkpoints/hf`.
+- **App swap.** Not started, and it touches three things:
+  - The app still reads the synthetic run at `/data/embeddings/predictions.parquet`, which the real run deliberately did not overwrite.
+  - `render_guard` (`app/streamlit_app.py`) still refuses a non-synthetic manifest. Sunday's data-driven banner replaces it (A1.6).
+  - The real parquet has one row per site per encoder × layer × pooling × condition × subsampled. So `retrieval.SliceStore` queries must also filter on layer, pooling and `subsampled`. Today they filter only on condition and encoder.
+- **README** items from *What is being graded*. The result above, the limitations (§1a lemma overlap, the pilot's failure) and next steps now have content to draw on.
+- **Following from the failure, for a later round:** a lemma-disjoint split, the 2–4 frame site width, context beyond the flap interval, and a stronger probe. §5 rules out adjusting anything and rerunning under the same registration. Each is a new registration.
+
+### A3.5 Noticed, not acted on
+
+`src/capstone/data/` is gitignored, probably by a blanket `data/` rule, so its `__init__.py` is not in the repo. Nothing imports it today.
