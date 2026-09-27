@@ -75,7 +75,8 @@ LOOKUP_LIMIT = 200
 # is meaningless and an interface offering it trains the reviewer to approve
 # noise. Every verdict names which of four claims it is about.
 REVIEW_TARGETS = {
-    "label": "Did you hear a flap, and does the /t/ or /d/ under it look right?",
+    "label": "Did you hear a flap, and is the corpus's /t/ or /d/ for it right? "
+             "(Not the model's guess.)",
     "clip": "Does the audio contain the flap, roughly centred and not cut off?",
     "retrieval": "Is this site actually an answer to what you filtered for?",
     "grounding": "Does the wording on screen stay within what the data says?",
@@ -567,6 +568,14 @@ with tab_evidence:
                     st.warning(f"No corpus audio mounted: {exc}")
 
             st.markdown("#### Your verdict")
+            # In the Co-Design review `label` was read as judging the model's
+            # guess, which sits directly above it. It judges the corpus label.
+            st.markdown(
+                f"**`label` judges the corpus, not the model.** It asks whether "
+                f"this site really is a flap from /{row.underlying}/ as the "
+                f"corpus says. The model's guess (/{row.pred}/) is not what "
+                "you are marking."
+            )
             if SYNTHETIC:
                 why = ("the model's score here is random, so approving \"the "
                        "answer\" would mean approving noise.")
