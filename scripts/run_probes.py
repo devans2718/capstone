@@ -330,6 +330,12 @@ def assemble() -> int:
 
     d = Data()
     e = d.elig_idx
+    # Built first: it records the commit, and this stage writes its CSVs into
+    # the tree, which would otherwise mark its own provenance dirty.
+    manifest = build_manifest(
+        INVENTORY, split_scheme=SPLIT_SCHEME, seeds=seeds.REGISTERED,
+        n_sites_scored=len(e), synthetic=False, encoders=("wavjepa", "mfcc", "lookup"),
+        run_id=f"pilot-{DATE}")
     y = d.is_d[e]
     tix = d.type_idx[e]
     W = resample_weights(len(d.types), seeds.BOOTSTRAP)
@@ -405,12 +411,6 @@ def assemble() -> int:
                              RUN_DIR / "predictions.parquet", synthetic=False)
     _write_control(ctrl_cols, site_ids, d, RUN_DIR / "control-predictions.parquet")
 
-    from capstone.predictions import CONTEXT_MS  # noqa: F401 - recorded by build_manifest
-
-    manifest = build_manifest(
-        INVENTORY, split_scheme=SPLIT_SCHEME, seeds=seeds.REGISTERED,
-        n_sites_scored=len(e), synthetic=False, encoders=("wavjepa", "mfcc", "lookup"),
-        run_id=f"pilot-{DATE}")
     manifest.write(RUN_DIR / "run-manifest.json")
     manifest.write(OUT / "run-manifest-pilot.json")
     print(f"wrote {OUT / f'probe-results-{DATE}.csv'} ({len(res):,} rows)")
