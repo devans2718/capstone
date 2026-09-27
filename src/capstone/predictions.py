@@ -351,3 +351,65 @@ def synthesize(inventory, n_sites: int = 40, seed: int = 20260919,
                 "synthetic": True,
             })
     return sites, rows
+
+
+def write_prediction_columns(blocks, site_ids, eligible, is_d, path: Path,
+                             *, synthetic: bool) -> Path:
+    """Write a real run's predictions, block by block, under the same schema.
+
+    write_predictions takes a list of dicts, which is right for the slice's
+    40 sites and wrong for a real run: every site, times 14 representations
+    and layers, times three poolings, times seven condition runs, is about
+    three million rows. This builds the same table column-wise and enforces
+    the same invariants, vectorised. An eligible site has a probability. An
+    ineligible one has null p_t, pred, correct and fold, never a
+    placeholder.
+
+    blocks: (encoder, pooling, condition, subsampled, fold (n,), p_d (R, n)).
+    p_d is P(/d/), NaN wherever no prediction exists. A block with R > 1 is
+    layers 0..R-1. The lookup is written as one row per site with a null
+    layer and pooling.
+    """
+    import numpy as np
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    site_ids = np.asarray(site_ids)
+    eligible = np.asarray(eligible, bool)
+    is_d = np.asarray(is_d, bool)
+    n = len(site_ids)
+    tables = []
+    for encoder, pooling, condition, subsampled, fold, p_d in blocks:
+        p_d = np.atleast_2d(np.asarray(p_d, dtype=np.float64))
+        R = p_d.shape[0]
+        if p_d.shape[1] != n:
+            raise ValueError(f"{encoder}/{condition}: {p_d.shape[1]} sites, expected {n}")
+        missing = np.isnan(p_d)
+        if (missing & eligible).any():
+            raise ValueError(f"{encoder}/{pooling}/{condition}: an eligible site has "
+                             "no prediction. A real run scores every eligible site.")
+        if (~missing & ~eligible).any():
+            raise ValueError(f"{encoder}/{pooling}/{condition}: an ineligible site has "
+                             "a probability. It was excluded before scoring.")
+        elig = np.tile(eligible, R)
+        pred_d = p_d.ravel() > 0.5
+        layer = (pa.nulls(R * n, pa.int32()) if encoder == "lookup"
+                 else pa.array(np.repeat(np.arange(R, dtype=np.int32), n)))
+        tables.append(pa.table({
+            "site_id": pa.array(np.tile(site_ids, R), pa.string()),
+            "encoder": pa.array([encoder] * (R * n), pa.string()),
+            "layer": layer,
+            "condition": pa.array([condition] * (R * n), pa.string()),
+            "subsampled": pa.array(np.full(R * n, bool(subsampled))),
+            "pooling": pa.array([pooling] * (R * n), pa.string()),
+            "fold": pa.array(np.tile(np.asarray(fold, np.int32), R), mask=~elig),
+            "eligible": pa.array(elig),
+            "scored": pa.array(elig),
+            "p_t": pa.array(1.0 - p_d.ravel(), mask=~elig),
+            "pred": pa.array(np.where(pred_d, "d", "t"), mask=~elig),
+            "correct": pa.array(pred_d == np.tile(is_d, R), mask=~elig),
+            "synthetic": pa.array(np.full(R * n, bool(synthetic))),
+        }, schema=prediction_schema()))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(pa.concat_tables(tables), path)
+    return path
