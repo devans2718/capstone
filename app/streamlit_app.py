@@ -1,29 +1,31 @@
-"""Challenge 2 slice — evidence-first interface over the flapping inventory.
+"""Challenge 2 — evidence-first interface over the flapping pilot.
 
 WHAT THIS IS FOR
     One vertical slice: a question goes in, typed tools answer it, and what
     comes back carries its own provenance — which sites, out of how many, cut
-    from which samples, under which run. The point is not that the numbers are
-    good. They are synthetic and carry no information. The point is that a
-    number on this screen can be walked back to the audio it claims to describe.
+    from which samples, under which run. Since 2026-09-26 it reads the real
+    pilot run, which failed its pre-registered criteria. The point was never
+    that the numbers are good. It is that a number on this screen can be walked
+    back to the audio it claims to describe, and a failed result is exactly
+    where that matters most.
 
-WHY THE BANNER CANNOT BE TURNED OFF
-    Every probability here comes from a seeded random draw. A person looking at
-    a table of probabilities will read them as results — that is what tables of
-    probabilities are for — so 'synthetic' is asserted in four places: the run
-    manifest, every prediction row, the rendered uncertainty string, and a
-    banner drawn before any query can run.
-
-    It is structural rather than disciplined. render_guard() below raises if the
-    manifest it is handed does not say synthetic, so a future edit that forgets
-    the banner fails loudly instead of quietly showing noise as findings.
+WHY THE BANNER IS CHOSEN BY THE MANIFEST
+    Until the pilot ran, every probability here was a seeded random draw, and
+    render_guard() refused any manifest that did not say synthetic. That was
+    right while no real run existed. Now one does, and the guard is replaced by
+    render_banner(): it reads the manifest's own `synthetic` field, which has
+    no default and is written by the run itself, and draws the synthetic
+    warning or the real-run provenance before anything else on the page. There
+    is no second flag in this file to forget. Point the app back at the
+    synthetic run and the synthetic banner and wording return with it.
 
 WHY THERE ARE TWO UNCERTAINTY SECTIONS AND NOT ONE NUMBER
-    Label-and-population uncertainty is real, measured, and citable today. Probe
-    uncertainty is synthetic and means nothing. Averaging them would produce one
-    confidence figure that is not wrong so much as unfixable: when it moved, you
-    could not tell which half had moved, and the two have different remedies —
-    better alignment versus more data.
+    Label-and-population uncertainty comes from the inventory: what was
+    excluded and why. Probe uncertainty comes from the run: the per-layer
+    bootstrap intervals. Averaging them would produce one confidence figure
+    that is not wrong so much as unfixable: when it moved, you could not tell
+    which half had moved, and the two have different remedies — better
+    alignment versus a different probe or split.
 
     So they are rendered in separate sections, labelled by provenance, and the
     code has no function that combines them.
@@ -32,6 +34,8 @@ WHY THERE ARE TWO UNCERTAINTY SECTIONS AND NOT ONE NUMBER
 from __future__ import annotations
 
 import json
+import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -46,8 +50,14 @@ from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite 
 
 INVENTORY = ROOT / "results" / "flapping" / "sites-20260924.parquet"
 STATS = ROOT / "results" / "flapping" / "sites-20260924.stats.json"
-PREDICTIONS = Path("/data/embeddings/predictions.parquet")
-MANIFEST = Path("/data/embeddings/run-manifest.json")
+# The pilot run. The synthetic run at /data/embeddings/predictions.parquet is
+# kept, untouched: pointing these two back at it restores the synthetic banner
+# and wording, because both are chosen from the manifest (render_banner).
+RUN_DIR = Path("/data/embeddings/probe-run-20260926")
+PREDICTIONS = RUN_DIR / "predictions.parquet"
+MANIFEST = RUN_DIR / "run-manifest.json"
+PROBE_RESULTS = ROOT / "results" / "flapping" / "probe-results-20260926.csv"
+CRITERIA = ROOT / "results" / "flapping" / "criteria-20260926.txt"
 REVIEWS = Path("/data/reviews/reviewed.jsonl")
 CLIPS = Path("/data/clips")
 
@@ -69,20 +79,73 @@ REVIEW_TARGETS = {
 }
 
 
-def render_guard(manifest: Manifest) -> None:
-    """Refuse to render anything if the run does not declare itself synthetic.
+def criteria_commit() -> str:
+    """The commit that recorded the criteria report, for the banner.
 
-    The brief's invariant is that the renderer must not be ABLE to omit the
-    synthetic marker. A flag every call site is supposed to remember is not that
-    — this is.
+    Asked of git rather than typed here, so the banner cannot go on naming a
+    commit after the report is re-recorded. Falls back to the report's own
+    `code commit` line, which names the code that computed it.
     """
-    if not manifest.synthetic:
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(ROOT), "log", "-1", "--format=%h", "--",
+             str(CRITERIA.relative_to(ROOT))],
+            capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        out = ""
+    if out:
+        return out
+    m = re.search(r"^code commit\s+(\w{7})", CRITERIA.read_text(), re.M)
+    return m.group(1) if m else "unknown"
+
+
+def render_banner(manifest: Manifest, criteria_text: str | None) -> None:
+    """The first thing on the page, and chosen by the manifest alone.
+
+    A synthetic manifest gets the warning it always got. A real one gets its
+    provenance and the report's `PILOT:` line, quoted rather than restated. A manifest with no boolean `synthetic` is refused: that is
+    the one case with no correct banner.
+    """
+    if not isinstance(manifest.synthetic, bool):
         raise RuntimeError(
-            "run manifest does not declare synthetic=true. This interface "
-            "renders synthetic runs and labels them as such; it has no correct "
-            "way to present a real one, and showing it unlabelled is the "
-            "failure this check exists to prevent."
+            f"run manifest {MANIFEST} has synthetic={manifest.synthetic!r}; it "
+            "must say true or false, and the page will not guess which."
         )
+    if manifest.synthetic:
+        st.error(
+            "**SYNTHETIC RUN — the model scores on this page are made up.**  \n"
+            "No probe has been trained yet. Every `p_t` below is a random number from a "
+            "fixed seed. They are here so the plumbing can be tested end to end — which "
+            "works just as well with noise, because the plumbing does not care whether a "
+            "number means anything. **Nothing on this page is a finding about /t/ or /d/.**"
+        )
+        return
+    verdict = next((line for line in (criteria_text or "").splitlines()
+                    if line.startswith("PILOT:")), "criteria report not found")
+    st.info(
+        f"**REAL RUN — `{manifest.run_id}`.** Predictions from code "
+        f"`{manifest.code_commit[:7]}` (run manifest); criteria report committed "
+        f"in `{criteria_commit()}`.  \n**{verdict}**"
+    )
+
+
+def best_layers(results) -> dict:
+    """Per condition: the WavJEPA layer that scored highest on this run.
+
+    Mean pooling, headline run, read from the committed results CSV. This is
+    a default for the view, not a finding: it is where this run happened to
+    peak, chosen after the fact, and on joint the layers are close together.
+    The sidebar says so next to it.
+    """
+    head = results[(results.encoder == "wavjepa") & (results.pooling == "mean")
+                   & (~results.subsampled)]
+    out = {}
+    for cond, g in head.groupby("condition"):
+        top = g.loc[g.balanced_acc.idxmax()]
+        out[cond] = {"layer": int(top.layer), "ba": float(top.balanced_acc),
+                     "spread": float(g.balanced_acc.max() - g.balanced_acc.min())}
+    return out
 
 
 def input_stamp() -> tuple:
@@ -107,7 +170,7 @@ def input_stamp() -> tuple:
     import capstone.predictions
     import capstone.retrieval
 
-    paths = [INVENTORY, STATS, PREDICTIONS, MANIFEST,
+    paths = [INVENTORY, STATS, PREDICTIONS, MANIFEST, PROBE_RESULTS, CRITERIA,
              Path(capstone.retrieval.__file__), Path(capstone.predictions.__file__)]
     return tuple(p.stat().st_mtime_ns if p.exists() else 0 for p in paths)
 
@@ -128,9 +191,23 @@ def load_stats(stamp: tuple) -> dict:
 
 
 @st.cache_data
-def load_states(stamp: tuple, condition: str) -> dict:
-    """Sites grouped by eligibility state. Cached — it scans all 10,392 rows."""
-    return load_store(stamp).sites_by_state(condition)
+def load_probe_results(stamp: tuple):
+    import pandas as pd
+
+    return pd.read_csv(PROBE_RESULTS)
+
+
+@st.cache_data
+def load_criteria(stamp: tuple) -> str | None:
+    return CRITERIA.read_text() if CRITERIA.exists() else None
+
+
+@st.cache_data
+def load_states(stamp: tuple, condition: str, layer: int, pooling: str,
+                subsampled: bool) -> dict:
+    """Sites grouped by eligibility state. Cached — it scans all 10,392 sites."""
+    return load_store(stamp).sites_by_state(condition, layer=layer, pooling=pooling,
+                                            subsampled=subsampled)
 
 
 def transcript(row) -> str:
@@ -205,22 +282,18 @@ if missing:
     st.error("Missing inputs:\n\n" + "\n".join(f"- `{p}`" for p in missing))
     st.code("python scripts/count_flap_sites.py --parquet "
             "results/flapping/sites-20260924.parquet\n"
-            "python scripts/make_synthetic_predictions.py")
+            "# the pilot's predictions: see scripts/run_probes.py's docstring")
     st.stop()
 
 STAMP = input_stamp()
 manifest = load_manifest(STAMP)
-render_guard(manifest)
+criteria_text = load_criteria(STAMP)
+render_banner(manifest, criteria_text)
+SYNTHETIC = manifest.synthetic
 store = load_store(STAMP)
 stats = load_stats(STAMP)
-
-st.error(
-    "**SYNTHETIC RUN — the model scores on this page are made up.**  \n"
-    "No probe has been trained yet. Every `p_t` below is a random number from a "
-    "fixed seed. They are here so the plumbing can be tested end to end — which "
-    "works just as well with noise, because the plumbing does not care whether a "
-    "number means anything. **Nothing on this page is a finding about /t/ or /d/.**"
-)
+results = load_probe_results(STAMP)
+BEST = best_layers(results)
 
 st.title("Was that flap a /t/ or a /d/?")
 st.write(
@@ -236,10 +309,22 @@ st.caption(
     "seeds " + ", ".join(f"{k} {v}" for k, v in sorted(manifest.seeds.items()))
 )
 
+# The condition and layer live in session_state under fixed keys, so every
+# view reads the same slice. Changing the condition moves the layer to that
+# condition's default; the layer can then be moved by hand.
+st.session_state.setdefault("condition", "joint")
+st.session_state.setdefault("layer", BEST["joint"]["layer"])
+st.session_state.setdefault("pooling", "mean")
+
+
+def to_default_layer() -> None:
+    st.session_state.layer = BEST[st.session_state.condition]["layer"]
+
+
 with st.sidebar:
     st.header("Query")
     condition = st.selectbox("How train/test was split", CONDITIONS,
-                             index=CONDITIONS.index("word_disjoint"))
+                             key="condition", on_change=to_default_layer)
     st.caption(
         "`random` — words and speakers can appear in both train and test.  \n"
         "`speaker_disjoint` — a speaker is in one or the other, never both.  \n"
@@ -247,7 +332,21 @@ with st.sidebar:
         "`joint` — word-split *and* speaker-split: the pre-registered design."
     )
     encoder = st.selectbox("Encoder", ["wavjepa"])
-    layer = st.selectbox("Encoder layer", list(range(13)), index=8)
+    layer = st.selectbox("Encoder layer", list(range(13)), key="layer")
+    best = BEST[condition]
+    st.caption(
+        f"Starts at layer {best['layer']}: the layer that happened to score "
+        f"highest under `{condition}` on this run (mean pooling, "
+        f"{best['ba']:.3f}). Picked after the fact, not in advance, and not a "
+        f"finding — the 13 layers span only {best['spread']:.3f} here."
+    )
+    pooling = st.selectbox("Pooling over the flap", ["mean", "max", "midpoint"],
+                           key="pooling")
+    if condition == "joint":
+        subsampled = False
+        st.caption("`joint` has no subsampled run; showing the headline run.")
+    else:
+        subsampled = st.toggle("Subsampled training (secondary run)", value=False)
     underlying = st.selectbox("Underlying sound", ["either", "t", "d"],
                               format_func=lambda v: {"either": "either",
                                                      "t": "/t/ (water, city)",
@@ -271,6 +370,7 @@ tab_evidence, tab_compare, tab_uncertainty, tab_state = st.tabs(
 
 with tab_evidence:
     result = store.query_sites(condition=condition, encoder=encoder, layer=layer,
+                               pooling=pooling, subsampled=subsampled,
                                underlying=u, correct=c)
     st.info(coverage_sentence(result.coverage))
     st.caption(
@@ -293,7 +393,13 @@ with tab_evidence:
             "a word's worth of run-up and follow-through, which is what makes it "
             "possible to hear at all."
         )
-        options = {label_for(r): r.site_id for r in result.rows.itertuples()}
+        # Capped like the lookup tab's list, with the true count beside it.
+        # The table above still holds every row.
+        options = {label_for(r): r.site_id
+                   for r in result.rows.head(LOOKUP_LIMIT).itertuples()}
+        if result.n > LOOKUP_LIMIT:
+            st.caption(f"Listing the first {LOOKUP_LIMIT} of {result.n:,} rows "
+                       "above. Narrow the filters in the sidebar to reach others.")
         picked_label = st.selectbox("Site", list(options))
         pick = options[picked_label]
         if pick:
@@ -308,7 +414,12 @@ with tab_evidence:
                     f"**/{row.underlying}/** underneath; the model guessed "
                     f"**/{row.pred}/** — {'right' if row.correct else 'wrong'}."
                 )
-                st.metric("Model's score for /t/ (made up)", f"{row.p_t:.3f}")
+                if SYNTHETIC:
+                    st.metric("Model's score for /t/ (made up)", f"{row.p_t:.3f}")
+                else:
+                    st.metric(f"Probe's probability of /t/ (layer {layer}, "
+                              f"{pooling}; site held out in fold {row.fold})",
+                              f"{row.p_t:.3f}")
                 st.caption(
                     f"Sounds either side: `{row.prev_phone}` … `{row.next_phone}`. "
                     f"The flap itself is {row.duration_ms:.0f} ms long."
@@ -330,11 +441,17 @@ with tab_evidence:
                     st.warning(f"No corpus audio mounted: {exc}")
 
             st.markdown("#### Your verdict")
+            if SYNTHETIC:
+                why = ("the model's score here is random, so approving \"the "
+                       "answer\" would mean approving noise.")
+            else:
+                why = ("whether the probe works is judged across all 10,389 "
+                       "sites by the criteria report, not one site at a time "
+                       "here.")
             st.caption(
                 "Four separate judgements, because they can disagree — the clip "
                 "can be cut correctly while the label is wrong. There is no "
-                "single approve button on purpose: the model's score here is "
-                "random, so approving \"the answer\" would mean approving noise."
+                "single approve button on purpose: " + why
             )
             for target, question in REVIEW_TARGETS.items():
                 cols = st.columns([3, 1, 1, 2])
@@ -368,7 +485,14 @@ with tab_compare:
                                                 "t": "/t/ (water, city)",
                                                 "d": "/d/ (ladder, ready)"}[v])
 
+    # joint has no subsampled run, so a comparison involving it uses the
+    # headline run on both sides rather than coming back empty.
+    cmp_sub = subsampled and "joint" not in (cond_a, cond_b)
+    st.caption(f"Both sides at layer {layer}, {pooling} pooling, "
+               f"{'subsampled' if cmp_sub else 'headline'} run — the sidebar's "
+               "slice.")
     comp = store.compare_conditions(cond_a, cond_b, encoder=encoder, layer=layer,
+                                    pooling=pooling, subsampled=cmp_sub,
                                     underlying=None if cmp_u == "either" else cmp_u)
     st.info(coverage_sentence(comp.coverage))
     st.caption(f"{comp.note} · `{coverage_line(comp.coverage)}`")
@@ -384,8 +508,11 @@ with tab_compare:
         )
         st.caption(
             "These are counts of the rows below — not percentages, not a "
-            "significance test, and not a claim about why. Saying why would "
-            "need a trained probe, which does not exist yet."
+            "significance test, and not a claim about why. "
+            + ("Saying why would need a trained probe, which does not exist yet."
+               if SYNTHETIC else
+               "The aggregate comparison, with intervals, is in the criteria "
+               "report and the results CSV.")
         )
         shown = comp.rows.copy()
         shown.insert(1, "transcript", [transcript(r) for r in shown.itertuples()])
@@ -396,7 +523,11 @@ with tab_compare:
 with tab_uncertainty:
     st.write(
         "Two different things here are uncertain, and they are kept apart on "
-        "purpose. One is real and can be quoted today. The other is noise."
+        "purpose. "
+        + ("One is real and can be quoted today. The other is noise."
+           if SYNTHETIC else
+           "One comes from what was left out of the data; the other from the "
+           "probe run itself.")
     )
 
     st.subheader("1 · What got left out of the data — real, and quotable now")
@@ -437,18 +568,49 @@ with tab_uncertainty:
     )
 
     st.divider()
-    st.subheader("2 · How confident the model is — meaningless here")
-    st.error(
-        "Every `p_t` on this page is a random number. It is labelled wherever it "
-        "appears. It is not weak evidence about /t/ and /d/ — it is no evidence, "
-        "and averaging a lot of it together does not turn it into any."
-    )
+    if SYNTHETIC:
+        st.subheader("2 · How confident the model is — meaningless here")
+        st.error(
+            "Every `p_t` on this page is a random number. It is labelled wherever it "
+            "appears. It is not weak evidence about /t/ and /d/ — it is no evidence, "
+            "and averaging a lot of it together does not turn it into any."
+        )
+        fix = "the second needs a real probe"
+    else:
+        st.subheader("2 · How sure the probe's score is — per layer, from this run")
+        sub_label = "subsampled" if subsampled else "headline"
+        st.caption(
+            f"`{condition}`, {pooling} pooling, {sub_label} run. Read from "
+            "`results/flapping/probe-results-20260926.csv`, not recomputed here. "
+            "Balanced accuracy over all scored sites, with the 95% interval "
+            "from the word-type bootstrap in `scripts/run_probes.py`. Chance "
+            "is 0.50. The control column is the same probe on the control "
+            "task."
+        )
+        sel = results[(results.condition == condition) & (results.pooling == pooling)
+                      & (results.subsampled == subsampled)]
+        wj = sel[sel.encoder == "wavjepa"]
+        table = wj[["layer", "balanced_acc", "ci_lo", "ci_hi",
+                    "control_balanced_acc", "f1_d", "n"]].rename(columns={
+            "balanced_acc": "balanced accuracy", "ci_lo": "95% low",
+            "ci_hi": "95% high", "control_balanced_acc": "control",
+            "f1_d": "/d/ F1", "n": "sites"})
+        st.dataframe(table, hide_index=True, width="stretch",
+                     column_config={c: st.column_config.NumberColumn(format="%.3f")
+                                    for c in ["balanced accuracy", "95% low",
+                                              "95% high", "control", "/d/ F1"]})
+        mf = sel[sel.encoder == "mfcc"]
+        if not mf.empty:
+            m0 = mf.iloc[0]
+            st.caption(f"MFCC baseline, same slice: {m0.balanced_acc:.3f} "
+                       f"[{m0.ci_lo:.3f}, {m0.ci_hi:.3f}].")
+        fix = "the second is a matter of the probe and the split"
     st.caption(
         "These two are never added together into one confidence score. They come "
         "from different places and have different fixes — the first needs better "
-        "alignment or recovering those thrown-out words, the second needs a real "
-        "probe — and a combined number would hide which of the two had moved, "
-        "leaving you unable to fix either."
+        f"alignment or recovering those thrown-out words, {fix} — and a combined "
+        "number would hide which of the two had moved, leaving you unable to fix "
+        "either."
     )
 
 # ----------------------------------------------------------------- site lookup
@@ -463,7 +625,11 @@ with tab_state:
     cond = st.selectbox("Under which split", CONDITIONS,
                         index=CONDITIONS.index("joint"), key="state_cond")
 
-    groups = load_states(STAMP, cond)
+    # joint has no subsampled run; the lookup falls back to the headline run.
+    state_sub = subsampled and cond != "joint"
+    st.caption(f"At layer {layer}, {pooling} pooling, "
+               f"{'subsampled' if state_sub else 'headline'} run — the sidebar's slice.")
+    groups = load_states(STAMP, cond, layer, pooling, state_sub)
     kinds = {
         "scored": f"Scored in this run ({len(groups['scored']):,})",
         "excluded": f"Excluded before scoring ({len(groups['excluded']):,})",
@@ -497,7 +663,8 @@ with tab_state:
 
     if site_id:
         try:
-            state = store.site_state(site_id.strip(), cond)
+            state = store.site_state(site_id.strip(), cond, layer=layer,
+                                     pooling=pooling, subsampled=state_sub)
         except UnknownSite as exc:
             st.error(str(exc))
         else:
@@ -517,14 +684,15 @@ with tab_state:
             elif state["status"] == NOT_REACHED:
                 st.info(
                     "**Not looked at in this run.** The site was eligible; this "
-                    "run only looked at 40 sites and this was not one of them. "
-                    "Different from being excluded."
+                    f"run scored {manifest.n_sites_scored:,} sites and this was "
+                    "not one of them. Different from being excluded."
                 )
             else:
+                made_up = "made-up " if SYNTHETIC else ""
                 st.success(
                     f"**Scored.** The model guessed /{state['pred']}/ — "
-                    f"{'right' if state['correct'] else 'wrong'} — with a made-up "
-                    f"score of {state['p_t']:.3f} for /t/."
+                    f"{'right' if state['correct'] else 'wrong'} — with a "
+                    f"{made_up}score of {state['p_t']:.3f} for /t/."
                 )
             with st.expander("Raw record"):
                 st.json(state)
