@@ -45,6 +45,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from capstone.audit import AUDIT_TARGETS, summarize  # noqa: E402
 from capstone.predictions import CONDITIONS, Manifest  # noqa: E402
 from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite  # noqa: E402
 
@@ -70,17 +71,10 @@ CLIPS = Path("/data/clips")
 # list cannot be read as the total.
 LOOKUP_LIMIT = 200
 
-# The four things a reviewer can judge. Deliberately not accept/reject: on a
-# synthetic run the probe output carries no information, so "accept this answer"
-# is meaningless and an interface offering it trains the reviewer to approve
-# noise. Every verdict names which of four claims it is about.
-REVIEW_TARGETS = {
-    "label": "Did you hear a flap, and is the corpus's /t/ or /d/ for it right? "
-             "(Not the model's guess.)",
-    "clip": "Does the audio contain the flap, roughly centred and not cut off?",
-    "retrieval": "Is this site actually an answer to what you filtered for?",
-    "grounding": "Does the wording on screen stay within what the data says?",
-}
+# The listening audit's sample (pre-registration §7, 2026-09-26). Drawn once
+# by scripts/draw_audit_sample.py; the questions are capstone.audit's.
+AUDIT_SAMPLE = ROOT / "results" / "flapping" / "audit-sample-20260926.tsv"
+VERDICT_LABELS = {"yes": "yes", "no": "no", "cant_tell": "can't tell"}
 
 
 def criteria_commit() -> str:
@@ -281,8 +275,8 @@ def coverage_line(cov) -> str:
             f"**{d['n_eligible']:,}** eligible · **{d['n_total']:,}** in inventory")
 
 
-def record_verdict(site_id: str, target: str, verdict: str, note: str,
-                   manifest: Manifest, view: dict) -> None:
+def record_verdict(site_id: str, target: str, verdict: str, note_key: str,
+                   manifest: Manifest, view: dict, audit: bool) -> None:
     """Append one verdict to reviewed.jsonl.
 
     inventory_hash travels on every line. A verdict about a site is a verdict
@@ -294,11 +288,19 @@ def record_verdict(site_id: str, target: str, verdict: str, note: str,
     run_id and synthetic keep verdicts from different runs apart: the file
     holds verdicts made on the synthetic run (20260920T000056Z) as well as
     this one. The view (encoder, condition, layer, pooling, subsampled) says
-    which prediction was on screen. In the real run a site has one per slice,
-    ~78 of them, and a retrieval or grounding verdict is about the one shown.
+    which prediction was on screen while browsing; the blind audit shows none,
+    and records none.
+
+    `audit` is what decides whether a line is ever counted (capstone.audit):
+    true only from the blind Audit tab. A verdict from the browser is kept
+    but never counted, because the site was picked by a filter with the
+    model's guess on screen.
+
     Append-only: earlier lines, which predate these fields, are never
-    rewritten.
+    rewritten. Called as a button callback, so the page that follows already
+    shows it.
     """
+    note = st.session_state.get(note_key, "")
     REVIEWS.parent.mkdir(parents=True, exist_ok=True)
     line = {
         "site_id": site_id,
@@ -309,33 +311,43 @@ def record_verdict(site_id: str, target: str, verdict: str, note: str,
         "run_id": manifest.run_id,
         "code_commit": manifest.code_commit,
         "synthetic": manifest.synthetic,
+        "audit": audit,
         **view,
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     with REVIEWS.open("a") as fh:
         fh.write(json.dumps(line) + "\n")
+    st.toast(f"{target}: {VERDICT_LABELS[verdict]}"
+             + ("" if audit else " (kept, not counted)"))
 
 
-def verdict_counts(run_id: str) -> tuple[int, int, int]:
-    """(verdicts on this run, sites they cover, lines from other runs).
-
-    Counts only lines whose run_id is this run's. The file also holds the
-    synthetic run's verdicts, and a count that mixed them in would credit
-    this run with reviews made on random numbers.
-    """
+def read_reviews() -> list[dict]:
+    """Every line of reviewed.jsonl, every run. Filtering is capstone.audit's."""
     if not REVIEWS.exists():
-        return 0, 0, 0
-    mine, other, sites = 0, 0, set()
-    for raw in REVIEWS.read_text().splitlines():
-        if not raw.strip():
-            continue
-        line = json.loads(raw)
-        if line.get("run_id") == run_id:
-            mine += 1
-            sites.add(line["site_id"])
-        else:
-            other += 1
-    return mine, len(sites), other
+        return []
+    return [json.loads(x) for x in REVIEWS.read_text().splitlines() if x.strip()]
+
+
+def verdict_form(site_id: str, *, audit: bool, view: dict, prefix: str,
+                 current: dict | None = None) -> None:
+    """The three questions, each answered yes / no / can't tell, with a note.
+
+    `current` maps question to the last verdict recorded, shown beside it so
+    the reviewer can see what the log holds and change it (last line wins).
+    """
+    for target, question in AUDIT_TARGETS.items():
+        cols = st.columns([4, 1, 1, 1, 3])
+        now = (current or {}).get(target)
+        cols[0].markdown(f"**{target}**: {question}"
+                         + (f"  \n*recorded: {VERDICT_LABELS[now]}*" if now else ""))
+        note_key = f"{prefix}_n_{target}_{site_id}"
+        cols[4].text_input("note", key=note_key, label_visibility="collapsed",
+                           placeholder="note (optional)")
+        for col, verdict in zip(cols[1:4], ("yes", "no", "cant_tell")):
+            col.button(VERDICT_LABELS[verdict], key=f"{prefix}_{verdict}_{target}_{site_id}",
+                       type="primary" if now == verdict else "secondary",
+                       on_click=record_verdict,
+                       args=(site_id, target, verdict, note_key, manifest, view, audit))
 
 
 # --------------------------------------------------------------------- layout
@@ -436,9 +448,9 @@ with st.sidebar:
 u = None if underlying == "either" else underlying
 c = None if correctness == "either" else (correctness == "correct")
 
-tab_result, tab_evidence, tab_compare, tab_uncertainty, tab_state = st.tabs(
+tab_result, tab_evidence, tab_compare, tab_uncertainty, tab_state, tab_audit = st.tabs(
     ["Result", "Browse and listen", "Compare two splits",
-     "What this can and can't tell you", "Look up one site"]
+     "What this can and can't tell you", "Look up one site", "Audit (blind)"]
 )
 
 # --------------------------------------------------------------------- result
@@ -567,47 +579,21 @@ with tab_evidence:
                 except FileNotFoundError as exc:
                     st.warning(f"No corpus audio mounted: {exc}")
 
-            st.markdown("#### Your verdict")
-            # In the Co-Design review `label` was read as judging the model's
-            # guess, which sits directly above it. It judges the corpus label.
-            st.markdown(
-                f"**`label` judges the corpus, not the model.** It asks whether "
-                f"this site really is a flap from /{row.underlying}/ as the "
-                f"corpus says. The model's guess (/{row.pred}/) is not what "
-                "you are marking."
-            )
-            if SYNTHETIC:
-                why = ("the model's score here is random, so approving \"the "
-                       "answer\" would mean approving noise.")
-            else:
-                why = ("whether the probe works is judged across all 10,389 "
-                       "sites by the criteria report, not one site at a time "
-                       "here.")
+            st.markdown("#### Your verdict: kept, not counted")
+            # Three questions about what can be heard. The /t/ or /d/ under a
+            # flap cannot be (that is the project's premise); it follows from
+            # the word, so `word` is the question.
             st.caption(
-                "Four separate judgements, because they can disagree — the clip "
-                "can be cut correctly while the label is wrong. There is no "
-                "single approve button on purpose: " + why
+                "About the site, not the model: whether the model was right is "
+                "judged across all 10,389 sites by the criteria report. "
+                "Verdicts here are logged but never counted, because this site "
+                "was chosen by a filter with the model's guess on screen. The "
+                "counted review is the **Audit** tab: a random sample, blind "
+                "to the model."
             )
             view = {"encoder": encoder, "condition": condition, "layer": layer,
                     "pooling": pooling, "subsampled": subsampled}
-            for target, question in REVIEW_TARGETS.items():
-                cols = st.columns([3, 1, 1, 2])
-                cols[0].markdown(f"**{target}** — {question}")
-                note = cols[3].text_input("note", key=f"n_{target}_{pick}",
-                                          label_visibility="collapsed")
-                if cols[1].button("✓", key=f"y_{target}_{pick}"):
-                    record_verdict(pick, target, "pass", note, manifest, view)
-                    st.toast(f"{target}: pass")
-                if cols[2].button("✗", key=f"x_{target}_{pick}"):
-                    record_verdict(pick, target, "fail", note, manifest, view)
-                    st.toast(f"{target}: fail")
-            mine, n_sites, other = verdict_counts(manifest.run_id)
-            st.caption(
-                f"{mine} verdicts on {n_sites} sites recorded against run "
-                f"`{manifest.run_id}`. "
-                + (f"{other} lines from other runs are in the same file and "
-                   "are not counted here." if other else "")
-            )
+            verdict_form(pick, audit=False, view=view, prefix="browse")
 
 # ---------------------------------------------------------------- differential
 
@@ -840,3 +826,75 @@ with tab_state:
                 )
             with st.expander("Raw record"):
                 st.json(state)
+
+# ---------------------------------------------------------------------- audit
+
+with tab_audit:
+    st.write(
+        "Does the inventory hold what it says it does? A random sample of "
+        "sites — 40 /t/, 40 /d/, drawn before anyone listened (pre-registration "
+        "§7) — checked by ear. This tests the data, not the model, so nothing "
+        "from the probe is shown here."
+    )
+    if not AUDIT_SAMPLE.exists():
+        st.warning(f"No audit sample at `{AUDIT_SAMPLE}`. Draw it with "
+                   "`scripts/draw_audit_sample.py`.")
+    else:
+        import pandas as pd
+
+        sample = pd.read_csv(AUDIT_SAMPLE, sep="\t")
+        reviews = read_reviews()
+        from capstone.audit import counted_verdicts
+
+        got = counted_verdicts(reviews, sample, manifest.run_id)
+        done = {s for s in sample.site_id
+                if all((s, t) in got for t in AUDIT_TARGETS)}
+        st.progress(len(done) / len(sample),
+                    text=f"{len(done)} of {len(sample)} sites fully reviewed")
+
+        ids = sample.site_id.tolist()
+        if "audit_site" not in st.session_state:
+            st.session_state.audit_site = next((s for s in ids if s not in done), ids[0])
+
+        def step(delta: int) -> None:
+            i = ids.index(st.session_state.audit_site)
+            st.session_state.audit_site = ids[(i + delta) % len(ids)]
+
+        def next_unreviewed() -> None:
+            i = ids.index(st.session_state.audit_site)
+            rest = ids[i + 1:] + ids[:i + 1]
+            st.session_state.audit_site = next((s for s in rest if s not in done),
+                                               st.session_state.audit_site)
+
+        order = dict(zip(sample.site_id, sample.order))
+        nav = st.columns([5, 1, 1, 2])
+        nav[0].selectbox("Site", ids, key="audit_site",
+                         format_func=lambda s: f"{order[s]}. {s}"
+                                               + ("  ✓" if s in done else ""))
+        nav[1].button("◀", on_click=step, args=(-1,), key="audit_prev")
+        nav[2].button("▶", on_click=step, args=(1,), key="audit_next")
+        nav[3].button("Next unreviewed", on_click=next_unreviewed, key="audit_skip")
+
+        site = st.session_state.audit_site
+        info = store.site_state(site, "joint", layer=layer)
+        left, right = info["prev_word"] or "…", info["next_word"] or "…"
+        a, b = st.columns([2, 3])
+        with a:
+            st.markdown(f"### “{left} {info['word']} {right}”")
+            st.caption(f"Listen for the flap in **{info['word']}**. `{site}`")
+        with b:
+            try:
+                st.audio(str(store.export_clip(site, out_dir=CLIPS)))
+            except FileNotFoundError as exc:
+                st.warning(f"No corpus audio mounted: {exc}")
+        verdict_form(site, audit=True, view={}, prefix="audit",
+                     current={t: v for (s, t), v in got.items() if s == site})
+
+        with st.expander("Running tally (counted verdicts only)"):
+            tally = summarize(reviews, sample, manifest.run_id)
+            st.dataframe(tally, hide_index=True, width="stretch",
+                         column_config={c: st.column_config.NumberColumn(format="%.3f")
+                                        for c in ("rate", "ci_lo", "ci_hi")})
+            st.caption("yes / (yes + no), Wilson 95% interval; can't tell is "
+                       "reported beside the rate, not folded in. Per class "
+                       "only: the sample is balanced, the inventory is not.")
