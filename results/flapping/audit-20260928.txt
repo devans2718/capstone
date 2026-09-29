@@ -1,0 +1,16 @@
+Listening audit of the flap sites — pre-registration §7 (2026-09-26)
+Run pilot-20260926. Sample results/flapping/audit-sample-20260926.tsv (80 sites, seed 20260930). Written 2026-09-28.
+One listener (the author, untrained), blind to the probe. It measures the inventory, not the model.
+
+Sites fully reviewed: 80 of 80
+
+Per question and class: rate = yes / (yes + no), Wilson 95% interval. Can't tell is not in the rate.
+  flap  /t/  reviewed 40/40  yes 38  no  2  can't tell  0  rate 0.950 [0.835, 0.986]
+  flap  /d/  reviewed 40/40  yes 34  no  0  can't tell  6  rate 1.000 [0.898, 1.000]
+  word  /t/  reviewed 40/40  yes 40  no  0  can't tell  0  rate 1.000 [0.912, 1.000]
+  word  /d/  reviewed 40/40  yes 40  no  0  can't tell  0  rate 1.000 [0.912, 1.000]
+  clip  /t/  reviewed 40/40  yes 40  no  0  can't tell  0  rate 1.000 [0.912, 1.000]
+  clip  /d/  reviewed 40/40  yes 40  no  0  can't tell  0  rate 1.000 [0.912, 1.000]
+
+No pooled rate: the sample is 40/40 and the inventory 75.7/24.3.
+Lines for pilot-20260926 not counted (browsing, or outside the audit): 0.
