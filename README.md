@@ -140,8 +140,10 @@ read against.
   `results/flapping/`. Closing word identity costs most of the score, and
   closing speakers much less (brief, A3.2).
 - **Human evaluation:** the blind listening audit of 80 sampled sites (40 /t/,
-  40 /d/) is **in progress, 4 of 80 reviewed**. Its report will appear on the
-  Result tab when finished; no rates are quoted here until then.
+  40 /d/), **all 80 reviewed**. Every word matched the transcript and every
+  flap sat centred in its clip; a flap was heard at 38 of 40 /t/ sites and at
+  all 34 judged /d/ sites (6 can't tell). Report:
+  `results/flapping/audit-20260928.txt`.
 - **Tests:** `pytest`, in two environments:
   - the app environment runs retrieval, splits, probes and audit;
   - the CUDA image runs frame geometry and the checkpoint tests (`-m model`).
@@ -191,8 +193,12 @@ uv venv .venv-app && uv pip install --python .venv-app/bin/python -r requirement
 - **The inventory is the tidy half.** 21% of flap-bearing words were excluded
   because their transcribed and canonical pronunciations differ in length.
   These are the most reduced tokens.
-- **The audit is unfinished, and it has one untrained listener.** Its rates
-  will bound what one ear agrees with, nothing more.
+- **The audit clears the sites, not the labels, and it has one untrained
+  listener.** It found no sign that the failure comes from badly cut or
+  mislocated sites: the lowest Wilson lower bound is 0.835 (flap, /t/). But
+  the underlying /t/ or /d/ comes from the word's dictionary form and cannot
+  be heard under a flap, so the audit does not check it. Its rates bound what
+  one ear agrees with, nothing more.
 
 ### Next steps
 
@@ -206,8 +212,6 @@ it.
 - **The comparison encoders** (wav2vec 2.0, then HuBERT and WavLM), for the
   layer-wise comparison across training objectives.
 - **ABX discrimination** as a probe-free measure.
-- **Short term:** finish the audit, and report its rates as a limit on the
-  inventory.
 
 ## References
 
