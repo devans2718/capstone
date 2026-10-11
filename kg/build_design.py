@@ -175,7 +175,7 @@ def outcome_nodes(nodes: list, edges: list) -> None:
         n, _, verdict = int(m[1]), m[2], m[3]
         key = f"outcome-{n}"
         nodes.append({"key": key, "labels": ["Outcome"],
-                      "name": f"Criterion {n}: {verdict}", "number": n,
+                      "name": f"C{n}: {verdict}", "number": n,
                       "passed": verdict == "PASS", "verdict": verdict,
                       "detail": lines[i + 1].strip()})
         edges.append((key, "EVALUATES", f"crit-rev3-{n}", {}))

@@ -579,3 +579,41 @@ edge("find-power", "EVIDENCED_BY", "art-criteria")
 edge("find-lemma", "EVIDENCED_BY", "art-criteria")
 edge("find-lemma", "EVIDENCED_BY", "art-lemma-sites")
 edge("find-lemma", "EVIDENCED_BY", "rev3", section="§1a")
+
+# ---------------------------------------------------------------------------
+# Display names. Neo4j Browser captions a node with its `name`, so every node
+# gets a short one; longer text stays in its own property.
+# ---------------------------------------------------------------------------
+
+SHORT_NAMES = {
+    "amend-clarifications": "Clarifications",
+    "amend-prediction": "Prediction",
+    "amend-lookup-ties": "Lookup ties (after run)",
+    "amend-audit": "Audit (after run)",
+    "task-voicing": "Voicing task",
+    "task-control": "Control task",
+    "task-speaker": "Speaker ID",
+    "ctrl-lookup": "Word lookup",
+    "find-sites": "Sites mislabelled?",
+    "find-width": "Sites too narrow?",
+    "find-words": "Doesn't generalize to unseen words",
+    "find-training": "Too little training data?",
+    "find-power": "Too little power",
+    "find-lemma": "Lemma overlap",
+}
+for n in NODES:
+    labels = n["labels"]
+    if n["key"] in SHORT_NAMES:
+        n["name"] = SHORT_NAMES[n["key"]]
+    elif "Registration" in labels:
+        n["name"] = f"Revision {n['revision']}"
+    elif "Criterion" in labels:
+        n["name"] = f"C{n['number']} (rev {n['revision']})"
+    elif "Paper" in labels:
+        n["name"] = n["short"]
+    elif "Concept" in labels:
+        n["name"] = n["term"]
+    elif "ResearchQuestion" in labels:
+        n["name"] = n["id"]
+    elif "Code" in labels and "name" not in n:
+        n["name"] = n["path"].rsplit("/", 1)[-1]
