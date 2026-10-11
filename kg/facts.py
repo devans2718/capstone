@@ -1,0 +1,581 @@
+"""Hand-written facts for the knowledge graph's design layer.
+
+WHAT THIS FILE IS
+    Everything in the graph that no results file already records: the study's
+    questions, the pre-registration lineage, criteria, parameters, papers,
+    linguistic concepts and the findings. kg/build_design.py adds what *is*
+    recorded (curves from the results CSV, outcomes from the criteria report,
+    the run from its manifest, artifact commits from git) and writes the Cypher.
+
+    Schema and reasoning: ai-design-plan.md in the vault (Challenge 3).
+
+THE BUCKEYE RULE
+    Nothing here may carry Buckeye-derived data: no words, speaker codes or
+    timestamps. Aggregate figures (site counts, balanced accuracies) are fine.
+    The corpus layer (sites, tokens, type keys, lemmas, speakers) is built
+    locally from a registered copy, never from this file.
+
+SHAPE
+    NODES: one dict per node. `key` is unique across the whole graph and is how
+    EDGES refer to it; `labels` is a list (the control task is both a Task and
+    a Control). Every other entry becomes a node property. A value of None is
+    left off.
+    EDGES: (source key, TYPE, target key, properties).
+"""
+
+from __future__ import annotations
+
+REPO = "capstone-prep"  # private until the public successor repo exists
+
+
+def node(key: str, *labels: str, **props) -> dict:
+    return {"key": key, "labels": list(labels), **props}
+
+
+NODES: list[dict] = []
+EDGES: list[tuple[str, str, str, dict]] = []
+
+
+def edge(src: str, rel: str, dst: str, **props) -> None:
+    EDGES.append((src, rel, dst, props))
+
+
+# ---------------------------------------------------------------------------
+# Research: study, questions, experiments, datasets
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("study", "Study", name="PhonoProbe",
+         description="Layer-wise probing of frozen audio-JEPA representations "
+                     "(WavJEPA) against self-supervised baselines"),
+    node("rq1", "ResearchQuestion", id="RQ1", status="active",
+         text="Do frozen audio-JEPA representations encode phonemes, or only "
+              "phones? Tested at neutralization sites: Russian word-final "
+              "devoicing, with English flapping as the control."),
+    node("rq2", "ResearchQuestion", id="RQ2", status="deferred",
+         text="English morphosyntax. Deferred 2026-08-01 until the phonological "
+              "experiments and the probing pipeline work."),
+    node("rq3", "ResearchQuestion", id="RQ3", status="active",
+         text="Are those patterns specific to the JEPA objective, or general to "
+              "self-supervised speech encoders?"),
+    node("exp-flapping", "Experiment", name="English flapping", status="active",
+         question="Is the underlying /t/ or /d/ beneath a flap recoverable "
+                  "from the encoder's representation of the flap?"),
+    node("exp-devoicing", "Experiment", name="Russian word-final devoicing",
+         status="planned"),
+    node("ds-buckeye", "Dataset", name="Buckeye Corpus of Conversational Speech",
+         status="used",
+         citation="Pitt, M.A., Dilley, L., Johnson, K., Kiesling, S., Raymond, "
+                  "W., Hume, E. & Fosler-Lussier, E. (2007). Buckeye Corpus of "
+                  "Conversational Speech (2nd release). Columbus, OH: Department "
+                  "of Psychology, Ohio State University.",
+         access="free registration at buckeyecorpus.osu.edu; not redistributed"),
+    node("ds-common-voice-ru", "Dataset", name="Mozilla Common Voice (Russian)",
+         status="planned"),
+]
+
+edge("study", "ASKS", "rq1")
+edge("study", "ASKS", "rq2")
+edge("study", "ASKS", "rq3")
+edge("study", "HAS_EXPERIMENT", "exp-flapping")
+edge("study", "HAS_EXPERIMENT", "exp-devoicing")
+edge("exp-flapping", "ADDRESSES", "rq1", role="English control")
+edge("exp-flapping", "ADDRESSES", "rq3", role="layer-wise curves")
+edge("exp-devoicing", "ADDRESSES", "rq1", role="primary")
+edge("exp-devoicing", "ADDRESSES", "rq3", role="layer-wise curves")
+edge("exp-flapping", "USES_DATASET", "ds-buckeye")
+edge("exp-devoicing", "USES_DATASET", "ds-common-voice-ru")
+
+# ---------------------------------------------------------------------------
+# Pre-registration lineage. Commits from `git log` on
+# experiments/pilot-flapping/README.md.
+# ---------------------------------------------------------------------------
+
+PREREG = "experiments/pilot-flapping/README.md"
+
+NODES += [
+    node("rev1", "Registration", revision=1, date="2026-08-22", commit="b0b2bce",
+         path=PREREG, pushed=True,
+         summary="Speaker-disjoint splits only; absolute thresholds."),
+    node("rev2", "Registration", revision=2, date="2026-08-22", commit="7e6e36a",
+         path=PREREG,
+         summary="Word-type-disjoint splits, after measuring that word identity "
+                 "alone scores 0.9951 on the real task. Three thresholds marked "
+                 "provisional. A revision, not a deviation: nothing had run."),
+    node("rev3", "Registration", revision=3, date="2026-09-26", commit="43b2896",
+         path=PREREG, pushed=True,
+         summary="Final before any run. Four split conditions, all 25 grid "
+                 "cells scored, MFCC registered as the baseline to beat, "
+                 "criteria finalized, every seed registered by value."),
+]
+edge("rev2", "SUPERSEDES", "rev1", reason="word identity scores 0.9951; "
+     "a probe could clear revision 1 without listening to anything")
+edge("rev3", "SUPERSEDES", "rev2", reason="finalize the provisional "
+     "thresholds; 19 listed changes, none from a result")
+
+# §7: dated entries appended after revision 3, never edited in above.
+NODES += [
+    node("amend-clarifications", "Amendment", date="2026-09-26", commit="8d1630b",
+         title="Clarifications fixed before the first run",
+         written_after_run=False,
+         summary="Midpoint pooling defined; the lookup's rule for unseen "
+                 "types; the speaker-ID metric; criterion 1's bootstrap is "
+                 "paired."),
+    node("amend-prediction", "Amendment", date="2026-09-26", commit="8d1630b",
+         title="A prediction recorded before extraction",
+         written_after_run=False,
+         summary="WavJEPA's information sits higher than wav2vec2-base's. A "
+                 "prediction, not a criterion; gates nothing."),
+    node("amend-lookup-ties", "Amendment", date="2026-09-26", commit="2847927",
+         title="Written after the run: the lookup's rule for tied types",
+         written_after_run=True,
+         summary="A type seen equally often as /t/ and /d/ falls back to the "
+                 "training majority, /t/. Reaches no site under the "
+                 "type-disjoint conditions; gates nothing."),
+    node("amend-audit", "Amendment", date="2026-09-26", commit="f92e503",
+         title="Registered before listening: an audit of the sites by ear",
+         written_after_run=True,
+         summary="40 /t/ + 40 /d/ sites, seed 20260930, blind to the probe; "
+                 "questions flap / word / clip; Wilson intervals."),
+]
+for a in ("amend-clarifications", "amend-prediction", "amend-lookup-ties",
+          "amend-audit"):
+    edge(a, "AMENDS", "rev3")
+
+# ---------------------------------------------------------------------------
+# Criteria: one node per criterion per revision.
+# ---------------------------------------------------------------------------
+
+CRITERIA = {
+    "rev1": [
+        (1, "Balanced accuracy at the best layer", ">= 0.65"),
+        (2, "Selectivity (real - control) at the best layer", ">= 0.10"),
+        (3, "Layer-wise curve is not flat", "best - worst >= 0.05"),
+        (4, "Minority-class F1 (/d/) at the best layer", ">= 0.50"),
+    ],
+    "rev2": [
+        (1, "Balanced accuracy at the best layer", ">= 0.60 (provisional)"),
+        (2, "Selectivity (real - control) at the best layer", ">= 0.10 (provisional)"),
+        (3, "Layer-wise curve is not flat", "best - worst >= 0.05"),
+        (4, "Minority-class F1 (/d/) at the best layer", ">= 0.45 (provisional)"),
+    ],
+    "rev3": [
+        (1, "Best WavJEPA layer beats the MFCC baseline",
+         "gap >= 0.05 balanced accuracy, and paired word-type bootstrap 95% "
+         "lower bound > 0"),
+        (2, "Control task shows no leak",
+         "control's max balanced accuracy over layers does not exceed the "
+         "95th percentile of 10,000 redrawn mappings"),
+        (3, "Layer-wise curve is not flat", "best - worst >= 0.05"),
+        (4, "Minority-class F1 (/d/) at the best layer", ">= 0.45"),
+    ],
+}
+for rev, rows in CRITERIA.items():
+    for n, statement, threshold in rows:
+        NODES.append(node(f"crit-{rev}-{n}", "Criterion", number=n,
+                          revision=int(rev[-1]), statement=statement,
+                          threshold=threshold))
+        edge(rev, "SETS_CRITERION", f"crit-{rev}-{n}")
+for n in (1, 2, 3, 4):
+    edge(f"crit-rev2-{n}", "SUPERSEDES", f"crit-rev1-{n}")
+    edge(f"crit-rev3-{n}", "SUPERSEDES", f"crit-rev2-{n}")
+
+# What changed, where it changed. The ±0.03 bound for criterion 2 was drafted
+# inside revision 3's work (980f84c) and replaced before the push, so it is a
+# property here rather than a revision of its own.
+CRITERION_NOTES = {
+    "crit-rev3-1": "Comparative instead of absolute: nothing calibrates an "
+                   "absolute bar for unseen words.",
+    "crit-rev3-2": "A leak bound, not a selectivity floor: under a "
+                   "type-disjoint split the control task's ceiling is chance. "
+                   "Drafted as 0.50 ± 0.03 (980f84c); replaced before the push "
+                   "because ±0.03 fires 59–80% of the time with no leak "
+                   "(bb35517).",
+    "crit-rev3-4": "A guard, not a second performance bar. Trivial floors: "
+                   "0.391 always-/d/, 0.327 coin flip, 0.243 base rate.",
+}
+for n in NODES:
+    if n["key"] in CRITERION_NOTES:
+        n["note"] = CRITERION_NOTES[n["key"]]
+
+# All rev 3 criteria are scored on `joint` only.
+for n in (1, 2, 3, 4):
+    edge(f"crit-rev3-{n}", "MEASURED_ON", "cond-joint")
+edge("crit-rev3-1", "COMPARES_TO", "rep-mfcc")
+
+# ---------------------------------------------------------------------------
+# Tasks, controls, representations, probes
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("task-voicing", "Task", name="Underlying voicing beneath a flap",
+         description="Binary: was this [ɾ] an underlying /t/ or /d/? Labels "
+                     "from Buckeye's hand-corrected phone tier, aligned to "
+                     "the words."),
+    node("task-control", "Task", "Control", name="Control task (Hewitt & Liang)",
+         description="Each word type draws a random /t/-or-/d/ label at the "
+                     "real marginal; every token inherits it. Under a "
+                     "type-disjoint split it is a leak detector.",
+         seed=20260927),
+    node("task-speaker", "Task", name="Speaker identification",
+         description="40-way speaker ID from the same representations. A "
+                     "speaker-leakage diagnostic; defined only under random "
+                     "and word_disjoint."),
+    node("ctrl-lookup", "Control", name="Word-identity lookup",
+         description="A lookup table over training word types; no audio. "
+                     "Scores 0.9951 on the real task when types recur, and "
+                     "chance when they don't."),
+    node("rep-wavjepa", "Representation", name="WavJEPA", status="used",
+         learned=True, n_layers=13, dim=768, checkpoint="6be4a50",
+         note="Index 0 is the input to the first layer; 1–12 are layer "
+              "outputs. Pretraining data not yet checked against the paper."),
+    node("rep-mfcc", "Representation", name="MFCC", status="used",
+         learned=False, n_layers=1, dim=39,
+         note="13 coefficients incl. c0 + deltas + delta-deltas, librosa, "
+              "25 ms window / 10 ms hop. Features with no learned structure."),
+    node("rep-wav2vec2", "Representation", name="facebook/wav2vec2-base",
+         status="planned", learned=True,
+         note="Registered in rev 3 as an exploratory second encoder; not run."),
+    node("rep-hubert", "Representation", name="facebook/hubert-base-ls960",
+         status="planned", learned=True),
+    node("rep-wavlm", "Representation", name="microsoft/wavlm-base",
+         status="planned", learned=True),
+    node("probe-linear", "Probe", name="Linear probe", status="used",
+         implementation="scikit-learn LogisticRegression", penalty="l2", C=1.0,
+         solver="lbfgs", max_iter=1000, class_weight="balanced",
+         standardization="StandardScaler fit per probe on its training sites"),
+    node("probe-stronger", "Probe", name="Stronger probe", status="planned",
+         note="A §5 follow-up, as a new registration."),
+]
+
+# ---------------------------------------------------------------------------
+# Parameters: conditions, pooling, environment. Construction details go on
+# the SPECIFIES edges below, so a node means the same thing in every revision.
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("cond-random", "Condition", name="random", held_out="nothing",
+         description="Shuffled 5-fold, stratified by label. Word types and "
+                     "speakers recur between train and test."),
+    node("cond-speaker", "Condition", name="speaker_disjoint",
+         held_out="speakers"),
+    node("cond-word", "Condition", name="word_disjoint",
+         held_out="word types (type keys)"),
+    node("cond-joint", "Condition", name="joint",
+         held_out="speakers and word types",
+         description="The gated condition."),
+    node("pool-mean", "Pooling", name="mean",
+         description="Mean over the site's frames."),
+    node("pool-max", "Pooling", name="max"),
+    node("pool-midpoint", "Pooling", name="midpoint",
+         description="The site's frame at or before its temporal midpoint."),
+    node("env-flap", "Environment", name="[ɾ]", status="used",
+         description="The flap's own frames only."),
+    node("env-v-flap", "Environment", name="[Vɾ]", status="planned",
+         description="The flap plus the preceding vowel."),
+    node("env-flap-v", "Environment", name="[ɾV]", status="planned",
+         description="The flap plus the following vowel."),
+    node("env-v-flap-v", "Environment", name="[VɾV]", status="planned",
+         description="Both vowels and the flap."),
+]
+
+# Revision 1
+edge("rev1", "SPECIFIES", "rep-wavjepa", role="primary")
+edge("rev1", "SPECIFIES", "probe-linear", role="primary")
+edge("rev1", "SPECIFIES", "task-voicing", role="primary")
+edge("rev1", "SPECIFIES", "task-control", role="calibration",
+     construction="selectivity against a per-type control task")
+edge("rev1", "SPECIFIES", "cond-speaker", role="gated",
+     construction="5-fold GroupKFold by speaker")
+edge("rev1", "SPECIFIES", "pool-mean", role="primary")
+edge("rev1", "SPECIFIES", "env-flap", role="primary")
+# Revision 2
+edge("rev2", "SPECIFIES", "rep-wavjepa", role="primary")
+edge("rev2", "SPECIFIES", "probe-linear", role="primary")
+edge("rev2", "SPECIFIES", "task-voicing", role="primary")
+edge("rev2", "SPECIFIES", "task-control", role="calibration")
+edge("rev2", "SPECIFIES", "ctrl-lookup", role="baseline",
+     construction="registered at 0.9951")
+edge("rev2", "SPECIFIES", "cond-joint", role="gated",
+     construction="5 x 5 speaker x type grid; the 5 diagonal cells tested")
+edge("rev2", "SPECIFIES", "pool-mean", role="primary")
+edge("rev2", "SPECIFIES", "env-flap", role="primary")
+# Revision 3
+edge("rev3", "SPECIFIES", "rep-wavjepa", role="primary")
+edge("rev3", "SPECIFIES", "rep-mfcc", role="baseline")
+edge("rev3", "SPECIFIES", "rep-wav2vec2", role="exploratory")
+edge("rev3", "SPECIFIES", "probe-linear", role="primary")
+edge("rev3", "SPECIFIES", "task-voicing", role="primary")
+edge("rev3", "SPECIFIES", "task-control", role="leak detector",
+     construction="seed 20260927; criterion 2's null from seed 20260929")
+edge("rev3", "SPECIFIES", "task-speaker", role="diagnostic")
+edge("rev3", "SPECIFIES", "ctrl-lookup", role="baseline")
+edge("rev3", "SPECIFIES", "cond-random", role="reported",
+     construction="StratifiedKFold(shuffle=True), seed 20260926, 5 folds")
+edge("rev3", "SPECIFIES", "cond-speaker", role="reported",
+     construction="5 speaker folds (grid rows)")
+edge("rev3", "SPECIFIES", "cond-word", role="reported",
+     construction="5 type folds (grid columns); types ranked by site count, "
+                  "ties by spelling")
+edge("rev3", "SPECIFIES", "cond-joint", role="gated",
+     construction="5 x 5 speaker x type grid; all 25 cells scored, pooled")
+edge("rev3", "SPECIFIES", "pool-mean", role="primary")
+edge("rev3", "SPECIFIES", "pool-max", role="secondary")
+edge("rev3", "SPECIFIES", "pool-midpoint", role="secondary")
+edge("rev3", "SPECIFIES", "env-flap", role="primary",
+     construction="context_ms = 200, constant across sites")
+
+# ---------------------------------------------------------------------------
+# Code. A reference (repo, path), not the code. Commits live on artifacts.
+# ---------------------------------------------------------------------------
+
+SCRIPTS = [
+    "count_flap_sites", "extract_site_features", "run_probes",
+    "plot_layer_curves", "draw_audit_sample", "summarize_audit",
+    "measure_lemma_overlap", "simulate_control_spread",
+]
+NODES += [node(f"code-{s}", "Code", kind="script", repo=REPO,
+               path=f"scripts/{s}.py") for s in SCRIPTS]
+MODULES = {
+    "splits": "src/capstone/splits.py",
+    "controls": "src/capstone/probes/controls.py",
+    "extraction": "src/capstone/encoders/extraction.py",
+    "audit": "src/capstone/audit.py",
+}
+NODES += [node(f"code-mod-{m}", "Code", kind="module", repo=REPO, path=p,
+               name=f"capstone.{p[len('src/capstone/'):-3].replace('/', '.')}")
+          for m, p in MODULES.items()]
+
+for c in ("cond-random", "cond-speaker", "cond-word", "cond-joint"):
+    edge(c, "IMPLEMENTED_BY", "code-mod-splits")
+edge("ctrl-lookup", "IMPLEMENTED_BY", "code-mod-controls")
+edge("task-control", "IMPLEMENTED_BY", "code-mod-controls")
+edge("rep-wavjepa", "IMPLEMENTED_BY", "code-mod-extraction")
+
+# ---------------------------------------------------------------------------
+# Artifacts. kg/build_design.py fills `commit` from git (the commit that
+# added the file). local_only = carries Buckeye-derived rows; never published.
+# ---------------------------------------------------------------------------
+
+ARTIFACTS = [
+    # key, path, kind, generated by, local_only
+    ("art-criteria", "results/flapping/criteria-20260926.txt", "report", "run_probes", False),
+    ("art-results", "results/flapping/probe-results-20260926.csv", "csv", "run_probes", False),
+    ("art-folds", "results/flapping/probe-folds-20260926.csv", "csv", "run_probes", False),
+    ("art-manifest", "results/flapping/run-manifest-pilot.json", "manifest", "run_probes", False),
+    ("art-fig-curves", "results/flapping/figures/layer-curves-mean.png", "figure", "plot_layer_curves", False),
+    ("art-fig-drop", "results/flapping/figures/condition-drop.png", "figure", "plot_layer_curves", False),
+    ("art-fig-controls", "results/flapping/figures/controls.png", "figure", "plot_layer_curves", False),
+    ("art-fig-pooling", "results/flapping/figures/pooling.png", "figure", "plot_layer_curves", False),
+    ("art-audit-sample", "results/flapping/audit-sample-20260926.tsv", "tsv", "draw_audit_sample", True),
+    ("art-audit-report", "results/flapping/audit-20260928.txt", "report", "summarize_audit", False),
+    ("art-lemma-sites", "results/flapping/lemma-overlap-joint-20260926.tsv", "tsv", "measure_lemma_overlap", True),
+    ("art-lemma-report", "results/corpus-verification/buckeye-lemma-overlap-20260926.txt", "report", "measure_lemma_overlap", True),
+    ("art-control-spread", "results/corpus-verification/buckeye-control-spread-20260926.txt", "report", "simulate_control_spread", False),
+    ("art-inventory", "results/corpus-verification/buckeye-flap-sites-20260821.tsv", "tsv", "count_flap_sites", True),
+]
+# Which run_probes.py stage wrote each of its outputs. The stages recorded
+# different commits (see build_design.run_nodes).
+STAGE = {"art-criteria": "gate", "art-results": "assemble",
+         "art-folds": "assemble", "art-manifest": "assemble"}
+for key, path, kind, script, local in ARTIFACTS:
+    NODES.append(node(key, "Artifact", path=path, kind=kind, repo=REPO,
+                      local_only=local))
+    if key in STAGE:
+        edge(key, "GENERATED_BY", f"code-{script}", stage=STAGE[key])
+    else:
+        edge(key, "GENERATED_BY", f"code-{script}")
+
+# ---------------------------------------------------------------------------
+# Papers. JUSTIFIES carries the section that does the justifying.
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("paper-hewitt-liang", "Paper", short="Hewitt & Liang 2019",
+         title="Designing and Interpreting Probes with Control Tasks",
+         authors="John Hewitt, Percy Liang", year=2019, arxiv="1909.03368"),
+    node("paper-zhang-bowman", "Paper", short="Zhang & Bowman 2018",
+         title="Language Modeling Teaches You More Syntax than Translation "
+               "Does: Lessons Learned Through Auxiliary Task Analysis",
+         authors="Kelly W. Zhang, Samuel R. Bowman", year=2018,
+         arxiv="1809.10040"),
+    node("paper-pasad-2021", "Paper", short="Pasad, Chou & Livescu 2021",
+         title="Layer-wise Analysis of a Self-supervised Speech "
+               "Representation Model",
+         authors="Ankita Pasad, Ju-Chieh Chou, Karen Livescu", year=2021,
+         arxiv="2107.04734"),
+    node("paper-pasad-2023", "Paper", short="Pasad, Shi & Livescu 2023",
+         title="Comparative Layer-wise Analysis of Self-supervised Speech "
+               "Models",
+         authors="Ankita Pasad, Bowen Shi, Karen Livescu", year=2023,
+         arxiv="2211.03929"),
+    node("paper-wavjepa", "Paper", short="Yuksel et al. 2025",
+         title="WavJEPA: Semantic Learning Unlocks Robust Audio Foundation "
+               "Models for Raw Waveforms",
+         authors="Goksenin Yuksel, Pierre Guetschel, Michael Tangermann, "
+                 "Marcel van Gerven, Kiki van der Heijden",
+         year=2025, arxiv="2509.23238"),
+]
+
+edge("paper-hewitt-liang", "JUSTIFIES", "task-control", section="§2",
+     claim="control tasks assign random outputs per word type")
+edge("paper-hewitt-liang", "JUSTIFIES", "crit-rev3-2", section="§2.3",
+     claim="the control's ceiling is the share of test tokens whose types "
+           "occur in training; zero under a type-disjoint split")
+edge("paper-hewitt-liang", "JUSTIFIES", "probe-linear", section="§3.6",
+     claim="linear and bilinear probes are the most selective")
+edge("paper-hewitt-liang", "JUSTIFIES", "rep-mfcc", section="§4",
+     claim="a random-representation baseline (Proj0)")
+edge("paper-hewitt-liang", "JUSTIFIES", "rq3", section="§4",
+     claim="layer accuracy confounds representing a property with exposing "
+           "word identity")
+edge("paper-zhang-bowman", "JUSTIFIES", "rep-mfcc",
+     claim="the source Hewitt & Liang cite for Proj0")
+edge("paper-pasad-2021", "JUSTIFIES", "rep-wav2vec2",
+     claim="a published layer-wise curve for wav2vec2-base to check against")
+edge("paper-pasad-2023", "JUSTIFIES", "amend-prediction",
+     claim="the pretraining-objective argument behind the prediction")
+edge("paper-pasad-2023", "JUSTIFIES", "rq3",
+     claim="the same layer-wise analysis across wav2vec 2.0, HuBERT and WavLM")
+edge("paper-pasad-2023", "JUSTIFIES", "rep-hubert")
+edge("paper-pasad-2023", "JUSTIFIES", "rep-wavlm")
+edge("paper-wavjepa", "JUSTIFIES", "rep-wavjepa", claim="the primary encoder")
+
+# ---------------------------------------------------------------------------
+# Concepts. Plain-language definitions for a reader without linguistics.
+# Reviewed by Daniel 2026-10-10.
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("con-phone", "Concept", term="phone",
+         definition="A speech sound as actually produced, described by how it "
+                    "is articulated or how it sounds, whatever word it "
+                    "belongs to."),
+    node("con-phoneme", "Concept", term="phoneme",
+         definition="An abstract sound category a language uses to tell words "
+                    "apart. English /t/ and /d/ are different phonemes "
+                    "because 'tin' and 'din' are different words."),
+    node("con-allophone", "Concept", term="allophone",
+         definition="One of the predictable pronunciations of a phoneme in a "
+                    "particular context. The flap is an allophone of both /t/ "
+                    "and /d/ in American English."),
+    node("con-flap", "Concept", term="flap",
+         definition="A very quick tap of the tongue tip against the ridge "
+                    "behind the upper teeth, written [ɾ]. In American English "
+                    "/t/ and /d/ are usually pronounced this way between "
+                    "vowels when the second is unstressed: 'water', "
+                    "'ladder'."),
+    node("con-neutralization", "Concept", term="neutralization",
+         definition="A context where the difference between two phonemes is "
+                    "lost in pronunciation. Flapping neutralizes /t/ vs /d/ "
+                    "('writer' and 'rider' can sound alike); Russian "
+                    "word-final devoicing neutralizes voicing (код 'code' "
+                    "and кот 'cat' both end in [t]). Small cues, such as the "
+                    "length of the preceding vowel, may survive."),
+    node("con-underlying", "Concept", term="underlying form",
+         definition="The phoneme a word has in its stored, dictionary form: "
+                    "/t/ in 'writer', /d/ in 'rider'. The pilot's labels are "
+                    "underlying forms."),
+    node("con-surface", "Concept", term="surface form",
+         definition="What is actually pronounced. At every pilot site it is "
+                    "a flap, by construction, so the label can't be read off "
+                    "the sound category."),
+    node("con-intervocalic", "Concept", term="intervocalic",
+         definition="Between two vowels: the usual environment for flapping, "
+                    "and the one the planned [Vɾ] / [ɾV] / [VɾV] analysis "
+                    "windows reach into."),
+    node("con-probing", "Concept", term="probing",
+         definition="Training a simple classifier (a probe) on a model's "
+                    "frozen internal representations, to test whether some "
+                    "property can be read out of them."),
+    node("con-ssl-speech", "Concept", term="self-supervised speech model",
+         definition="A model trained on unlabelled audio only, by predicting "
+                    "parts of its own input. No transcripts are used, so "
+                    "anything phonological it encodes was learned from sound "
+                    "alone."),
+]
+
+edge("con-allophone", "BROADER", "con-phone")
+edge("con-flap", "BROADER", "con-phone")
+edge("con-allophone", "INVOLVES", "con-phoneme")
+edge("con-neutralization", "INVOLVES", "con-phoneme")
+edge("con-underlying", "INVOLVES", "con-phoneme")
+edge("con-surface", "INVOLVES", "con-phone")
+edge("rq1", "INVOLVES", "con-phoneme")
+edge("rq1", "INVOLVES", "con-phone")
+edge("rq1", "INVOLVES", "con-neutralization")
+edge("rq3", "INVOLVES", "con-ssl-speech")
+edge("exp-flapping", "INVOLVES", "con-flap")
+edge("exp-flapping", "INVOLVES", "con-neutralization")
+edge("task-voicing", "INVOLVES", "con-underlying")
+edge("task-voicing", "INVOLVES", "con-surface")
+edge("probe-linear", "INVOLVES", "con-probing")
+edge("env-v-flap-v", "INVOLVES", "con-intervocalic")
+edge("rep-wavjepa", "INVOLVES", "con-ssl-speech")
+
+# ---------------------------------------------------------------------------
+# Findings: the answer to "Why did the pilot fail?" Statuses confirmed by
+# Daniel 2026-10-10; wording reviewed the same day.
+# Outcome keys (outcome-1 … outcome-4) and curve keys come from
+# kg/build_design.py.
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("find-sites", "Finding", candidate_cause="Sites aren't what the "
+         "inventory says", status="ruled out for the sites, not the labels",
+         statement="A blind listening audit of 80 sites heard a flap in 72 of "
+                   "74 decidable cases (6 /d/ can't-tells), and the right "
+                   "word and a well-placed clip in all 80. The labels come "
+                   "from the dictionary form and can't be heard under a "
+                   "flap, so the audit clears the sites, not the labels."),
+    node("find-width", "Finding", candidate_cause="Site too narrow (2–4 frames)",
+         status="open",
+         statement="Sites are 2–4 encoder frames wide (median 3, 27.4 ms). A "
+                   "cue outside those frames, such as the preceding vowel's "
+                   "length, is invisible to the probe. Untested: the "
+                   "environment axis and a wider window would test it."),
+    node("find-words", "Finding", candidate_cause="The cue doesn't generalize "
+         "to unseen words", status="consistent with the result",
+         statement="The drop from random to joint is mostly the word axis: "
+                   "holding out speakers costs little, holding out word "
+                   "types costs most of the gap above chance."),
+    node("find-training", "Finding", candidate_cause="Too little training data",
+         status="ruled out",
+         statement="Retraining the single-axis conditions at joint's training "
+                   "size (about 64% of sites) costs 0.006–0.013 at the best "
+                   "layer, against a 0.108 drop from random to joint."),
+    node("find-power", "Finding", candidate_cause="Too little statistical power",
+         status="limitation",
+         statement="The gap to MFCC's paired word-type bootstrap interval is "
+                   "[-0.015, +0.056]: no evidence of an advantage over MFCC, "
+                   "which is not evidence of none."),
+    node("find-lemma", "Finding", candidate_cause="Lemma overlap",
+         status="limitation, registered before the run",
+         statement="25.1% of joint test sites (2,612) have their lemma in "
+                   "training with the same label; the split is disjoint by "
+                   "word form, not lemma. On the 7,586 lemma-unseen sites the "
+                   "gap to MFCC is +0.030, CI [-0.004, +0.073], still short "
+                   "of criterion 1."),
+]
+
+# What each finding explains. Criterion 2 passed; the rest failed.
+for f in ("find-sites", "find-width", "find-words", "find-training"):
+    for n in (1, 3, 4):
+        edge(f, "EXPLAINS", f"outcome-{n}")
+edge("find-power", "EXPLAINS", "outcome-1")
+edge("find-lemma", "EXPLAINS", "outcome-1")
+
+# What each finding rests on.
+edge("find-sites", "EVIDENCED_BY", "art-audit-report")
+edge("find-sites", "EVIDENCED_BY", "amend-audit")
+edge("find-width", "EVIDENCED_BY", "rev3", section="§2")
+edge("find-width", "EVIDENCED_BY", "env-v-flap-v")
+for cond in ("random", "speaker_disjoint", "word_disjoint", "joint"):
+    edge("find-words", "EVIDENCED_BY", f"curve:wavjepa:mean:{cond}:full")
+edge("find-words", "EVIDENCED_BY", "art-fig-drop")
+for cond in ("random", "speaker_disjoint", "word_disjoint"):
+    edge("find-training", "EVIDENCED_BY", f"curve:wavjepa:mean:{cond}:subsampled")
+edge("find-power", "EVIDENCED_BY", "art-criteria")
+edge("find-lemma", "EVIDENCED_BY", "art-criteria")
+edge("find-lemma", "EVIDENCED_BY", "art-lemma-sites")
+edge("find-lemma", "EVIDENCED_BY", "rev3", section="§1a")
