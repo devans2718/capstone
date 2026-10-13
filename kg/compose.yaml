@@ -1,0 +1,41 @@
+# The knowledge graph's Neo4j server, pinned.
+#
+# HOW TO RUN (from the repo root, in WSL, with Docker Desktop running)
+#     docker compose -f kg/compose.yaml up -d     # create or start
+#     docker compose -f kg/compose.yaml stop      # stop; keeps the container
+#     Browser http://localhost:7474 · Bolt bolt://localhost:7687
+#
+# WHY PINNED
+#     The server and the Python driver (requirements-app.txt) are pinned as a
+#     pair. The tag fixes the Neo4j version; the digest below records the exact
+#     image, since official images are rebuilt under the same tag for base-OS
+#     patches. On 2026-10-12 the floating `neo4j:5` tag had already moved past
+#     the image this graph was built on.
+#
+# THE DATA
+#     The graph lives on the named volume neo4j-capstone-data. It is declared
+#     external, so compose never creates or deletes it: `docker compose down`
+#     removes the container and leaves the graph. Create it once with
+#     `docker volume create neo4j-capstone-data`. Both layers rebuild from the
+#     scripts in kg/, so the volume is not backed up.
+#
+# Ports are bound to 127.0.0.1 only. The password is local-only, not a secret.
+# No plugins: nothing in kg/ uses APOC.
+
+services:
+  neo4j:
+    # Digest at pin time (2026-10-12):
+    # sha256:c7d25c0eeebfe125718d58b72ed5d663c85d0479047733845eb2237c67ce8069
+    image: neo4j:5.26.31-community
+    container_name: neo4j-capstone
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/phonoprobe-local
+    volumes:
+      - neo4j-capstone-data:/data
+
+volumes:
+  neo4j-capstone-data:
+    external: true
