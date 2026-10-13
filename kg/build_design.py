@@ -23,6 +23,8 @@ RELOADING
     Every node written here carries layer = "design". The script starts by
     deleting exactly those nodes, so a reload replaces the design layer and
     leaves the corpus layer alone. Edits to the facts take effect on reload.
+    The edges joining the layers (IN_DATASET, SAMPLES) are dropped with the
+    design nodes, so re-run kg/build_corpus.py after reloading this one.
 
 THE BUCKEYE RULE
     Only aggregate files are read. Nothing in the output carries words,

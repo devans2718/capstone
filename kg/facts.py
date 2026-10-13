@@ -567,6 +567,7 @@ edge("find-lemma", "EXPLAINS", "outcome-1")
 
 # What each finding rests on.
 edge("find-sites", "EVIDENCED_BY", "art-audit-report")
+edge("find-sites", "EVIDENCED_BY", "art-audit-sample")  # -SAMPLES-> its 80 Sites (corpus layer)
 edge("find-sites", "EVIDENCED_BY", "amend-audit")
 edge("find-width", "EVIDENCED_BY", "rev3", section="§2")
 edge("find-width", "EVIDENCED_BY", "env-v-flap-v")

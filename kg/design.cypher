@@ -308,6 +308,7 @@ MATCH (a:Finding {key: "find-training"}), (b:Outcome {key: "outcome-4"}) MERGE (
 MATCH (a:Finding {key: "find-power"}), (b:Outcome {key: "outcome-1"}) MERGE (a)-[r:EXPLAINS]->(b);
 MATCH (a:Finding {key: "find-lemma"}), (b:Outcome {key: "outcome-1"}) MERGE (a)-[r:EXPLAINS]->(b);
 MATCH (a:Finding {key: "find-sites"}), (b:Artifact {key: "art-audit-report"}) MERGE (a)-[r:EVIDENCED_BY]->(b);
+MATCH (a:Finding {key: "find-sites"}), (b:Artifact {key: "art-audit-sample"}) MERGE (a)-[r:EVIDENCED_BY]->(b);
 MATCH (a:Finding {key: "find-sites"}), (b:Amendment {key: "amend-audit"}) MERGE (a)-[r:EVIDENCED_BY]->(b);
 MATCH (a:Finding {key: "find-width"}), (b:Registration {key: "rev3"}) MERGE (a)-[r:EVIDENCED_BY]->(b) SET r += {section: "§2"};
 MATCH (a:Finding {key: "find-width"}), (b:Environment {key: "env-v-flap-v"}) MERGE (a)-[r:EVIDENCED_BY]->(b);
