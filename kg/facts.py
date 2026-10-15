@@ -528,12 +528,20 @@ NODES += [
                    "word and a well-placed clip in all 80. The labels come "
                    "from the dictionary form and can't be heard under a "
                    "flap, so the audit clears the sites, not the labels."),
+    # Corrected 2026-10-14: said a cue outside the site's frames "is invisible
+    # to the probe", true only for MFCC. WavJEPA encodes the whole excerpt
+    # (scripts/extract_site_features.py:206-230), so attention mixes context in.
     node("find-width", "Finding", candidate_cause="Site too narrow (2–4 frames)",
          status="open",
-         statement="Sites are 2–4 encoder frames wide (median 3, 27.4 ms). A "
-                   "cue outside those frames, such as the preceding vowel's "
-                   "length, is invisible to the probe. Untested: the "
-                   "environment axis and a wider window would test it."),
+         statement="Sites are 2–4 encoder frames wide (median 3, 27.4 ms). For "
+                   "MFCC, whose 25 ms frames see only local audio (deltas "
+                   "reach ±40 ms), a cue outside those frames, such as the "
+                   "preceding vowel's length, is invisible to the probe. "
+                   "WavJEPA encodes the flap ± 200 ms as one excerpt, so at "
+                   "depth its flap frames can carry that context; for "
+                   "WavJEPA the pilot shows only that the cue wasn't linearly "
+                   "recoverable from those frames. Untested: the phonetic "
+                   "environment axis would test both."),
     node("find-words", "Finding", candidate_cause="The cue doesn't generalize "
          "to unseen words", status="consistent with the result",
          statement="The drop from random to joint is mostly the word axis: "
