@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+"""GraphRAG over the capstone knowledge graph: question -> Cypher -> rows -> answer.
+
+HOW TO RUN (from the repo root, in WSL, with neo4j-capstone up)
+    .venv-app/bin/python kg/graphrag.py "Why did the pilot fail?"
+    .venv-app/bin/python kg/graphrag.py --save kg/graphrag-runs "What's a flap?"
+
+    Needs ANTHROPIC_API_KEY, from the environment or from .env at the repo
+    root (gitignored). Neo4j connection as in kg/build_corpus.py.
+
+WHAT IT DOES
+    1. Route. The LLM picks one retrieval from RETRIEVALS below, plus its
+       parameter. It chooses; it never writes Cypher. Every query that can
+       run is one a human has read.
+    2. Retrieve. The chosen Cypher runs against the graph.
+    3. Answer. The LLM gets the question and the returned rows, and is told
+       to answer from the rows only, citing node keys.
+    Rows are printed before the answer, so the evidence is always on screen.
+
+SWAPPING THE MODEL
+    Both LLM calls go through complete(). Moving to another endpoint (e.g. a
+    local Ollama model) means rewriting that one function.
+
+THE BUCKEYE RULE
+    The retrievals read the design layer only (aggregates, no words, speaker
+    codes or timestamps), so a saved run is safe to commit.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+
+import anthropic
+from neo4j import GraphDatabase
+
+REPO = Path(__file__).resolve().parents[1]
+URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+AUTH = (os.environ.get("NEO4J_USER", "neo4j"),
+        os.environ.get("NEO4J_PASSWORD", "phonoprobe-local"))
+MODEL = "claude-opus-5-5"
+
+# ---------------------------------------------------------------------------
+# Retrievals. Each is a description (what the router sees) and one or more
+# named Cypher statements. Parameters: $term (string), $criterion (integer).
+# ---------------------------------------------------------------------------
+
+RETRIEVALS: dict[str, dict] = {
+    "concept": {
+        "description": "Basic lookup: define a linguistics or ML concept "
+                       "(flap, underlying form, probing, ...) and what it "
+                       "relates to. Needs `term`.",
+        "statements": {
+            "concept": """
+                MATCH (c:Concept) WHERE toLower(c.term) CONTAINS toLower($term)
+                OPTIONAL MATCH (c)-[:BROADER|INVOLVES]-(d:Concept)
+                OPTIONAL MATCH (e:Experiment)-[:INVOLVES]->(c)
+                RETURN c.key AS key, c.term AS term, c.definition AS definition,
+                       collect(DISTINCT d.key + ': ' + d.term) AS related,
+                       collect(DISTINCT e.name) AS experiments
+                ORDER BY term""",
+        },
+    },
+    "criterion_provenance": {
+        "description": "Multi-hop: how one pre-registered success criterion "
+                       "evolved across registration revisions, which paper "
+                       "justified it, and what it superseded. Needs "
+                       "`criterion` (1-4).",
+        "statements": {
+            "revisions": """
+                MATCH (r:Registration)-[:SETS_CRITERION]->(c:Criterion {number: $criterion})
+                OPTIONAL MATCH (c)-[:SUPERSEDES]->(prev:Criterion)
+                OPTIONAL MATCH (p:Paper)-[j:JUSTIFIES]->(c)
+                RETURN r.key AS registration, r.revision AS revision,
+                       r.commit AS commit, r.date AS date,
+                       c.key AS criterion_key, c.statement AS statement,
+                       c.threshold AS threshold, c.note AS note,
+                       prev.key AS supersedes,
+                       p.key AS paper, p.short AS paper_short, j.section AS section
+                ORDER BY revision""",
+        },
+    },
+    "why_failed": {
+        "description": "Research question: why the pilot failed. Failed "
+                       "criteria and their results, the candidate "
+                       "explanations (Findings) with their status and full "
+                       "statement, and what each rests on, including "
+                       "planned analyses.",
+        "statements": {
+            "failed_criteria": """
+                MATCH (:Run {run_id: 'pilot-20260926'})<-[:FROM_RUN]-(o:Outcome {passed: false})
+                      -[:EVALUATES]->(c:Criterion)
+                RETURN c.key AS key, c.number AS criterion, c.statement AS statement,
+                       c.threshold AS threshold, o.detail AS result
+                ORDER BY criterion""",
+            "findings": """
+                MATCH (:Run {run_id: 'pilot-20260926'})<-[:FROM_RUN]-(o:Outcome {passed: false})
+                      -[:EVALUATES]->(c:Criterion)
+                MATCH (f:Finding)-[:EXPLAINS]->(o)
+                WITH f, collect(DISTINCT c.number) AS explains_failed_criteria
+                OPTIONAL MATCH (f)-[e:EVIDENCED_BY]->(x)
+                RETURN f.key AS key, f.candidate_cause AS cause, f.status AS status,
+                       f.statement AS statement, explains_failed_criteria,
+                       collect(DISTINCT labels(x)[0] + ' ' + x.key
+                               + coalesce(' (status: ' + x.status + ')', '')
+                               + coalesce(' - ' + x.description, '')
+                               + coalesce(' ' + e.section, '')) AS evidenced_by
+                ORDER BY key""",
+        },
+    },
+    "word_axis": {
+        "description": "Results: WavJEPA's best layer against the MFCC "
+                       "baseline under each split condition (random, "
+                       "speaker-disjoint, word-disjoint, joint).",
+        "statements": {
+            "curves": """
+                MATCH (w:Curve {representation: 'wavjepa', pooling: 'mean', subsampled: false})
+                      -[:UNDER_CONDITION]->(k:Condition)<-[:UNDER_CONDITION]-
+                      (m:Curve {representation: 'mfcc', pooling: 'mean', subsampled: false})
+                RETURN k.key AS condition_key, k.name AS condition, k.held_out AS held_out,
+                       w.key AS wavjepa_curve, w.best_layer AS best_layer,
+                       round(w.best_balanced_acc, 3) AS wavjepa,
+                       round(m.best_balanced_acc, 3) AS mfcc,
+                       round(w.best_balanced_acc - m.best_balanced_acc, 3) AS gap,
+                       w.lookup_balanced_acc AS word_lookup
+                ORDER BY wavjepa DESC""",
+        },
+    },
+    "registered_not_run": {
+        "description": "Plans: what pre-registration revision 3 specifies "
+                       "that the pilot never used (planned encoders, "
+                       "analysis windows, probes).",
+        "statements": {
+            "specified_unused": """
+                MATCH (:Registration {revision: 3})-[s:SPECIFIES]->(x)
+                WHERE NOT EXISTS { (:Run)-[:USED|REALIZES]->(x) }
+                RETURN x.key AS key, labels(x)[0] AS kind,
+                       coalesce(x.name, x.key) AS item, s.role AS role,
+                       x.status AS status, x.note AS note""",
+        },
+    },
+}
+
+# ---------------------------------------------------------------------------
+# The one model call. Everything model-specific lives here.
+# ---------------------------------------------------------------------------
+
+
+def load_dotenv() -> None:
+    """Put KEY=value lines from the repo's .env into the environment, if unset."""
+    path = REPO / ".env"
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"\''))
+
+
+_client: anthropic.Anthropic | None = None
+
+
+def complete(system: str, user: str, schema: dict | None = None,
+             effort: str = "medium") -> str:
+    """Send one system + user message; return the text reply.
+
+    With `schema`, the reply is constrained to JSON matching it.
+    """
+    global _client
+    if _client is None:
+        _client = anthropic.Anthropic()
+    output_config: dict = {"effort": effort}
+    if schema is not None:
+        output_config["format"] = {"type": "json_schema", "schema": schema}
+    response = _client.messages.create(
+        model=MODEL,
+        max_tokens=16000,
+        system=system,
+        messages=[{"role": "user", "content": user}],
+        output_config=output_config,
+    )
+    if response.stop_reason == "refusal":
+        raise SystemExit(f"model declined: {response.stop_details}")
+    return "".join(b.text for b in response.content if b.type == "text")
+
+# ---------------------------------------------------------------------------
+# The pipeline
+# ---------------------------------------------------------------------------
+
+
+ROUTE_SYSTEM = """You route questions about a research study to one retrieval \
+over its Neo4j knowledge graph. The study probes a speech encoder (WavJEPA) \
+for underlying /t/ vs /d/ at English flaps, against an MFCC baseline, under a \
+pre-registered design. Pick the single retrieval that best answers the \
+question, and fill its parameter. Use "" for an unused `term` and 0 for an \
+unused `criterion`.
+
+Retrievals:
+{menu}"""
+
+ANSWER_SYSTEM = """You answer questions about a research study using only \
+rows retrieved from its knowledge graph. Rules:
+- Use only the rows. If they don't answer the question, say what's missing.
+- Cite node keys in square brackets after each claim, e.g. [find-width].
+- Keep each finding's status as the rows give it (open, ruled out, \
+limitation, ...); don't upgrade a candidate explanation to a conclusion.
+- Plain prose, at most about 200 words."""
+
+
+def route(question: str) -> dict:
+    menu = "\n".join(f"- {name}: {r['description']}"
+                     for name, r in RETRIEVALS.items())
+    schema = {
+        "type": "object",
+        "properties": {
+            "retrieval": {"type": "string", "enum": list(RETRIEVALS)},
+            "term": {"type": "string"},
+            "criterion": {"type": "integer"},
+        },
+        "required": ["retrieval", "term", "criterion"],
+        "additionalProperties": False,
+    }
+    reply = complete(ROUTE_SYSTEM.format(menu=menu), question, schema, effort="low")
+    return json.loads(reply)
+
+
+def retrieve(choice: dict) -> dict[str, list[dict]]:
+    params = {"term": choice["term"], "criterion": choice["criterion"]}
+    out: dict[str, list[dict]] = {}
+    with GraphDatabase.driver(URI, auth=AUTH) as driver:
+        for name, cypher in RETRIEVALS[choice["retrieval"]]["statements"].items():
+            records, _, _ = driver.execute_query(cypher, params)
+            out[name] = [r.data() for r in records]
+    return out
+
+
+def answer(question: str, rows: dict[str, list[dict]]) -> str:
+    context = json.dumps(rows, indent=1, ensure_ascii=False, default=str)
+    return complete(ANSWER_SYSTEM,
+                    f"Question: {question}\n\nRetrieved rows:\n{context}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("question")
+    ap.add_argument("--save", type=Path,
+                    help="directory to write this run to, as JSON")
+    args = ap.parse_args()
+    load_dotenv()
+
+    choice = route(args.question)
+    rows = retrieve(choice)
+    text = answer(args.question, rows)
+
+    print(f"QUESTION   {args.question}")
+    print(f"RETRIEVAL  {choice['retrieval']}  "
+          f"(term={choice['term']!r}, criterion={choice['criterion']})")
+    for name, cypher in RETRIEVALS[choice["retrieval"]]["statements"].items():
+        print(f"\n--- {name}: Cypher")
+        print("\n".join(l[16:] if l.startswith(" " * 16) else l
+                        for l in cypher.strip("\n").splitlines()))
+        print(f"--- {name}: {len(rows[name])} rows")
+        for r in rows[name]:
+            print(json.dumps(r, ensure_ascii=False, default=str))
+    print(f"\nANSWER ({MODEL})\n{text}")
+
+    if args.save:
+        args.save.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        path = args.save / f"{stamp}-{choice['retrieval']}.json"
+        path.write_text(json.dumps({
+            "time": stamp, "model": MODEL, "question": args.question,
+            "choice": choice, "rows": rows, "answer": text,
+        }, indent=1, ensure_ascii=False, default=str) + "\n",
+            encoding="utf-8", newline="\n")
+        print(f"\nsaved {path.relative_to(REPO) if path.is_absolute() else path}")
+
+
+if __name__ == "__main__":
+    main()

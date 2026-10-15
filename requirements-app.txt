@@ -36,6 +36,7 @@ neo4j==5.28.6        # kg/: loads the knowledge graph's corpus layer over Bolt.
                      # Pinned as a pair with the server in kg/compose.yaml
                      # (5.26 LTS): the 5.x driver line matches the server's major.
                      # Not 5.28.7: yanked ("perpetual active spinning").
+anthropic==1.14.0    # kg/graphrag.py: the LLM calls. What resolved on 2026-10-14.
 
 # Testing. Not in §11's list, which names only what the application imports,
 # but the slice's acceptance is seven test cases (brief §9), and a test suite
