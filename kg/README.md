@@ -43,7 +43,10 @@ echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env
 
 Reloading the design layer drops the edges that join it to the corpus layer, so
 re-run step 4 after step 3. The corpus layer reads Buckeye-derived files that
-stay in this private repo; see the docstring in `build_corpus.py`.
+this repository doesn't carry. With a registered copy, `scripts/count_flap_sites.py`
+rebuilds the site inventory; the lemma table and the listening audit don't
+regenerate, so without them the script loads the rest and says what it skipped.
+See the docstring in `build_corpus.py`.
 
 ## GraphRAG
 

@@ -28,8 +28,8 @@ WHAT IT BUILDS
     not the Site: they belong to this one audit, by one untrained listener,
     and a second audit would be a second Artifact with its own edges. Counted
     by capstone.audit.counted_verdicts (last verdict wins, audit lines only)
-    from the local review log /data/reviews/reviewed.jsonl; without the log the
-    edges are skipped. Refused unless the counts in the graph equal
+    from the local review log /data/reviews/reviewed.jsonl; without the log or
+    the sample the edges are skipped. Refused unless the counts in the graph equal
     capstone.audit.summarize's, the table in results/flapping/audit-20260928.txt.
 
 WHERE THE DATA COMES FROM, AND THE CHECKS THAT IT IS THE RUN'S
@@ -39,7 +39,9 @@ WHERE THE DATA COMES FROM, AND THE CHECKS THAT IT IS THE RUN'S
       registered seed for `random`. Refused unless every condition's fold
       sizes equal those recorded in probe-folds-20260926.csv.
     - Lemmas read from the registered TSV rather than re-lemmatized, so a
-      different NLTK or WordNet cannot move them.
+      different NLTK or WordNet cannot move them. Without the TSV, which the
+      public repo doesn't carry and nothing regenerates, the rest loads with
+      no Lemma nodes and the overlap check below is skipped.
     - After loading, the lemma overlap under `joint` is recomputed IN THE
       GRAPH, from the fold properties and HAS_LEMMA alone, and compared site
       by site with the TSV. Expected: 2,612 same label + 191 other label only
@@ -145,7 +147,11 @@ def check_fold_sizes(folds: dict) -> None:
             fail(f"{cond} fold sizes differ from {FOLDS_CSV.name}")
 
 
-def read_lemmas(inv) -> dict[str, dict]:
+def read_lemmas(inv) -> dict[str, dict] | None:
+    """The registered lemmas, or None without the TSV: it doesn't regenerate from the corpus."""
+    if not LEMMAS.exists():
+        print(f"no {LEMMAS.name}: Lemma nodes and the overlap check skipped")
+        return None
     with LEMMAS.open(newline="") as fh:
         rows = {r["site_id"]: r for r in csv.DictReader(fh, delimiter="\t")}
     eligible = set(inv.site_id[~inv.excerpt_clamped])
@@ -333,8 +339,9 @@ RETURN q AS question, s.underlying AS class, e[q] AS verdict, count(*) AS n
 
 
 def load_audit(driver) -> None:
-    if not REVIEWS.exists():
-        print(f"no {REVIEWS}: audit edges skipped")
+    missing = [p for p in (REVIEWS, AUDIT_SAMPLE) if not p.exists()]
+    if missing:
+        print(f"no {', '.join(p.name for p in missing)}: audit edges skipped")
         return
     lines = [json.loads(x) for x in REVIEWS.read_text().splitlines() if x.strip()]
     sample = pd.read_csv(AUDIT_SAMPLE, sep="\t")  # as scripts/summarize_audit.py reads it
@@ -364,7 +371,7 @@ def main() -> None:
     folds = assign_folds(inv)
     check_fold_sizes(folds)
     lemmas = read_lemmas(inv)
-    rows = build_rows(inv, folds, lemmas)
+    rows = build_rows(inv, folds, lemmas or {})
 
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         driver.verify_connectivity()
@@ -377,7 +384,8 @@ def main() -> None:
             print(f"  {r['label']:<9} {r['n']}")
         per_token = Counter(Counter(s["token"] for s in rows["sites"]).values())
         print("  sites per token: " + ", ".join(f"{k}: {v}" for k, v in sorted(per_token.items())))
-        check_overlap(driver, lemmas)
+        if lemmas is not None:
+            check_overlap(driver, lemmas)
         load_audit(driver)
 
 
