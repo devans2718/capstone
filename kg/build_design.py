@@ -50,6 +50,7 @@ CSV_PATH = RESULTS / "probe-results-20260926.csv"
 CRITERIA_PATH = RESULTS / "criteria-20260926.txt"
 MANIFEST_PATH = RESULTS / "run-manifest-pilot.json"
 OUT = REPO / "kg" / "design.cypher"
+COMMIT_MAP = REPO / "docs" / "provenance" / "commit-map.txt"
 
 REP_KEY = {"wavjepa": "rep-wavjepa", "mfcc": "rep-mfcc"}
 REP_NAME = {"wavjepa": "WavJEPA", "mfcc": "MFCC"}
@@ -67,6 +68,23 @@ SCALAR_COLUMNS = ["n", "n_d", "lookup_balanced_acc"]
 # Generated nodes
 # ---------------------------------------------------------------------------
 
+def public_commit(sha: str) -> str:
+    """This repository's 7-character hash for a commit the run records recorded.
+
+    The pilot ran in the private predecessor repository, so the manifest and
+    criteria report name its hashes. They stay as recorded; the graph carries
+    the public counterpart from the rewrite's commit map, so every commit in
+    the graph resolves here.
+    """
+    for line in COMMIT_MAP.read_text().splitlines()[1:]:
+        old, new = line.split()
+        if old.startswith(sha):
+            if set(new) == {"0"}:
+                sys.exit(f"commit {sha} was dropped by the rewrite")
+            return new[:7]
+    sys.exit(f"commit {sha} is not in {COMMIT_MAP.name}")
+
+
 def run_nodes(nodes: list, edges: list) -> None:
     """The pilot run, from its manifest and criteria report, and what it used.
 
@@ -83,12 +101,13 @@ def run_nodes(nodes: list, edges: list) -> None:
         sys.exit(f"couldn't read the stage commits from {CRITERIA_PATH.name}")
     props = {
         "name": m["run_id"], "run_id": m["run_id"], "date": "2026-09-26",
-        "features_commit": feats[1][:7], "gate_commit": gate[1][:7],
-        "assemble_commit": m["code_commit"][:7],
+        "features_commit": public_commit(feats[1]),
+        "gate_commit": public_commit(gate[1]),
+        "assemble_commit": public_commit(m["code_commit"]),
         "checkpoint_revision": m["checkpoint_revision"],
         "context_ms": m["context_ms"], "inventory_hash": m["inventory_hash"],
         "n_sites_scored": m["n_sites_scored"], "synthetic": m["synthetic"],
-        "criteria_commit": "6915b83", "verdict": "failed, 1 of 4 criteria",
+        "criteria_commit": "b163059", "verdict": "failed, 1 of 4 criteria",
     }
     props.update({f"seed_{k}": v for k, v in m["seeds"].items()})
     nodes.append({"key": "run-pilot", "labels": ["Run"], **props})

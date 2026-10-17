@@ -25,7 +25,7 @@ SHAPE
 
 from __future__ import annotations
 
-REPO = "capstone-prep"  # private until the public successor repo exists
+REPO = "capstone"  # the public successor; history rewritten from capstone-prep
 
 
 def node(key: str, *labels: str, **props) -> dict:
@@ -94,15 +94,15 @@ edge("exp-devoicing", "USES_DATASET", "ds-common-voice-ru")
 PREREG = "experiments/pilot-flapping/README.md"
 
 NODES += [
-    node("rev1", "Registration", revision=1, date="2026-08-22", commit="b0b2bce",
+    node("rev1", "Registration", revision=1, date="2026-08-22", commit="12a0349",
          path=PREREG, pushed=True,
          summary="Speaker-disjoint splits only; absolute thresholds."),
-    node("rev2", "Registration", revision=2, date="2026-08-22", commit="7e6e36a",
+    node("rev2", "Registration", revision=2, date="2026-08-22", commit="c7323d0",
          path=PREREG,
          summary="Word-type-disjoint splits, after measuring that word identity "
                  "alone scores 0.9951 on the real task. Three thresholds marked "
                  "provisional. A revision, not a deviation: nothing had run."),
-    node("rev3", "Registration", revision=3, date="2026-09-26", commit="43b2896",
+    node("rev3", "Registration", revision=3, date="2026-09-26", commit="cb09c9d",
          path=PREREG, pushed=True,
          summary="Final before any run. Four split conditions, all 25 grid "
                  "cells scored, MFCC registered as the baseline to beat, "
@@ -115,24 +115,24 @@ edge("rev3", "SUPERSEDES", "rev2", reason="finalize the provisional "
 
 # §7: dated entries appended after revision 3, never edited in above.
 NODES += [
-    node("amend-clarifications", "Amendment", date="2026-09-26", commit="8d1630b",
+    node("amend-clarifications", "Amendment", date="2026-09-26", commit="5356109",
          title="Clarifications fixed before the first run",
          written_after_run=False,
          summary="Midpoint pooling defined; the lookup's rule for unseen "
                  "types; the speaker-ID metric; criterion 1's bootstrap is "
                  "paired."),
-    node("amend-prediction", "Amendment", date="2026-09-26", commit="8d1630b",
+    node("amend-prediction", "Amendment", date="2026-09-26", commit="5356109",
          title="A prediction recorded before extraction",
          written_after_run=False,
          summary="WavJEPA's information sits higher than wav2vec2-base's. A "
                  "prediction, not a criterion; gates nothing."),
-    node("amend-lookup-ties", "Amendment", date="2026-09-26", commit="2847927",
+    node("amend-lookup-ties", "Amendment", date="2026-09-26", commit="f678cbf",
          title="Written after the run: the lookup's rule for tied types",
          written_after_run=True,
          summary="A type seen equally often as /t/ and /d/ falls back to the "
                  "training majority, /t/. Reaches no site under the "
                  "type-disjoint conditions; gates nothing."),
-    node("amend-audit", "Amendment", date="2026-09-26", commit="f92e503",
+    node("amend-audit", "Amendment", date="2026-09-26", commit="9fd2e16",
          title="Registered before listening: an audit of the sites by ear",
          written_after_run=True,
          summary="40 /t/ + 40 /d/ sites, seed 20260930, blind to the probe; "
@@ -181,16 +181,16 @@ for n in (1, 2, 3, 4):
     edge(f"crit-rev3-{n}", "SUPERSEDES", f"crit-rev2-{n}")
 
 # What changed, where it changed. The ±0.03 bound for criterion 2 was drafted
-# inside revision 3's work (980f84c) and replaced before the push, so it is a
+# inside revision 3's work (b9c861b) and replaced before the push, so it is a
 # property here rather than a revision of its own.
 CRITERION_NOTES = {
     "crit-rev3-1": "Comparative instead of absolute: nothing calibrates an "
                    "absolute bar for unseen words.",
     "crit-rev3-2": "A leak bound, not a selectivity floor: under a "
                    "type-disjoint split the control task's ceiling is chance. "
-                   "Drafted as 0.50 ± 0.03 (980f84c); replaced before the push "
+                   "Drafted as 0.50 ± 0.03 (b9c861b); replaced before the push "
                    "because ±0.03 fires 59–80% of the time with no leak "
-                   "(bb35517).",
+                   "(61bf29e).",
     "crit-rev3-4": "A guard, not a second performance bar. Trivial floors: "
                    "0.391 always-/d/, 0.327 coin flip, 0.243 base rate.",
 }
