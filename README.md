@@ -91,13 +91,18 @@ read against.
 - **Buckeye Corpus** of conversational American English (Pitt et al., 2007),
   40 speakers. The inventory holds **10,392 flap sites (7,863 /t/, 2,529
   /d/)**, built by `scripts/count_flap_sites.py` from the hand-corrected phone
-  tier. It is committed as `results/flapping/sites-20260924.parquet`:
-  identifiers, times and labels, no audio.
-- **The audio stays local.** Buckeye's license restricts redistributing its
-  audio, so the corpus, features and predictions live under `/data`, outside
-  the repository. What is committed: the inventory, the results CSVs, the
-  criteria report, the figures, run manifests with seeds and commits, and
-  the audit sample.
+  tier. It is written to `results/flapping/sites-20260924.parquet`
+  (identifiers, times and labels, no audio) and stays local.
+- **Nothing derived from Buckeye per site is in this repository.** OSU
+  distributes the corpus only through a free registration, so the corpus,
+  features and predictions live under `/data`, and the inventory, the
+  lemma-overlap table and the audit sample are ignored (`.gitignore`). What
+  is committed: the results CSVs, the criteria and audit reports, the
+  figures, and run manifests with seeds and commits.
+- **To rebuild from a registered copy:** register at
+  [buckeyecorpus.osu.edu](https://buckeyecorpus.osu.edu), place the archives
+  as `scripts/setup_buckeye.sh` describes and run it, then
+  `scripts/count_flap_sites.py` regenerates the inventory deterministically.
 
 ### AI capability
 
@@ -252,7 +257,8 @@ it.
 ## Cloud
 
 Build and push the image, pull it on the instance (Lambda / Vast / RunPod),
-populate `/data` with the download scripts, run with `--gpus all` and
+populate `/data` (`scripts/download_common_voice.sh`; Buckeye by registration,
+then `scripts/setup_buckeye.sh`), run with `--gpus all` and
 `configs/cloud.yaml`. The image is the portability artifact — if it needs a
 rebuild to run remotely, that is a bug.
 
@@ -263,8 +269,19 @@ Nightly restic from WSL: tier 1 (this repo) + tier 2 (`/data/embeddings`,
 not backed up — re-downloadable. Full design: vault note
 `Reference/Desktop/Capstone Dev Environment (Docker + WSL).md`.
 
-## Successor-repo note
+## This repository and its history
 
-This is the summer repo. If a clean repo is started for the semester, fork or
-copy this layout wholesale — the `/data` contract, config split, and stimuli
-policy are the parts that must survive the move.
+This is the public successor to a private working repository. Its history is
+that repository's, rewritten with `git filter-repo` on 2026-10-16 to remove the
+Buckeye download automation and every Buckeye-derived per-site file, and to
+redact example site identifiers and word lists. Commit hashes therefore differ
+from the private repository's: `docs/provenance/commit-map.txt` maps each
+private commit to its public counterpart (an all-zero hash means the commit
+touched only removed files). The private repository stays the record that the
+pre-registration preceded the pilot; the course instructor is a collaborator
+on it.
+
+## License
+
+MIT; see `LICENSE`. The Buckeye Corpus is not covered by it and is not
+redistributed here.
