@@ -172,7 +172,7 @@ else
         fi
 
         # Resume against .part only. The completed archive is never a -C - target,
-        # which is the 416-on-complete-file trap that made download_buckeye.sh
+        # which is the 416-on-complete-file trap that made the Buckeye downloader
         # report 40/40 speakers FAILED on a healthy corpus.
         if [[ -f "$PARTIAL" ]]; then
             log "resuming partial download ($(stat -c%s "$PARTIAL") bytes already present)"

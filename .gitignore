@@ -24,3 +24,12 @@ wandb/
 *.flac
 !stimuli/**/*.wav
 !stimuli/*.wav
+
+# Buckeye-derived per-site data stays local: these carry speaker codes, word
+# forms and timestamps, and the corpus is distributed only through OSU's
+# registration. The scripts named in README regenerate them from a registered
+# copy; aggregate reports and figures are committed.
+results/flapping/sites-*.parquet
+results/flapping/lemma-overlap-*.tsv
+results/flapping/audit-sample-*.tsv
+results/corpus-verification/buckeye-*.tsv
