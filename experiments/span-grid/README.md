@@ -265,5 +265,48 @@ the three duration baselines side by side.
 Any departure from the above gets appended here with a date and a reason, and
 the original text stays as written.
 
+**2026-10-18 — wav2vec2-base's geometry, verified (§4).** Checked live on
+2026-10-17 at `0b5b8e8` (resolving to `0b5b8e868dd8…`) in the pinned
+container, by the tests WavJEPA's geometry passed
+(`scripts/probe_w2v2_frame_positions.py`, `tests/test_wav2vec2_model.py`).
+Stride product 320 samples (20 ms) and receptive field 400 (25 ms), as the
+config says. The model's frame count equals `(n − 400) // 320 + 1` at every
+length tried. A single-sample spike peaks in the predicted frames, and frame t
+reads samples [320t, 320t + 400) of its input and nothing outside them, beyond
+conv layer 0's GroupNorm floor. The map is uniform: frame t's centre is sample
+320t + 200. Two corrections to §4:
+
+- **Hidden state 0 is not the CNN output.** It is LayerNorm(projection +
+  convolutional positional embedding), so like WavJEPA's index 0 it carries
+  position. The positional convolution (kernel 128) also mixes neighbouring
+  frames. Index 12 is the last layer's output and equals the model's
+  `last_hidden_state`.
+- **Recount.** With the flap's bounds rounded to samples, as the extraction
+  rounds them for MFCC, 160 of the 10,334 sites (1.5%) contain no frame centre
+  and 8,031 (77.7%) exactly one; on the pilot's 10,389, 169 and 8,064. The
+  provisional 168 and 8,065 were computed outside the repository and could not
+  be reproduced. "Mostly one frame" stands.
+
+**2026-10-18 — The cropped design's normalization covers one of two (§3).** §3
+applies the encoder's input normalization once, on the full excerpt, so that
+mostly-noise crops do not rescale the speech. Both encoders also normalize
+inside the model: conv layer 0 is a GroupNorm with one group per channel, which
+standardizes each channel over its whole input (for WavJEPA, over each 2.01 s
+segment, longer than L). It cannot be disabled without changing the model. In a
+padded crop the noise therefore still sets the scale of the speech's conv
+features, by a different amount for each span. Both spike tests show it: a
+spike anywhere moves every frame (`scripts/probe_frame_positions.py`,
+`scripts/probe_w2v2_frame_positions.py`). How it is handled is decided before
+the cropped inputs are built, and recorded here. The padding-only control
+measures the effect for the full excerpt only.
+
+**2026-10-18 — Frame precision: the pilot's float16 is kept (§3, §5).** The
+pilot's WavJEPA frames were rounded to float16 by `WavJEPAExtractor.encode`'s
+default dtype before pooling, then stored as float32; the extraction script's
+docstring said float32 throughout and is corrected. Every encoder here keeps
+float16 frames, so the pooled design's ɾ span gets the pilot's exact features
+and the reproduction check (§5) compares like with like, with no tolerance to
+set.
+
 ---
 
