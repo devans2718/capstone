@@ -320,6 +320,15 @@ percentile. Applied to the same speech samples, these are the whole of the
 difference GroupNorm makes, so the measure is defined for every site, including
 ɾ spans too short to hold a frame clear of the crop edges.
 
+**2026-10-18 — WavJEPA's spans take only frames that read real audio (§2,
+§4).** A span clipped at the excerpt's end would, by onset, include WavJEPA's
+last returned frame, which reads mostly the model's zero padding
+(`FrameGeometry.n_clean_frames`). Every WavJEPA span drops any frame whose
+receptive field runs past the excerpt. The ɾ span never reaches the end, so the
+pilot's features are unchanged; wav2vec 2.0 and MFCC return only whole frames
+and are unaffected. The number of spans affected is recorded in the extraction
+manifest.
+
 **2026-10-18 — Frame precision: the pilot's float16 is kept (§3, §5).** The
 pilot's WavJEPA frames were rounded to float16 by `WavJEPAExtractor.encode`'s
 default dtype before pooling, then stored as float32; the extraction script's
