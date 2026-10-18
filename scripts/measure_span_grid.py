@@ -32,6 +32,9 @@ RUNNING IT
     .venv-app/bin/python scripts/measure_span_grid.py [--write PATH]
     --write saves the excluded site IDs and reasons as a TSV, outside the
     repository (default /data/span-grid/excluded-sites.tsv).
+
+    locate_spans and exclusion_digest are also what extract_span_features.py
+    uses, in the container, which has no pyarrow: hence the import inside main.
 """
 import argparse
 import hashlib
@@ -40,8 +43,6 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-import pyarrow.parquet as pq  # noqa: E402
 
 from count_flap_sites import DEFAULT_ROOT, read_phones  # noqa: E402
 
@@ -68,16 +69,16 @@ def median(xs):
     return s[len(s) // 2]
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--root", type=Path, default=DEFAULT_ROOT)
-    ap.add_argument("--write", type=Path, nargs="?",
-                    const=Path("/data/span-grid/excluded-sites.tsv"))
-    args = ap.parse_args()
+def locate_spans(rows, root: Path = DEFAULT_ROOT):
+    """Find each site's preceding stretch and following segment in .phones.
 
-    rows = [r for r in pq.read_table(INVENTORY).to_pylist()
-            if not r["excerpt_clamped"]]
-    paths = {p.stem: p for p in args.root.rglob("*.phones")}
+    `rows` are eligible sites as mappings with site_id, track and start (in
+    seconds), in any order. Returns (kept, excluded): kept is a list of
+    (row, vowel, codas, following) with the vowel and following segment as
+    Phones and codas nearest-the-flap first; excluded is (site_id, reason).
+    Stops if a site's phone is not the inventory's flap.
+    """
+    paths = {p.stem: p for p in root.rglob("*.phones")}
     tiers: dict[str, list] = {}
 
     excluded: list[tuple[str, str]] = []
@@ -99,9 +100,37 @@ def main() -> int:
                              + (f" before coda {' '.join(reversed(codas))}" if codas else "")))
             continue
         kept.append((r, tier[j], codas, tier[i + 1]))
+    return kept, excluded
 
+
+def clipped(r, vowel, following) -> tuple[bool, bool]:
+    """(preceding, following): does the stretch start, or the segment end, outside
+    the excerpt? In seconds against flap ± CONTEXT_MS, the comparison §2's counts
+    were made with; one site sits within float rounding of the edge, so any
+    other arithmetic for the same question can count it differently."""
+    ctx = CONTEXT_MS / 1000
+    return (r["start"] - ctx) > vowel.start, following.end > (r["end"] + ctx)
+
+
+def exclusion_digest(excluded) -> str:
+    """sha256 of the sorted excluded site IDs, one per line, newline-terminated."""
     ids = sorted(s for s, _ in excluded)
-    digest = hashlib.sha256("".join(f"{s}\n" for s in ids).encode()).hexdigest()
+    return hashlib.sha256("".join(f"{s}\n" for s in ids).encode()).hexdigest()
+
+
+def main() -> int:
+    import pyarrow.parquet as pq
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    ap.add_argument("--write", type=Path, nargs="?",
+                    const=Path("/data/span-grid/excluded-sites.tsv"))
+    args = ap.parse_args()
+
+    rows = [r for r in pq.read_table(INVENTORY).to_pylist()
+            if not r["excerpt_clamped"]]
+    kept, excluded = locate_spans(rows, args.root)
+    digest = exclusion_digest(excluded)
 
     print(f"eligible sites            {len(rows):>7,}")
     print(f"excluded                  {len(excluded):>7,}")
@@ -116,8 +145,9 @@ def main() -> int:
         print(f"    {c:<10} {n:>6,}")
 
     ctx = CONTEXT_MS / 1000
-    pre = [(r["start"] - ctx) > v.start for r, v, _, _ in kept]
-    post = [f.end > (r["end"] + ctx) for r, _, _, f in kept]
+    flags = [clipped(r, v, f) for r, v, _, f in kept]
+    pre = [a for a, _ in flags]
+    post = [b for _, b in flags]
     over_pre = [(r["start"] - ctx - v.start) * 1000 for (r, v, _, _), c in zip(kept, pre) if c]
     over_post = [(f.end - r["end"] - ctx) * 1000 for (r, _, _, f), c in zip(kept, post) if c]
     either = sum(a or b for a, b in zip(pre, post))
