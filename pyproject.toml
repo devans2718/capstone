@@ -18,5 +18,5 @@ testpaths = ["tests"]
 # command line overrides this one, so `-m model` runs them in the container.
 addopts = "-m 'not model'"
 markers = [
-    "model: requires the WavJEPA checkpoint and a GPU; not runnable in CI",
+    "model: requires an encoder checkpoint (WavJEPA or wav2vec2-base); not runnable in CI",
 ]

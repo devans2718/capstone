@@ -1,4 +1,4 @@
-"""Layer-wise extraction from WavJEPA via forward hooks.
+"""Layer-wise extraction: WavJEPA via forward hooks, and wav2vec 2.0.
 
 WHY HOOKS
     WavJEPAModel.forward(self, tensor) takes no kwargs, so output_hidden_states
@@ -57,14 +57,30 @@ WHAT THIS MODULE DOES NOT DO
     surrounding vowels, so the cue may live in the transitions rather than in the
     flap interval. Pooling is a decision the pilot should inform, so extraction
     keeps frames and `window_frames` records where the target sits inside them.
+
+THE SECOND ENCODER: wav2vec 2.0
+    Wav2Vec2Extractor gives the same surface (LayerwiseExtractor) with less
+    machinery. HF's Wav2Vec2Model takes output_hidden_states and runs the whole
+    input in one pass, so there are no hooks and no segments to reassemble.
+
+    Its 13 states line up with WavJEPA's by construction, not by luck. Index 0
+    is the input to the first transformer layer: LayerNorm(projection +
+    convolutional positional embedding), so it carries position, as WavJEPA's
+    index 0 does. Index 12 is the last layer's output; the base model has no
+    final norm, so it equals last_hidden_state (verified 2026-10-17).
+
+    The one rule that differs is which frames belong to a target: WavJEPA by
+    onset, wav2vec 2.0 by centre (wav2vec2.py says why). Callers get frames
+    through window_frames and never apply either rule themselves.
 """
 
 from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterator, Sequence
+from typing import TYPE_CHECKING, Iterator, Protocol, Sequence
 
+from .wav2vec2 import ConvGeometry
 from .wavjepa import FrameGeometry, reassemble
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -80,6 +96,33 @@ REVISION = "6be4a50"
 N_ENCODER_LAYERS = 12
 N_LAYERS = N_ENCODER_LAYERS + 1  # + the pre-transformer input at index 0
 WIDTH = 768
+
+W2V2_MODEL_ID = "facebook/wav2vec2-base"
+# Pinned for the same reason as WavJEPA, though this one is stock transformers
+# code: the registration names this revision (span-grid README §4).
+# tests/test_wav2vec2_model.py is the tripwire.
+W2V2_REVISION = "0b5b8e8"
+
+
+class LayerwiseExtractor(Protocol):
+    """What probing code may rely on, whichever encoder is behind it.
+
+    Frames come back as (n_layers, n_frames, width), index 0 the input to the
+    first transformer layer. Which frames describe a target is the encoder's
+    own rule, so callers take it from window_frames or encode_excerpt and never
+    compute it from a frame rate.
+    """
+
+    n_layers: int
+    width: int
+
+    def encode(self, waveform, dtype: str = "float16") -> "torch.Tensor": ...
+
+    def encode_excerpt(
+        self, recording, excerpt: "Excerpt", sample_rate: int = 16_000
+    ) -> tuple["torch.Tensor", range]: ...
+
+    def window_frames(self, excerpt: "Excerpt", n_frames: int) -> range: ...
 
 
 @dataclass(frozen=True)
@@ -181,6 +224,9 @@ class WavJEPAExtractor:
     cleared, and every forward runs under inference_mode. This is a probing
     study — the encoder is frozen by construction, not by convention.
     """
+
+    n_layers = N_LAYERS
+    width = WIDTH
 
     def __init__(self, model, feature_extractor, geometry: FrameGeometry, device: str):
         self.model = model
@@ -297,6 +343,125 @@ class WavJEPAExtractor:
         rng = self.geometry.frames_for_interval(
             excerpt.target_start_local_ms, excerpt.target_end_local_ms
         )
+        return range(min(rng.start, n_frames), min(rng.stop, n_frames))
+
+
+class Wav2Vec2Extractor:
+    """Frozen wav2vec 2.0 base, all 13 hidden states. One utterance per call.
+
+    Frozen as WavJEPAExtractor is: eval(), requires_grad cleared, every forward
+    under inference_mode. eval() also matters for a second reason here: the
+    config enables SpecAugment time masking (mask_time_prob 0.05), which the
+    model applies only in training mode.
+    """
+
+    n_layers = 13   # the transformer input + 12 layer outputs
+    width = 768
+
+    def __init__(self, model, feature_extractor, geometry: ConvGeometry, device: str):
+        self.model = model
+        self.feature_extractor = feature_extractor
+        self.geometry = geometry
+        self.device = device
+
+    # ------------------------------------------------------------------ loading
+
+    @classmethod
+    def load(
+        cls,
+        model_id: str = W2V2_MODEL_ID,
+        revision: str | None = W2V2_REVISION,
+        device: str | None = None,
+    ) -> "Wav2Vec2Extractor":
+        import torch
+        from transformers import AutoFeatureExtractor, Wav2Vec2Model
+
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Wav2Vec2Model, not AutoModel: the checkpoint is a pretraining one, and
+        # this loads the encoder without the quantizer and projection heads.
+        model = Wav2Vec2Model.from_pretrained(model_id, revision=revision)
+        model.eval()
+        model.requires_grad_(False)
+        model.to(device)
+
+        feature_extractor = AutoFeatureExtractor.from_pretrained(
+            model_id, revision=revision
+        )
+        geometry = ConvGeometry.from_config(model.config, feature_extractor.sampling_rate)
+        return cls(model, feature_extractor, geometry, device)
+
+    # ----------------------------------------------------------------- encoding
+
+    def encode(self, waveform, dtype: str = "float16"):
+        """Encode ONE utterance and return (13, n_frames, 768).
+
+        Args:
+            waveform: 1-D float samples at 16 kHz, or a (1, n) tensor/array.
+                One utterance: the feature extractor's do_normalize standardizes
+                each waveform by its own mean and variance, so batching changes
+                the numbers.
+            dtype: storage dtype for the returned tensor, as WavJEPAExtractor.
+
+        Returns:
+            (13, n_frames, 768), where n_frames == geometry.n_output_frames.
+        """
+        import torch
+
+        wav = _as_1d(waveform)
+        # Raises before any GPU work on an input shorter than one frame.
+        expected = self.geometry.n_output_frames(int(wav.shape[-1]))
+
+        batch = self.feature_extractor(
+            wav.numpy(), sampling_rate=self.geometry.sample_rate, return_tensors="pt"
+        )
+        with torch.inference_mode():
+            out = self.model(batch["input_values"].to(self.device),
+                             output_hidden_states=True)
+
+        states = out.hidden_states
+        if len(states) != self.n_layers:
+            raise RuntimeError(
+                f"model returned {len(states)} hidden states, expected {self.n_layers}. "
+                "Upstream may have changed what output_hidden_states includes."
+            )
+        stacked = torch.cat(states, dim=0)  # (13, n_frames, 768)
+        if stacked.shape[1] != expected:
+            raise RuntimeError(
+                f"model returned {stacked.shape[1]} frames, geometry predicts "
+                f"{expected}. Every frame label is suspect; re-run "
+                "scripts/probe_w2v2_frame_positions.py."
+            )
+        return stacked.float().cpu().to(getattr(torch, dtype))
+
+    def encode_excerpt(self, recording, excerpt: Excerpt, sample_rate: int = 16_000):
+        """Cut `excerpt` out of `recording`, encode it, and locate the target.
+
+        Returns (frames, target_range) where frames is (13, n, 768) and
+        target_range comes from window_frames, so it is never empty.
+        """
+        wav = _as_1d(recording)
+        start, end = excerpt_samples(excerpt, sample_rate)
+        frames = self.encode(wav[start:end])
+        return frames, self.window_frames(excerpt, frames.shape[1])
+
+    def window_frames(self, excerpt: Excerpt, n_frames: int) -> range:
+        """Frames of an encoded excerpt whose centres fall inside the target.
+
+        A target containing no centre takes the one frame whose centre is
+        nearest its midpoint (span-grid README §4). Under centred excerpts that
+        is a flap of 12.5 ms or less: its onset sits on frame 10's, and frame
+        10's centre is 12.5 ms later. Clamped to n_frames, as WavJEPAExtractor.window_frames is.
+        """
+        g = self.geometry
+        rng = g.frames_for_interval(
+            excerpt.target_start_local_ms, excerpt.target_end_local_ms
+        )
+        if len(rng) == 0:
+            mid_ms = (excerpt.target_start_local_ms + excerpt.target_end_local_ms) / 2
+            nearest = g.nearest_frame(mid_ms / 1000 * g.sample_rate)
+            rng = range(nearest, nearest + 1)
         return range(min(rng.start, n_frames), min(rng.stop, n_frames))
 
 
