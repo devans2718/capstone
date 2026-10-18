@@ -21,10 +21,14 @@ WHAT IT WRITES, under /data/embeddings/features-<inventory hash[:12]>/
     not encoded and their rows are NaN: they are excluded before scoring (§1),
     and a NaN that reaches a probe fails loudly where a zero would not.
 
-    float32, not float16. Layer 12 comes before the final LayerNorm, so its
-    values are unnormalised, and float16 keeps about three significant
-    digits. The cost is ~415 MB per pooling for WavJEPA, which is nothing next
-    to removing that question.
+    Stored as float32, but each WavJEPA frame is rounded to float16 first:
+    encode_excerpt calls encode() at its default dtype, so a frame keeps
+    about three significant digits before it is pooled. MFCC never passes
+    through encode and is float32 throughout. *Corrected 2026-10-18: this
+    said float32 removed the precision question; that held for the stored
+    pools only.* No value overflowed float16 (the inf check below ran
+    clean), and the rounding is kept: the span grid's reproduction check
+    needs these exact features (span-grid README §8).
 
 ONE EXCERPT, TWO REPRESENTATIONS
     Each site's excerpt is planned once: plan_excerpt on the FLOAT times (as
