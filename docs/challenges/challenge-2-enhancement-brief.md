@@ -257,7 +257,7 @@ These are needed by later steps in §4:
 | --- | --- |
 | §7 clarifications, pushed before any feature existed: midpoint pooling, the lookup on unseen types, the speaker-ID metric, and the paired bootstrap. Also the author's wav2vec2 prediction, under its own heading | `8d1630b` |
 | Seeds in `capstone.seeds`, a manifest with seeds by name and a required `synthetic` flag, and `subsampled` and `pooling` columns (closes A1.6's first three items) | `647ec90`, `003235f` |
-| Feature extraction: WavJEPA and MFCC, mean/max/midpoint, float32 | `c53d4c7`, run at `afb5811` |
+| Feature extraction: WavJEPA and MFCC, mean/max/midpoint, stored as float32. *Corrected 2026-10-18: WavJEPA's frames were rounded to float16 before pooling (`129dfe1`); MFCC is float32 throughout* | `c53d4c7`, run at `afb5811` |
 | Probe harness, `capstone.probes`, with tests | `4881f42` |
 | **Criteria report** | `6915b83` |
 | Results CSV, folds CSV, manifest | `2d61fba` |
