@@ -137,10 +137,34 @@ NODES += [
          written_after_run=True,
          summary="40 /t/ + 40 /d/ sites, seed 20260930, blind to the probe; "
                  "questions flap / word / clip; Wilson intervals."),
+    node("amend-span-grid", "Amendment", date="2026-10-17", commit="1715e95",
+         title="Not a deviation: the span grid is registered separately",
+         written_after_run=True,
+         summary="Nothing changed. The follow-up to §5's 'site width' "
+                 "suspect is a new study with its own registration; its "
+                 "WavJEPA ɾ span must reproduce the pilot's joint curve."),
 ]
 for a in ("amend-clarifications", "amend-prediction", "amend-lookup-ties",
-          "amend-audit"):
+          "amend-audit", "amend-span-grid"):
     edge(a, "AMENDS", "rev3")
+
+# The span grid: a follow-up registered in its own file, not a revision of the
+# pilot's. Its departures will go in that file's §8.
+SPAN_GRID = "experiments/span-grid/README.md"
+
+NODES += [
+    node("sg-rev1", "Registration", revision=1, date="2026-10-17",
+         commit="1715e95", path=SPAN_GRID, pushed=True,
+         summary="Where the cue sits: four spans (ɾ, Vɾ, ɾV, VɾV) over 10,334 "
+                 "sites, a pooled and a cropped design, WavJEPA and "
+                 "wav2vec2-base against MFCC and duration baselines. Seven "
+                 "registered comparisons with the author's predictions; the "
+                 "WavJEPA ɾ span must first reproduce the pilot's joint "
+                 "curve."),
+]
+edge("sg-rev1", "FOLLOWS_UP", "rev3", reason="§5 names the 2–4 frame site "
+     "width among the suspects for a failure near chance")
+edge("amend-span-grid", "POINTS_TO", "sg-rev1")
 
 # ---------------------------------------------------------------------------
 # Criteria: one node per criterion per revision.
@@ -234,8 +258,10 @@ NODES += [
          note="13 coefficients incl. c0 + deltas + delta-deltas, librosa, "
               "25 ms window / 10 ms hop. Features with no learned structure."),
     node("rep-wav2vec2", "Representation", name="facebook/wav2vec2-base",
-         status="planned", learned=True,
-         note="Registered in rev 3 as an exploratory second encoder; not run."),
+         status="planned", learned=True, n_layers=13, dim=768,
+         checkpoint="0b5b8e8",
+         note="Registered in rev 3 as an exploratory second encoder; not run. "
+              "The span grid compares it with WavJEPA."),
     node("rep-hubert", "Representation", name="facebook/hubert-base-ls960",
          status="planned", learned=True),
     node("rep-wavlm", "Representation", name="microsoft/wavlm-base",
@@ -272,11 +298,15 @@ NODES += [
     node("env-flap", "Environment", name="[ɾ]", status="used",
          description="The flap's own frames only."),
     node("env-v-flap", "Environment", name="[Vɾ]", status="planned",
-         description="The flap plus the preceding vowel."),
+         description="The preceding sonorant stretch through the flap: back "
+                     "through any sonorant coda (r, l, n, m, ng, nx) to the "
+                     "start of the vowel before it. V includes syllabic "
+                     "consonants."),
     node("env-flap-v", "Environment", name="[ɾV]", status="planned",
-         description="The flap plus the following vowel."),
+         description="The flap through the following segment, whatever it "
+                     "is."),
     node("env-v-flap-v", "Environment", name="[VɾV]", status="planned",
-         description="Both vowels and the flap."),
+         description="The preceding stretch through the following segment."),
 ]
 
 # Revision 1
@@ -324,6 +354,21 @@ edge("rev3", "SPECIFIES", "pool-max", role="secondary")
 edge("rev3", "SPECIFIES", "pool-midpoint", role="secondary")
 edge("rev3", "SPECIFIES", "env-flap", role="primary",
      construction="context_ms = 200, constant across sites")
+# Span grid
+edge("sg-rev1", "SPECIFIES", "rep-wavjepa", role="compared")
+edge("sg-rev1", "SPECIFIES", "rep-wav2vec2", role="compared")
+edge("sg-rev1", "SPECIFIES", "rep-mfcc", role="baseline",
+     construction="alone, and with the span's clipped duration appended")
+edge("sg-rev1", "SPECIFIES", "probe-linear", role="primary")
+edge("sg-rev1", "SPECIFIES", "task-voicing", role="primary")
+edge("sg-rev1", "SPECIFIES", "task-control", role="leak detector")
+edge("sg-rev1", "SPECIFIES", "cond-joint", role="only condition",
+     construction="the pilot's folds over 10,389 sites; 55 dropped after "
+                  "assignment")
+edge("sg-rev1", "SPECIFIES", "pool-mean", role="only pooling")
+for env in ("env-flap", "env-v-flap", "env-flap-v", "env-v-flap-v"):
+    edge("sg-rev1", "SPECIFIES", env, role="span",
+         construction="clipped to flap ± 200 ms; clipped sites kept")
 
 # ---------------------------------------------------------------------------
 # Code. A reference (repo, path), not the code. Commits live on artifacts.
@@ -332,7 +377,7 @@ edge("rev3", "SPECIFIES", "env-flap", role="primary",
 SCRIPTS = [
     "count_flap_sites", "extract_site_features", "run_probes",
     "plot_layer_curves", "draw_audit_sample", "summarize_audit",
-    "measure_lemma_overlap", "simulate_control_spread",
+    "measure_lemma_overlap", "simulate_control_spread", "measure_span_grid",
 ]
 NODES += [node(f"code-{s}", "Code", kind="script", repo=REPO,
                path=f"scripts/{s}.py") for s in SCRIPTS]
@@ -481,9 +526,10 @@ NODES += [
                     "a flap, by construction, so the label can't be read off "
                     "the sound category."),
     node("con-intervocalic", "Concept", term="intervocalic",
-         definition="Between two vowels: the usual environment for flapping, "
-                    "and the one the planned [Vɾ] / [ɾV] / [VɾV] analysis "
-                    "windows reach into."),
+         definition="Between two vowels: the usual environment for flapping. "
+                    "Flapping also follows r, l and n ('hardy', 'party'), so "
+                    "the span grid's [Vɾ] and [VɾV] spans reach back through "
+                    "those to the vowel."),
     node("con-probing", "Concept", term="probing",
          definition="Training a simple classifier (a probe) on a model's "
                     "frozen internal representations, to test whether some "
@@ -540,8 +586,8 @@ NODES += [
                    "WavJEPA encodes the flap ± 200 ms as one excerpt, so at "
                    "depth its flap frames can carry that context; for "
                    "WavJEPA the pilot shows only that the cue wasn't linearly "
-                   "recoverable from those frames. Untested: the phonetic "
-                   "environment axis would test both."),
+                   "recoverable from those frames. Untested: the span grid, "
+                   "registered 2026-10-17, tests both."),
     node("find-words", "Finding", candidate_cause="The cue doesn't generalize "
          "to unseen words", status="consistent with the result",
          statement="The drop from random to joint is mostly the word axis: "
@@ -579,6 +625,7 @@ edge("find-sites", "EVIDENCED_BY", "art-audit-sample")  # -SAMPLES-> its 80 Site
 edge("find-sites", "EVIDENCED_BY", "amend-audit")
 edge("find-width", "EVIDENCED_BY", "rev3", section="§2")
 edge("find-width", "EVIDENCED_BY", "env-v-flap-v")
+edge("sg-rev1", "TESTS", "find-width")
 for cond in ("random", "speaker_disjoint", "word_disjoint", "joint"):
     edge("find-words", "EVIDENCED_BY", f"curve:wavjepa:mean:{cond}:full")
 edge("find-words", "EVIDENCED_BY", "art-fig-drop")
@@ -599,6 +646,8 @@ SHORT_NAMES = {
     "amend-prediction": "Prediction",
     "amend-lookup-ties": "Lookup ties (after run)",
     "amend-audit": "Audit (after run)",
+    "amend-span-grid": "Span grid pointer",
+    "sg-rev1": "Span grid (rev 1)",
     "task-voicing": "Voicing task",
     "task-control": "Control task",
     "task-speaker": "Speaker ID",
