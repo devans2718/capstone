@@ -300,6 +300,26 @@ spike anywhere moves every frame (`scripts/probe_frame_positions.py`,
 the cropped inputs are built, and recorded here. The padding-only control
 measures the effect for the full excerpt only.
 
+**2026-10-18 — GroupNorm in the cropped design: kept, and measured (§3;
+resolves the entry above).** Conv layer 0's GroupNorm is kept as part of each
+encoder. §3 controls the normalization outside the model, the feature
+extractor's, because preprocessing is the experimenter's to fix. How the
+encoder's own layers respond to an input holding only the span is part of what
+the cropped design asks. Freezing GroupNorm's statistics to the full excerpt's
+is rejected: they summarize the neighbouring speech, as 512 channel means and
+512 standard deviations, and would carry it into every crop. §3's input
+normalization already carries a leak of that kind, one gain and offset computed
+on the full excerpt. It stays, because it is one pair of numbers, and it is
+stated here so the line between the two is visible.
+
+**Measured and reported, not compared:** the per-channel scale and offset
+GroupNorm applies to the crop, against those it applies to the full excerpt.
+Per site, the median over channels of |log(σ_crop / σ_full)| and of
+|μ_crop − μ_full| / σ_full, reported per span and encoder as a median and 95th
+percentile. Applied to the same speech samples, these are the whole of the
+difference GroupNorm makes, so the measure is defined for every site, including
+ɾ spans too short to hold a frame clear of the crop edges.
+
 **2026-10-18 — Frame precision: the pilot's float16 is kept (§3, §5).** The
 pilot's WavJEPA frames were rounded to float16 by `WavJEPAExtractor.encode`'s
 default dtype before pooling, then stored as float32; the extraction script's
