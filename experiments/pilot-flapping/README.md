@@ -726,3 +726,14 @@ interval, with the can't-tell count reported beside it and never folded in,
 and how many of the 40 were reviewed. The sample is balanced and the
 inventory is not (75.7 / 24.3), so no pooled rate is reported. Output:
 `results/flapping/audit-<date>.txt` from `scripts/summarize_audit.py`.
+
+### 2026-10-17 — Not a deviation: the span grid is registered separately
+
+**Nothing above is changed.** §5's first reading of a failure near chance
+names "the 2–4 frame site width" among its suspects. The follow-up that takes
+it up, asking where the cue sits and whether the neighbouring speech carries
+it, is a new study with its own sites, spans, inputs, baselines and predictions.
+It is registered in `experiments/span-grid/README.md`, not here. It reuses
+this file's inventory, probe, `joint` folds and seeds, and its WavJEPA ɾ span
+on these 10,389 sites must reproduce this pilot's `joint` mean-pooled curve
+before any of its results are read. This pilot's result stands as recorded.
