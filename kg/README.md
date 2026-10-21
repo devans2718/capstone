@@ -16,6 +16,8 @@ Co-Design).
 | `queries/` | Nine demo queries (Challenge 3 AI Design); `run_all.sh` runs them all |
 | `graphrag.py` | Question → retrieval → Cypher → rows → LLM answer, with the evidence printed |
 | `graphrag-runs/` | Saved GraphRAG runs (JSON) |
+| `export_design.py` | Read-only export of the design layer and the five retrievals' evidence, for the GNN |
+| `gnn/` | The GNN stage: `design-graph.json` (generated) and `design_gnn.ipynb` |
 
 ## Setup
 
@@ -86,3 +88,33 @@ excerpt and the frames are selected afterwards
 into the flap frames. The finding was corrected in `facts.py` and the graph
 reloaded. The re-run answer separates the two encoders
 (`graphrag-runs/20261014-215107-why_failed.json`).
+
+## GNN ranker (Challenge 3, GNN stage)
+
+Does a GNN rank the evidence better than text similarity? This applies the course
+notebook's recipe (TF-IDF features, two-layer GraphSAGE, link prediction,
+seed → expand → score) to the design layer, and scores it against what the
+reviewed Cypher returns.
+
+```bash
+# 1. Export (needs the server; read-only)
+.venv-app/bin/python kg/export_design.py      # -> kg/gnn/design-graph.json
+
+# 2. The notebook needs no Neo4j. It runs in an environment with torch,
+#    torch_geometric, scikit-learn, networkx and matplotlib, from kg/gnn/
+#    (GNN_FIG_DIR=<dir> also saves the figures)
+```
+
+- **Gold** for each of five questions is every design-node key in its
+  retrieval's rows. Questions 1–3 are the saved runs; 4–5 are assigned their
+  retrieval directly, so the export makes no LLM call.
+- **Homogeneous GraphSAGE, not `to_hetero`.** The design layer has 31
+  relationship types over 146 nodes, and 16 of them have five edges or fewer.
+- **Result:** at the course notebook's settings, no ranker gets the reviewed
+  evidence into its top 5 (mean hits@5 / possible: 0.10 vector only, 0.00 graph
+  expansion, 0.00 graph + GNN). Text seeding is where it fails: the questions'
+  words aren't the evidence nodes' words, so the gold set is mostly never a
+  candidate. Section 4b varies features, seeds and hops; the GNN ordering
+  only pulls ahead (0.22–0.32) when raw TF-IDF and five seeds widen the
+  candidate set. That's five questions, so it's a pattern, not a result, and
+  the evaluation isn't question-disjoint (the GNN trains on the gold edges).

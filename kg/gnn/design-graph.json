@@ -1,0 +1,3078 @@
+{
+ "nodes": [
+  {
+   "key": "amend-audit",
+   "label": "Amendment",
+   "text": "2026-09-26 Audit (after run) 40 /t/ + 40 /d/ sites, seed 20260930, blind to the probe; questions flap / word / clip; Wilson intervals. Registered before listening: an audit of the sites by ear"
+  },
+  {
+   "key": "amend-clarifications",
+   "label": "Amendment",
+   "text": "2026-09-26 Clarifications Midpoint pooling defined; the lookup's rule for unseen types; the speaker-ID metric; criterion 1's bootstrap is paired. Clarifications fixed before the first run"
+  },
+  {
+   "key": "amend-lookup-ties",
+   "label": "Amendment",
+   "text": "2026-09-26 Lookup ties (after run) A type seen equally often as /t/ and /d/ falls back to the training majority, /t/. Reaches no site under the type-disjoint conditions; gates nothing. Written after the run: the lookup's rule for tied types"
+  },
+  {
+   "key": "amend-prediction",
+   "label": "Amendment",
+   "text": "2026-09-26 Prediction WavJEPA's information sits higher than wav2vec2-base's. A prediction, not a criterion; gates nothing. A prediction recorded before extraction"
+  },
+  {
+   "key": "amend-span-grid",
+   "label": "Amendment",
+   "text": "2026-10-17 Span grid pointer Nothing changed. The follow-up to §5's 'site width' suspect is a new study with its own registration; its WavJEPA ɾ span must reproduce the pilot's joint curve. Not a deviation: the span grid is registered separately"
+  },
+  {
+   "key": "art-audit-report",
+   "label": "Artifact",
+   "text": "report audit-20260928.txt results/flapping/audit-20260928.txt capstone"
+  },
+  {
+   "key": "art-audit-sample",
+   "label": "Artifact",
+   "text": "tsv audit-sample-20260926.tsv results/flapping/audit-sample-20260926.tsv capstone"
+  },
+  {
+   "key": "art-control-spread",
+   "label": "Artifact",
+   "text": "report buckeye-control-spread-20260926.txt results/corpus-verification/buckeye-control-spread-20260926.txt capstone"
+  },
+  {
+   "key": "art-criteria",
+   "label": "Artifact",
+   "text": "report criteria-20260926.txt results/flapping/criteria-20260926.txt capstone"
+  },
+  {
+   "key": "art-fig-controls",
+   "label": "Artifact",
+   "text": "figure controls.png results/flapping/figures/controls.png capstone"
+  },
+  {
+   "key": "art-fig-curves",
+   "label": "Artifact",
+   "text": "figure layer-curves-mean.png results/flapping/figures/layer-curves-mean.png capstone"
+  },
+  {
+   "key": "art-fig-drop",
+   "label": "Artifact",
+   "text": "figure condition-drop.png results/flapping/figures/condition-drop.png capstone"
+  },
+  {
+   "key": "art-fig-pooling",
+   "label": "Artifact",
+   "text": "figure pooling.png results/flapping/figures/pooling.png capstone"
+  },
+  {
+   "key": "art-folds",
+   "label": "Artifact",
+   "text": "csv probe-folds-20260926.csv results/flapping/probe-folds-20260926.csv capstone"
+  },
+  {
+   "key": "art-inventory",
+   "label": "Artifact",
+   "text": "tsv buckeye-flap-sites-20260821.tsv results/corpus-verification/buckeye-flap-sites-20260821.tsv capstone"
+  },
+  {
+   "key": "art-lemma-report",
+   "label": "Artifact",
+   "text": "report buckeye-lemma-overlap-20260926.txt results/corpus-verification/buckeye-lemma-overlap-20260926.txt capstone"
+  },
+  {
+   "key": "art-lemma-sites",
+   "label": "Artifact",
+   "text": "tsv lemma-overlap-joint-20260926.tsv results/flapping/lemma-overlap-joint-20260926.tsv capstone"
+  },
+  {
+   "key": "art-manifest",
+   "label": "Artifact",
+   "text": "manifest run-manifest-pilot.json results/flapping/run-manifest-pilot.json capstone"
+  },
+  {
+   "key": "art-results",
+   "label": "Artifact",
+   "text": "csv probe-results-20260926.csv results/flapping/probe-results-20260926.csv capstone"
+  },
+  {
+   "key": "code-count_flap_sites",
+   "label": "Code",
+   "text": "script count_flap_sites.py scripts/count_flap_sites.py capstone"
+  },
+  {
+   "key": "code-draw_audit_sample",
+   "label": "Code",
+   "text": "script draw_audit_sample.py scripts/draw_audit_sample.py capstone"
+  },
+  {
+   "key": "code-extract_site_features",
+   "label": "Code",
+   "text": "script extract_site_features.py scripts/extract_site_features.py capstone"
+  },
+  {
+   "key": "code-measure_lemma_overlap",
+   "label": "Code",
+   "text": "script measure_lemma_overlap.py scripts/measure_lemma_overlap.py capstone"
+  },
+  {
+   "key": "code-measure_span_grid",
+   "label": "Code",
+   "text": "script measure_span_grid.py scripts/measure_span_grid.py capstone"
+  },
+  {
+   "key": "code-mod-audit",
+   "label": "Code",
+   "text": "module capstone.audit src/capstone/audit.py capstone"
+  },
+  {
+   "key": "code-mod-controls",
+   "label": "Code",
+   "text": "module capstone.probes.controls src/capstone/probes/controls.py capstone"
+  },
+  {
+   "key": "code-mod-extraction",
+   "label": "Code",
+   "text": "module capstone.encoders.extraction src/capstone/encoders/extraction.py capstone"
+  },
+  {
+   "key": "code-mod-splits",
+   "label": "Code",
+   "text": "module capstone.splits src/capstone/splits.py capstone"
+  },
+  {
+   "key": "code-plot_layer_curves",
+   "label": "Code",
+   "text": "script plot_layer_curves.py scripts/plot_layer_curves.py capstone"
+  },
+  {
+   "key": "code-run_probes",
+   "label": "Code",
+   "text": "script run_probes.py scripts/run_probes.py capstone"
+  },
+  {
+   "key": "code-simulate_control_spread",
+   "label": "Code",
+   "text": "script simulate_control_spread.py scripts/simulate_control_spread.py capstone"
+  },
+  {
+   "key": "code-summarize_audit",
+   "label": "Code",
+   "text": "script summarize_audit.py scripts/summarize_audit.py capstone"
+  },
+  {
+   "key": "con-allophone",
+   "label": "Concept",
+   "text": "One of the predictable pronunciations of a phoneme in a particular context. The flap is an allophone of both /t/ and /d/ in American English. allophone allophone"
+  },
+  {
+   "key": "con-flap",
+   "label": "Concept",
+   "text": "A very quick tap of the tongue tip against the ridge behind the upper teeth, written [ɾ]. In American English /t/ and /d/ are usually pronounced this way between vowels when the second is unstressed: 'water', 'ladder'. flap flap"
+  },
+  {
+   "key": "con-intervocalic",
+   "label": "Concept",
+   "text": "Between two vowels: the usual environment for flapping. Flapping also follows r, l and n ('hardy', 'party'), so the span grid's [Vɾ] and [VɾV] spans reach back through those to the vowel. intervocalic intervocalic"
+  },
+  {
+   "key": "con-neutralization",
+   "label": "Concept",
+   "text": "A context where the difference between two phonemes is lost in pronunciation. Flapping neutralizes /t/ vs /d/ ('writer' and 'rider' can sound alike); Russian word-final devoicing neutralizes voicing (код 'code' and кот 'cat' both end in [t]). Small cues, such as the length of the preceding vowel, may survive. neutralization neutralization"
+  },
+  {
+   "key": "con-phone",
+   "label": "Concept",
+   "text": "A speech sound as actually produced, described by how it is articulated or how it sounds, whatever word it belongs to. phone phone"
+  },
+  {
+   "key": "con-phoneme",
+   "label": "Concept",
+   "text": "An abstract sound category a language uses to tell words apart. English /t/ and /d/ are different phonemes because 'tin' and 'din' are different words. phoneme phoneme"
+  },
+  {
+   "key": "con-probing",
+   "label": "Concept",
+   "text": "Training a simple classifier (a probe) on a model's frozen internal representations, to test whether some property can be read out of them. probing probing"
+  },
+  {
+   "key": "con-ssl-speech",
+   "label": "Concept",
+   "text": "A model trained on unlabelled audio only, by predicting parts of its own input. No transcripts are used, so anything phonological it encodes was learned from sound alone. self-supervised speech model self-supervised speech model"
+  },
+  {
+   "key": "con-surface",
+   "label": "Concept",
+   "text": "What is actually pronounced. At every pilot site it is a flap, by construction, so the label can't be read off the sound category. surface form surface form"
+  },
+  {
+   "key": "con-underlying",
+   "label": "Concept",
+   "text": "The phoneme a word has in its stored, dictionary form: /t/ in 'writer', /d/ in 'rider'. The pilot's labels are underlying forms. underlying form underlying form"
+  },
+  {
+   "key": "cond-joint",
+   "label": "Condition",
+   "text": "The gated condition. speakers and word types joint"
+  },
+  {
+   "key": "cond-random",
+   "label": "Condition",
+   "text": "Shuffled 5-fold, stratified by label. Word types and speakers recur between train and test. nothing random"
+  },
+  {
+   "key": "cond-speaker",
+   "label": "Condition",
+   "text": "speakers speaker_disjoint"
+  },
+  {
+   "key": "cond-word",
+   "label": "Condition",
+   "text": "word types (type keys) word_disjoint"
+  },
+  {
+   "key": "crit-rev1-1",
+   "label": "Criterion",
+   "text": "C1 (rev 1) Balanced accuracy at the best layer >= 0.65"
+  },
+  {
+   "key": "crit-rev1-2",
+   "label": "Criterion",
+   "text": "C2 (rev 1) Selectivity (real - control) at the best layer >= 0.10"
+  },
+  {
+   "key": "crit-rev1-3",
+   "label": "Criterion",
+   "text": "C3 (rev 1) Layer-wise curve is not flat best - worst >= 0.05"
+  },
+  {
+   "key": "crit-rev1-4",
+   "label": "Criterion",
+   "text": "C4 (rev 1) Minority-class F1 (/d/) at the best layer >= 0.50"
+  },
+  {
+   "key": "crit-rev2-1",
+   "label": "Criterion",
+   "text": "C1 (rev 2) Balanced accuracy at the best layer >= 0.60 (provisional)"
+  },
+  {
+   "key": "crit-rev2-2",
+   "label": "Criterion",
+   "text": "C2 (rev 2) Selectivity (real - control) at the best layer >= 0.10 (provisional)"
+  },
+  {
+   "key": "crit-rev2-3",
+   "label": "Criterion",
+   "text": "C3 (rev 2) Layer-wise curve is not flat best - worst >= 0.05"
+  },
+  {
+   "key": "crit-rev2-4",
+   "label": "Criterion",
+   "text": "C4 (rev 2) Minority-class F1 (/d/) at the best layer >= 0.45 (provisional)"
+  },
+  {
+   "key": "crit-rev3-1",
+   "label": "Criterion",
+   "text": "C1 (rev 3) Comparative instead of absolute: nothing calibrates an absolute bar for unseen words. Best WavJEPA layer beats the MFCC baseline gap >= 0.05 balanced accuracy, and paired word-type bootstrap 95% lower bound > 0"
+  },
+  {
+   "key": "crit-rev3-2",
+   "label": "Criterion",
+   "text": "C2 (rev 3) A leak bound, not a selectivity floor: under a type-disjoint split the control task's ceiling is chance. Drafted as 0.50 ± 0.03 (b9c861b); replaced before the push because ±0.03 fires 59–80% of the time with no leak (61bf29e). Control task shows no leak control's max balanced accuracy over layers does not exceed the 95th percentile of 10,000 redrawn mappings"
+  },
+  {
+   "key": "crit-rev3-3",
+   "label": "Criterion",
+   "text": "C3 (rev 3) Layer-wise curve is not flat best - worst >= 0.05"
+  },
+  {
+   "key": "crit-rev3-4",
+   "label": "Criterion",
+   "text": "C4 (rev 3) A guard, not a second performance bar. Trivial floors: 0.391 always-/d/, 0.327 coin flip, 0.243 base rate. Minority-class F1 (/d/) at the best layer >= 0.45"
+  },
+  {
+   "key": "ctrl-lookup",
+   "label": "Control",
+   "text": "A lookup table over training word types; no audio. Scores 0.9951 on the real task when types recur, and chance when they don't. Word lookup"
+  },
+  {
+   "key": "curve:mfcc:max:joint:full",
+   "label": "Curve",
+   "text": "joint MFCC · joint · max max mfcc"
+  },
+  {
+   "key": "curve:mfcc:max:random:full",
+   "label": "Curve",
+   "text": "random MFCC · random · max max mfcc"
+  },
+  {
+   "key": "curve:mfcc:max:random:subsampled",
+   "label": "Curve",
+   "text": "random MFCC · random · max · subsampled max mfcc"
+  },
+  {
+   "key": "curve:mfcc:max:speaker_disjoint:full",
+   "label": "Curve",
+   "text": "speaker_disjoint MFCC · speaker_disjoint · max max mfcc"
+  },
+  {
+   "key": "curve:mfcc:max:speaker_disjoint:subsampled",
+   "label": "Curve",
+   "text": "speaker_disjoint MFCC · speaker_disjoint · max · subsampled max mfcc"
+  },
+  {
+   "key": "curve:mfcc:max:word_disjoint:full",
+   "label": "Curve",
+   "text": "word_disjoint MFCC · word_disjoint · max max mfcc"
+  },
+  {
+   "key": "curve:mfcc:max:word_disjoint:subsampled",
+   "label": "Curve",
+   "text": "word_disjoint MFCC · word_disjoint · max · subsampled max mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:joint:full",
+   "label": "Curve",
+   "text": "joint MFCC · joint · mean mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:random:full",
+   "label": "Curve",
+   "text": "random MFCC · random · mean mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:random:subsampled",
+   "label": "Curve",
+   "text": "random MFCC · random · mean · subsampled mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:speaker_disjoint:full",
+   "label": "Curve",
+   "text": "speaker_disjoint MFCC · speaker_disjoint · mean mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:speaker_disjoint:subsampled",
+   "label": "Curve",
+   "text": "speaker_disjoint MFCC · speaker_disjoint · mean · subsampled mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:word_disjoint:full",
+   "label": "Curve",
+   "text": "word_disjoint MFCC · word_disjoint · mean mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:mean:word_disjoint:subsampled",
+   "label": "Curve",
+   "text": "word_disjoint MFCC · word_disjoint · mean · subsampled mean mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:joint:full",
+   "label": "Curve",
+   "text": "joint MFCC · joint · midpoint midpoint mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:random:full",
+   "label": "Curve",
+   "text": "random MFCC · random · midpoint midpoint mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:random:subsampled",
+   "label": "Curve",
+   "text": "random MFCC · random · midpoint · subsampled midpoint mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:speaker_disjoint:full",
+   "label": "Curve",
+   "text": "speaker_disjoint MFCC · speaker_disjoint · midpoint midpoint mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:speaker_disjoint:subsampled",
+   "label": "Curve",
+   "text": "speaker_disjoint MFCC · speaker_disjoint · midpoint · subsampled midpoint mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:word_disjoint:full",
+   "label": "Curve",
+   "text": "word_disjoint MFCC · word_disjoint · midpoint midpoint mfcc"
+  },
+  {
+   "key": "curve:mfcc:midpoint:word_disjoint:subsampled",
+   "label": "Curve",
+   "text": "word_disjoint MFCC · word_disjoint · midpoint · subsampled midpoint mfcc"
+  },
+  {
+   "key": "curve:wavjepa:max:joint:full",
+   "label": "Curve",
+   "text": "joint WavJEPA · joint · max max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:max:random:full",
+   "label": "Curve",
+   "text": "random WavJEPA · random · max max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:max:random:subsampled",
+   "label": "Curve",
+   "text": "random WavJEPA · random · max · subsampled max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:max:speaker_disjoint:full",
+   "label": "Curve",
+   "text": "speaker_disjoint WavJEPA · speaker_disjoint · max max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:max:speaker_disjoint:subsampled",
+   "label": "Curve",
+   "text": "speaker_disjoint WavJEPA · speaker_disjoint · max · subsampled max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:max:word_disjoint:full",
+   "label": "Curve",
+   "text": "word_disjoint WavJEPA · word_disjoint · max max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:max:word_disjoint:subsampled",
+   "label": "Curve",
+   "text": "word_disjoint WavJEPA · word_disjoint · max · subsampled max wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:joint:full",
+   "label": "Curve",
+   "text": "joint WavJEPA · joint · mean mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:random:full",
+   "label": "Curve",
+   "text": "random WavJEPA · random · mean mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:random:subsampled",
+   "label": "Curve",
+   "text": "random WavJEPA · random · mean · subsampled mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:speaker_disjoint:full",
+   "label": "Curve",
+   "text": "speaker_disjoint WavJEPA · speaker_disjoint · mean mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:speaker_disjoint:subsampled",
+   "label": "Curve",
+   "text": "speaker_disjoint WavJEPA · speaker_disjoint · mean · subsampled mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:word_disjoint:full",
+   "label": "Curve",
+   "text": "word_disjoint WavJEPA · word_disjoint · mean mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:mean:word_disjoint:subsampled",
+   "label": "Curve",
+   "text": "word_disjoint WavJEPA · word_disjoint · mean · subsampled mean wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:joint:full",
+   "label": "Curve",
+   "text": "joint WavJEPA · joint · midpoint midpoint wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:random:full",
+   "label": "Curve",
+   "text": "random WavJEPA · random · midpoint midpoint wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:random:subsampled",
+   "label": "Curve",
+   "text": "random WavJEPA · random · midpoint · subsampled midpoint wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:speaker_disjoint:full",
+   "label": "Curve",
+   "text": "speaker_disjoint WavJEPA · speaker_disjoint · midpoint midpoint wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:speaker_disjoint:subsampled",
+   "label": "Curve",
+   "text": "speaker_disjoint WavJEPA · speaker_disjoint · midpoint · subsampled midpoint wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:word_disjoint:full",
+   "label": "Curve",
+   "text": "word_disjoint WavJEPA · word_disjoint · midpoint midpoint wavjepa"
+  },
+  {
+   "key": "curve:wavjepa:midpoint:word_disjoint:subsampled",
+   "label": "Curve",
+   "text": "word_disjoint WavJEPA · word_disjoint · midpoint · subsampled midpoint wavjepa"
+  },
+  {
+   "key": "ds-buckeye",
+   "label": "Dataset",
+   "text": "free registration at buckeyecorpus.osu.edu; not redistributed Pitt, M.A., Dilley, L., Johnson, K., Kiesling, S., Raymond, W., Hume, E. & Fosler-Lussier, E. (2007). Buckeye Corpus of Conversational Speech (2nd release). Columbus, OH: Department of Psychology, Ohio State University. Buckeye Corpus of Conversational Speech used"
+  },
+  {
+   "key": "ds-common-voice-ru",
+   "label": "Dataset",
+   "text": "Mozilla Common Voice (Russian) planned"
+  },
+  {
+   "key": "env-flap",
+   "label": "Environment",
+   "text": "The flap's own frames only. [ɾ] used"
+  },
+  {
+   "key": "env-flap-v",
+   "label": "Environment",
+   "text": "The flap through the following segment, whatever it is. [ɾV] planned"
+  },
+  {
+   "key": "env-v-flap",
+   "label": "Environment",
+   "text": "The preceding sonorant stretch through the flap: back through any sonorant coda (r, l, n, m, ng, nx) to the start of the vowel before it. V includes syllabic consonants. [Vɾ] planned"
+  },
+  {
+   "key": "env-v-flap-v",
+   "label": "Environment",
+   "text": "The preceding stretch through the following segment. [VɾV] planned"
+  },
+  {
+   "key": "exp-devoicing",
+   "label": "Experiment",
+   "text": "Russian word-final devoicing planned"
+  },
+  {
+   "key": "exp-flapping",
+   "label": "Experiment",
+   "text": "English flapping Is the underlying /t/ or /d/ beneath a flap recoverable from the encoder's representation of the flap? active"
+  },
+  {
+   "key": "find-lemma",
+   "label": "Finding",
+   "text": "Lemma overlap Lemma overlap 25.1% of joint test sites (2,612) have their lemma in training with the same label; the split is disjoint by word form, not lemma. On the 7,586 lemma-unseen sites the gap to MFCC is +0.030, CI [-0.004, +0.073], still short of criterion 1. limitation, registered before the run"
+  },
+  {
+   "key": "find-power",
+   "label": "Finding",
+   "text": "Too little statistical power Too little power The gap to MFCC's paired word-type bootstrap interval is [-0.015, +0.056]: no evidence of an advantage over MFCC, which is not evidence of none. limitation"
+  },
+  {
+   "key": "find-sites",
+   "label": "Finding",
+   "text": "Sites aren't what the inventory says Sites mislabelled? A blind listening audit of 80 sites heard a flap in 72 of 74 decidable cases (6 /d/ can't-tells), and the right word and a well-placed clip in all 80. The labels come from the dictionary form and can't be heard under a flap, so the audit clears the sites, not the labels. ruled out for the sites, not the labels"
+  },
+  {
+   "key": "find-training",
+   "label": "Finding",
+   "text": "Too little training data Too little training data? Retraining the single-axis conditions at joint's training size (about 64% of sites) costs 0.006–0.013 at the best layer, against a 0.108 drop from random to joint. ruled out"
+  },
+  {
+   "key": "find-width",
+   "label": "Finding",
+   "text": "Site too narrow (2–4 frames) Sites too narrow? Sites are 2–4 encoder frames wide (median 3, 27.4 ms). For MFCC, whose 25 ms frames see only local audio (deltas reach ±40 ms), a cue outside those frames, such as the preceding vowel's length, is invisible to the probe. WavJEPA encodes the flap ± 200 ms as one excerpt, so at depth its flap frames can carry that context; for WavJEPA the pilot shows only that the cue wasn't linearly recoverable from those frames. Untested: the span grid, registered 2026-10-17, tests both. open"
+  },
+  {
+   "key": "find-words",
+   "label": "Finding",
+   "text": "The cue doesn't generalize to unseen words Doesn't generalize to unseen words The drop from random to joint is mostly the word axis: holding out speakers costs little, holding out word types costs most of the gap above chance. consistent with the result"
+  },
+  {
+   "key": "outcome-1",
+   "label": "Outcome",
+   "text": "best layer 3: 0.5438; MFCC 0.5274; gap +0.0163 (needs >= 0.05); paired word-type bootstrap 95% CI [-0.0154, +0.0561] (lower bound needs > 0) C1: FAIL FAIL"
+  },
+  {
+   "key": "outcome-2",
+   "label": "Outcome",
+   "text": "control max over layers 0.5377 (layer 9); 95th percentile of 10,000 null maxima 0.5502; permutation p = 0.1336 C2: PASS PASS"
+  },
+  {
+   "key": "outcome-3",
+   "label": "Outcome",
+   "text": "best 0.5438 (layer 3) - worst 0.5185 (layer 2) = 0.0253 (needs >= 0.05) C3: FAIL FAIL"
+  },
+  {
+   "key": "outcome-4",
+   "label": "Outcome",
+   "text": "/d/ F1 at layer 3 0.3563 (needs >= 0.45; trivial floors 0.391 always-/d/, 0.327 coin, 0.243 base rate) C4: FAIL FAIL"
+  },
+  {
+   "key": "paper-hewitt-liang",
+   "label": "Paper",
+   "text": "1909.03368 John Hewitt, Percy Liang Hewitt & Liang 2019 Hewitt & Liang 2019 Designing and Interpreting Probes with Control Tasks"
+  },
+  {
+   "key": "paper-pasad-2021",
+   "label": "Paper",
+   "text": "2107.04734 Ankita Pasad, Ju-Chieh Chou, Karen Livescu Pasad, Chou & Livescu 2021 Pasad, Chou & Livescu 2021 Layer-wise Analysis of a Self-supervised Speech Representation Model"
+  },
+  {
+   "key": "paper-pasad-2023",
+   "label": "Paper",
+   "text": "2211.03929 Ankita Pasad, Bowen Shi, Karen Livescu Pasad, Shi & Livescu 2023 Pasad, Shi & Livescu 2023 Comparative Layer-wise Analysis of Self-supervised Speech Models"
+  },
+  {
+   "key": "paper-wavjepa",
+   "label": "Paper",
+   "text": "2509.23238 Goksenin Yuksel, Pierre Guetschel, Michael Tangermann, Marcel van Gerven, Kiki van der Heijden Yuksel et al. 2025 Yuksel et al. 2025 WavJEPA: Semantic Learning Unlocks Robust Audio Foundation Models for Raw Waveforms"
+  },
+  {
+   "key": "paper-zhang-bowman",
+   "label": "Paper",
+   "text": "1809.10040 Kelly W. Zhang, Samuel R. Bowman Zhang & Bowman 2018 Zhang & Bowman 2018 Language Modeling Teaches You More Syntax than Translation Does: Lessons Learned Through Auxiliary Task Analysis"
+  },
+  {
+   "key": "pool-max",
+   "label": "Pooling",
+   "text": "max"
+  },
+  {
+   "key": "pool-mean",
+   "label": "Pooling",
+   "text": "Mean over the site's frames. mean"
+  },
+  {
+   "key": "pool-midpoint",
+   "label": "Pooling",
+   "text": "The site's frame at or before its temporal midpoint. midpoint"
+  },
+  {
+   "key": "probe-linear",
+   "label": "Probe",
+   "text": "balanced scikit-learn LogisticRegression Linear probe l2 lbfgs StandardScaler fit per probe on its training sites used"
+  },
+  {
+   "key": "probe-stronger",
+   "label": "Probe",
+   "text": "Stronger probe A §5 follow-up, as a new registration. planned"
+  },
+  {
+   "key": "rep-hubert",
+   "label": "Representation",
+   "text": "facebook/hubert-base-ls960 planned"
+  },
+  {
+   "key": "rep-mfcc",
+   "label": "Representation",
+   "text": "MFCC 13 coefficients incl. c0 + deltas + delta-deltas, librosa, 25 ms window / 10 ms hop. Features with no learned structure. used"
+  },
+  {
+   "key": "rep-wav2vec2",
+   "label": "Representation",
+   "text": "0b5b8e8 facebook/wav2vec2-base Registered in rev 3 as an exploratory second encoder; not run. The span grid compares it with WavJEPA. planned"
+  },
+  {
+   "key": "rep-wavjepa",
+   "label": "Representation",
+   "text": "6be4a50 WavJEPA Index 0 is the input to the first layer; 1–12 are layer outputs. Pretraining data not yet checked against the paper. used"
+  },
+  {
+   "key": "rep-wavlm",
+   "label": "Representation",
+   "text": "microsoft/wavlm-base planned"
+  },
+  {
+   "key": "rev1",
+   "label": "Registration",
+   "text": "2026-08-22 Revision 1 experiments/pilot-flapping/README.md Speaker-disjoint splits only; absolute thresholds."
+  },
+  {
+   "key": "rev2",
+   "label": "Registration",
+   "text": "2026-08-22 Revision 2 experiments/pilot-flapping/README.md Word-type-disjoint splits, after measuring that word identity alone scores 0.9951 on the real task. Three thresholds marked provisional. A revision, not a deviation: nothing had run."
+  },
+  {
+   "key": "rev3",
+   "label": "Registration",
+   "text": "2026-09-26 Revision 3 experiments/pilot-flapping/README.md Final before any run. Four split conditions, all 25 grid cells scored, MFCC registered as the baseline to beat, criteria finalized, every seed registered by value."
+  },
+  {
+   "key": "rq1",
+   "label": "ResearchQuestion",
+   "text": "RQ1 RQ1 active Do frozen audio-JEPA representations encode phonemes, or only phones? Tested at neutralization sites: Russian word-final devoicing, with English flapping as the control."
+  },
+  {
+   "key": "rq2",
+   "label": "ResearchQuestion",
+   "text": "RQ2 RQ2 deferred English morphosyntax. Deferred 2026-08-01 until the phonological experiments and the probing pipeline work."
+  },
+  {
+   "key": "rq3",
+   "label": "ResearchQuestion",
+   "text": "RQ3 RQ3 active Are those patterns specific to the JEPA objective, or general to self-supervised speech encoders?"
+  },
+  {
+   "key": "run-pilot",
+   "label": "Run",
+   "text": "61ba76f 6be4a50 b163059 2026-09-26 c75a23b 78462eb b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162 pilot-20260926 pilot-20260926 failed, 1 of 4 criteria"
+  },
+  {
+   "key": "sg-rev1",
+   "label": "Registration",
+   "text": "2026-10-17 Span grid (rev 1) experiments/span-grid/README.md Where the cue sits: four spans (ɾ, Vɾ, ɾV, VɾV) over 10,334 sites, a pooled and a cropped design, WavJEPA and wav2vec2-base against MFCC and duration baselines. Seven registered comparisons with the author's predictions; the WavJEPA ɾ span must first reproduce the pilot's joint curve."
+  },
+  {
+   "key": "study",
+   "label": "Study",
+   "text": "Layer-wise probing of frozen audio-JEPA representations (WavJEPA) against self-supervised baselines PhonoProbe"
+  },
+  {
+   "key": "task-control",
+   "label": "Control",
+   "text": "Each word type draws a random /t/-or-/d/ label at the real marginal; every token inherits it. Under a type-disjoint split it is a leak detector. Control task"
+  },
+  {
+   "key": "task-speaker",
+   "label": "Task",
+   "text": "40-way speaker ID from the same representations. A speaker-leakage diagnostic; defined only under random and word_disjoint. Speaker ID"
+  },
+  {
+   "key": "task-voicing",
+   "label": "Task",
+   "text": "Binary: was this [ɾ] an underlying /t/ or /d/? Labels from Buckeye's hand-corrected phone tier, aligned to the words. Voicing task"
+  }
+ ],
+ "edges": [
+  {
+   "source": "amend-audit",
+   "type": "AMENDS",
+   "target": "rev3"
+  },
+  {
+   "source": "amend-clarifications",
+   "type": "AMENDS",
+   "target": "rev3"
+  },
+  {
+   "source": "amend-lookup-ties",
+   "type": "AMENDS",
+   "target": "rev3"
+  },
+  {
+   "source": "amend-prediction",
+   "type": "AMENDS",
+   "target": "rev3"
+  },
+  {
+   "source": "amend-span-grid",
+   "type": "AMENDS",
+   "target": "rev3"
+  },
+  {
+   "source": "amend-span-grid",
+   "type": "POINTS_TO",
+   "target": "sg-rev1"
+  },
+  {
+   "source": "art-audit-report",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-audit-report",
+   "type": "GENERATED_BY",
+   "target": "code-summarize_audit"
+  },
+  {
+   "source": "art-audit-sample",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-audit-sample",
+   "type": "GENERATED_BY",
+   "target": "code-draw_audit_sample"
+  },
+  {
+   "source": "art-control-spread",
+   "type": "GENERATED_BY",
+   "target": "code-simulate_control_spread"
+  },
+  {
+   "source": "art-criteria",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-criteria",
+   "type": "GENERATED_BY",
+   "target": "code-run_probes"
+  },
+  {
+   "source": "art-criteria",
+   "type": "REPORTS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "art-criteria",
+   "type": "REPORTS",
+   "target": "outcome-2"
+  },
+  {
+   "source": "art-criteria",
+   "type": "REPORTS",
+   "target": "outcome-3"
+  },
+  {
+   "source": "art-criteria",
+   "type": "REPORTS",
+   "target": "outcome-4"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "GENERATED_BY",
+   "target": "code-plot_layer_curves"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:joint:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:random:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:random:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-fig-controls",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "GENERATED_BY",
+   "target": "code-plot_layer_curves"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:joint:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:random:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:random:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-fig-curves",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "GENERATED_BY",
+   "target": "code-plot_layer_curves"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:random:full"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:random:subsampled"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-fig-drop",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:word_disjoint:subsampled"
+  },
+  {
+   "source": "art-fig-pooling",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-fig-pooling",
+   "type": "GENERATED_BY",
+   "target": "code-plot_layer_curves"
+  },
+  {
+   "source": "art-fig-pooling",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:joint:full"
+  },
+  {
+   "source": "art-fig-pooling",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "art-fig-pooling",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:joint:full"
+  },
+  {
+   "source": "art-folds",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-folds",
+   "type": "GENERATED_BY",
+   "target": "code-run_probes"
+  },
+  {
+   "source": "art-inventory",
+   "type": "GENERATED_BY",
+   "target": "code-count_flap_sites"
+  },
+  {
+   "source": "art-lemma-report",
+   "type": "GENERATED_BY",
+   "target": "code-measure_lemma_overlap"
+  },
+  {
+   "source": "art-lemma-sites",
+   "type": "GENERATED_BY",
+   "target": "code-measure_lemma_overlap"
+  },
+  {
+   "source": "art-manifest",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-manifest",
+   "type": "GENERATED_BY",
+   "target": "code-run_probes"
+  },
+  {
+   "source": "art-results",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "art-results",
+   "type": "GENERATED_BY",
+   "target": "code-run_probes"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:joint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:random:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:random:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:speaker_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:word_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:max:word_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:joint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:random:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:random:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:mean:word_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:joint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:random:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:random:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:speaker_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:word_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:mfcc:midpoint:word_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:joint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:random:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:random:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:speaker_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:word_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:max:word_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:random:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:random:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:word_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:mean:word_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:joint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:random:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:random:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:speaker_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:word_disjoint:full"
+  },
+  {
+   "source": "art-results",
+   "type": "REPORTS",
+   "target": "curve:wavjepa:midpoint:word_disjoint:subsampled"
+  },
+  {
+   "source": "con-allophone",
+   "type": "BROADER",
+   "target": "con-phone"
+  },
+  {
+   "source": "con-allophone",
+   "type": "INVOLVES",
+   "target": "con-phoneme"
+  },
+  {
+   "source": "con-flap",
+   "type": "BROADER",
+   "target": "con-phone"
+  },
+  {
+   "source": "con-neutralization",
+   "type": "INVOLVES",
+   "target": "con-phoneme"
+  },
+  {
+   "source": "con-surface",
+   "type": "INVOLVES",
+   "target": "con-phone"
+  },
+  {
+   "source": "con-underlying",
+   "type": "INVOLVES",
+   "target": "con-phoneme"
+  },
+  {
+   "source": "cond-joint",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-splits"
+  },
+  {
+   "source": "cond-random",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-splits"
+  },
+  {
+   "source": "cond-speaker",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-splits"
+  },
+  {
+   "source": "cond-word",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-splits"
+  },
+  {
+   "source": "crit-rev2-1",
+   "type": "SUPERSEDES",
+   "target": "crit-rev1-1"
+  },
+  {
+   "source": "crit-rev2-2",
+   "type": "SUPERSEDES",
+   "target": "crit-rev1-2"
+  },
+  {
+   "source": "crit-rev2-3",
+   "type": "SUPERSEDES",
+   "target": "crit-rev1-3"
+  },
+  {
+   "source": "crit-rev2-4",
+   "type": "SUPERSEDES",
+   "target": "crit-rev1-4"
+  },
+  {
+   "source": "crit-rev3-1",
+   "type": "COMPARES_TO",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "crit-rev3-1",
+   "type": "MEASURED_ON",
+   "target": "cond-joint"
+  },
+  {
+   "source": "crit-rev3-1",
+   "type": "SUPERSEDES",
+   "target": "crit-rev2-1"
+  },
+  {
+   "source": "crit-rev3-2",
+   "type": "MEASURED_ON",
+   "target": "cond-joint"
+  },
+  {
+   "source": "crit-rev3-2",
+   "type": "SUPERSEDES",
+   "target": "crit-rev2-2"
+  },
+  {
+   "source": "crit-rev3-3",
+   "type": "MEASURED_ON",
+   "target": "cond-joint"
+  },
+  {
+   "source": "crit-rev3-3",
+   "type": "SUPERSEDES",
+   "target": "crit-rev2-3"
+  },
+  {
+   "source": "crit-rev3-4",
+   "type": "MEASURED_ON",
+   "target": "cond-joint"
+  },
+  {
+   "source": "crit-rev3-4",
+   "type": "SUPERSEDES",
+   "target": "crit-rev2-4"
+  },
+  {
+   "source": "ctrl-lookup",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-controls"
+  },
+  {
+   "source": "curve:mfcc:max:joint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:joint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:joint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-joint"
+  },
+  {
+   "source": "curve:mfcc:max:joint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:max:random:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:random:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:random:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:mfcc:max:random:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:max:random:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:random:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:random:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:mfcc:max:random:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:mfcc:max:speaker_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:mfcc:max:word_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:mfcc:mean:joint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:joint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:joint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-joint"
+  },
+  {
+   "source": "curve:mfcc:mean:joint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:mean:random:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:random:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:random:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:mfcc:mean:random:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:mean:random:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:random:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:random:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:mfcc:mean:random:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:mfcc:mean:speaker_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:mfcc:mean:word_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:mfcc:midpoint:joint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:joint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:joint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-joint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:joint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:mfcc:midpoint:random:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:mfcc:midpoint:speaker_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:mfcc:midpoint:word_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:max:joint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:joint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:joint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-joint"
+  },
+  {
+   "source": "curve:wavjepa:max:joint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:max:random:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:random:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:random:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:wavjepa:max:random:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:max:random:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:random:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:random:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:wavjepa:max:random:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:wavjepa:max:speaker_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:wavjepa:max:word_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-max"
+  },
+  {
+   "source": "curve:wavjepa:mean:joint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:joint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:joint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-joint"
+  },
+  {
+   "source": "curve:wavjepa:mean:joint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:wavjepa:mean:random:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:wavjepa:mean:speaker_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:wavjepa:mean:word_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-mean"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:joint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:joint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:joint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-joint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:joint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-random"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:random:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:speaker_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:full",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:full",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:full",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:full",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:subsampled",
+   "type": "FOR_REPRESENTATION",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:subsampled",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:subsampled",
+   "type": "UNDER_CONDITION",
+   "target": "cond-word"
+  },
+  {
+   "source": "curve:wavjepa:midpoint:word_disjoint:subsampled",
+   "type": "WITH_POOLING",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "env-v-flap-v",
+   "type": "INVOLVES",
+   "target": "con-intervocalic"
+  },
+  {
+   "source": "exp-devoicing",
+   "type": "ADDRESSES",
+   "target": "rq1"
+  },
+  {
+   "source": "exp-devoicing",
+   "type": "ADDRESSES",
+   "target": "rq3"
+  },
+  {
+   "source": "exp-devoicing",
+   "type": "USES_DATASET",
+   "target": "ds-common-voice-ru"
+  },
+  {
+   "source": "exp-flapping",
+   "type": "ADDRESSES",
+   "target": "rq1"
+  },
+  {
+   "source": "exp-flapping",
+   "type": "ADDRESSES",
+   "target": "rq3"
+  },
+  {
+   "source": "exp-flapping",
+   "type": "HAS_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "exp-flapping",
+   "type": "INVOLVES",
+   "target": "con-flap"
+  },
+  {
+   "source": "exp-flapping",
+   "type": "INVOLVES",
+   "target": "con-neutralization"
+  },
+  {
+   "source": "exp-flapping",
+   "type": "USES_DATASET",
+   "target": "ds-buckeye"
+  },
+  {
+   "source": "find-lemma",
+   "type": "EVIDENCED_BY",
+   "target": "art-criteria"
+  },
+  {
+   "source": "find-lemma",
+   "type": "EVIDENCED_BY",
+   "target": "art-lemma-sites"
+  },
+  {
+   "source": "find-lemma",
+   "type": "EVIDENCED_BY",
+   "target": "rev3"
+  },
+  {
+   "source": "find-lemma",
+   "type": "EXPLAINS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "find-power",
+   "type": "EVIDENCED_BY",
+   "target": "art-criteria"
+  },
+  {
+   "source": "find-power",
+   "type": "EXPLAINS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "find-sites",
+   "type": "EVIDENCED_BY",
+   "target": "amend-audit"
+  },
+  {
+   "source": "find-sites",
+   "type": "EVIDENCED_BY",
+   "target": "art-audit-report"
+  },
+  {
+   "source": "find-sites",
+   "type": "EVIDENCED_BY",
+   "target": "art-audit-sample"
+  },
+  {
+   "source": "find-sites",
+   "type": "EXPLAINS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "find-sites",
+   "type": "EXPLAINS",
+   "target": "outcome-3"
+  },
+  {
+   "source": "find-sites",
+   "type": "EXPLAINS",
+   "target": "outcome-4"
+  },
+  {
+   "source": "find-training",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:random:subsampled"
+  },
+  {
+   "source": "find-training",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:speaker_disjoint:subsampled"
+  },
+  {
+   "source": "find-training",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:word_disjoint:subsampled"
+  },
+  {
+   "source": "find-training",
+   "type": "EXPLAINS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "find-training",
+   "type": "EXPLAINS",
+   "target": "outcome-3"
+  },
+  {
+   "source": "find-training",
+   "type": "EXPLAINS",
+   "target": "outcome-4"
+  },
+  {
+   "source": "find-width",
+   "type": "EVIDENCED_BY",
+   "target": "env-v-flap-v"
+  },
+  {
+   "source": "find-width",
+   "type": "EVIDENCED_BY",
+   "target": "rev3"
+  },
+  {
+   "source": "find-width",
+   "type": "EXPLAINS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "find-width",
+   "type": "EXPLAINS",
+   "target": "outcome-3"
+  },
+  {
+   "source": "find-width",
+   "type": "EXPLAINS",
+   "target": "outcome-4"
+  },
+  {
+   "source": "find-words",
+   "type": "EVIDENCED_BY",
+   "target": "art-fig-drop"
+  },
+  {
+   "source": "find-words",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "find-words",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:random:full"
+  },
+  {
+   "source": "find-words",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:speaker_disjoint:full"
+  },
+  {
+   "source": "find-words",
+   "type": "EVIDENCED_BY",
+   "target": "curve:wavjepa:mean:word_disjoint:full"
+  },
+  {
+   "source": "find-words",
+   "type": "EXPLAINS",
+   "target": "outcome-1"
+  },
+  {
+   "source": "find-words",
+   "type": "EXPLAINS",
+   "target": "outcome-3"
+  },
+  {
+   "source": "find-words",
+   "type": "EXPLAINS",
+   "target": "outcome-4"
+  },
+  {
+   "source": "outcome-1",
+   "type": "EVALUATES",
+   "target": "crit-rev3-1"
+  },
+  {
+   "source": "outcome-1",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "outcome-1",
+   "type": "SCORED_FROM",
+   "target": "curve:mfcc:mean:joint:full"
+  },
+  {
+   "source": "outcome-1",
+   "type": "SCORED_FROM",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "outcome-2",
+   "type": "EVALUATES",
+   "target": "crit-rev3-2"
+  },
+  {
+   "source": "outcome-2",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "outcome-2",
+   "type": "SCORED_FROM",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "outcome-3",
+   "type": "EVALUATES",
+   "target": "crit-rev3-3"
+  },
+  {
+   "source": "outcome-3",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "outcome-3",
+   "type": "SCORED_FROM",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "outcome-4",
+   "type": "EVALUATES",
+   "target": "crit-rev3-4"
+  },
+  {
+   "source": "outcome-4",
+   "type": "FROM_RUN",
+   "target": "run-pilot"
+  },
+  {
+   "source": "outcome-4",
+   "type": "SCORED_FROM",
+   "target": "curve:wavjepa:mean:joint:full"
+  },
+  {
+   "source": "paper-hewitt-liang",
+   "type": "JUSTIFIES",
+   "target": "crit-rev3-2"
+  },
+  {
+   "source": "paper-hewitt-liang",
+   "type": "JUSTIFIES",
+   "target": "probe-linear"
+  },
+  {
+   "source": "paper-hewitt-liang",
+   "type": "JUSTIFIES",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "paper-hewitt-liang",
+   "type": "JUSTIFIES",
+   "target": "rq3"
+  },
+  {
+   "source": "paper-hewitt-liang",
+   "type": "JUSTIFIES",
+   "target": "task-control"
+  },
+  {
+   "source": "paper-pasad-2021",
+   "type": "JUSTIFIES",
+   "target": "rep-wav2vec2"
+  },
+  {
+   "source": "paper-pasad-2023",
+   "type": "JUSTIFIES",
+   "target": "amend-prediction"
+  },
+  {
+   "source": "paper-pasad-2023",
+   "type": "JUSTIFIES",
+   "target": "rep-hubert"
+  },
+  {
+   "source": "paper-pasad-2023",
+   "type": "JUSTIFIES",
+   "target": "rep-wavlm"
+  },
+  {
+   "source": "paper-pasad-2023",
+   "type": "JUSTIFIES",
+   "target": "rq3"
+  },
+  {
+   "source": "paper-wavjepa",
+   "type": "JUSTIFIES",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "paper-zhang-bowman",
+   "type": "JUSTIFIES",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "probe-linear",
+   "type": "INVOLVES",
+   "target": "con-probing"
+  },
+  {
+   "source": "rep-wavjepa",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-extraction"
+  },
+  {
+   "source": "rep-wavjepa",
+   "type": "INVOLVES",
+   "target": "con-ssl-speech"
+  },
+  {
+   "source": "rev1",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev1-1"
+  },
+  {
+   "source": "rev1",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev1-2"
+  },
+  {
+   "source": "rev1",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev1-3"
+  },
+  {
+   "source": "rev1",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev1-4"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "env-flap"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "pool-mean"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "probe-linear"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "task-control"
+  },
+  {
+   "source": "rev1",
+   "type": "SPECIFIES",
+   "target": "task-voicing"
+  },
+  {
+   "source": "rev2",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev2-1"
+  },
+  {
+   "source": "rev2",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev2-2"
+  },
+  {
+   "source": "rev2",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev2-3"
+  },
+  {
+   "source": "rev2",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev2-4"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "cond-joint"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "ctrl-lookup"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "env-flap"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "pool-mean"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "probe-linear"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "task-control"
+  },
+  {
+   "source": "rev2",
+   "type": "SPECIFIES",
+   "target": "task-voicing"
+  },
+  {
+   "source": "rev2",
+   "type": "SUPERSEDES",
+   "target": "rev1"
+  },
+  {
+   "source": "rev3",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev3-1"
+  },
+  {
+   "source": "rev3",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev3-2"
+  },
+  {
+   "source": "rev3",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev3-3"
+  },
+  {
+   "source": "rev3",
+   "type": "SETS_CRITERION",
+   "target": "crit-rev3-4"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "cond-joint"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "cond-random"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "cond-word"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "ctrl-lookup"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "env-flap"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "pool-max"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "pool-mean"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "probe-linear"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "rep-wav2vec2"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "task-control"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "task-speaker"
+  },
+  {
+   "source": "rev3",
+   "type": "SPECIFIES",
+   "target": "task-voicing"
+  },
+  {
+   "source": "rev3",
+   "type": "SUPERSEDES",
+   "target": "rev2"
+  },
+  {
+   "source": "rq1",
+   "type": "INVOLVES",
+   "target": "con-neutralization"
+  },
+  {
+   "source": "rq1",
+   "type": "INVOLVES",
+   "target": "con-phone"
+  },
+  {
+   "source": "rq1",
+   "type": "INVOLVES",
+   "target": "con-phoneme"
+  },
+  {
+   "source": "rq3",
+   "type": "INVOLVES",
+   "target": "con-ssl-speech"
+  },
+  {
+   "source": "run-pilot",
+   "type": "REALIZES",
+   "target": "task-control"
+  },
+  {
+   "source": "run-pilot",
+   "type": "REALIZES",
+   "target": "task-speaker"
+  },
+  {
+   "source": "run-pilot",
+   "type": "REALIZES",
+   "target": "task-voicing"
+  },
+  {
+   "source": "run-pilot",
+   "type": "REGISTERED_BY",
+   "target": "rev3"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "cond-joint"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "cond-random"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "cond-speaker"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "cond-word"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "ctrl-lookup"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "ds-buckeye"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "env-flap"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "pool-max"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "pool-mean"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "pool-midpoint"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "probe-linear"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "run-pilot",
+   "type": "USED",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "FOLLOWS_UP",
+   "target": "rev3"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "cond-joint"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "env-flap"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "env-flap-v"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "env-v-flap"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "env-v-flap-v"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "pool-mean"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "probe-linear"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "rep-mfcc"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "rep-wav2vec2"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "rep-wavjepa"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "task-control"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "SPECIFIES",
+   "target": "task-voicing"
+  },
+  {
+   "source": "sg-rev1",
+   "type": "TESTS",
+   "target": "find-width"
+  },
+  {
+   "source": "study",
+   "type": "ASKS",
+   "target": "rq1"
+  },
+  {
+   "source": "study",
+   "type": "ASKS",
+   "target": "rq2"
+  },
+  {
+   "source": "study",
+   "type": "ASKS",
+   "target": "rq3"
+  },
+  {
+   "source": "study",
+   "type": "HAS_EXPERIMENT",
+   "target": "exp-devoicing"
+  },
+  {
+   "source": "study",
+   "type": "HAS_EXPERIMENT",
+   "target": "exp-flapping"
+  },
+  {
+   "source": "task-control",
+   "type": "IMPLEMENTED_BY",
+   "target": "code-mod-controls"
+  },
+  {
+   "source": "task-voicing",
+   "type": "INVOLVES",
+   "target": "con-surface"
+  },
+  {
+   "source": "task-voicing",
+   "type": "INVOLVES",
+   "target": "con-underlying"
+  }
+ ],
+ "questions": [
+  {
+   "question": "What's a flap?",
+   "retrieval": "concept",
+   "params": {
+    "term": "flap",
+    "criterion": 0
+   },
+   "gold": [
+    "con-flap",
+    "con-phone"
+   ]
+  },
+  {
+   "question": "How did criterion 2 get its final form?",
+   "retrieval": "criterion_provenance",
+   "params": {
+    "term": "",
+    "criterion": 2
+   },
+   "gold": [
+    "crit-rev1-2",
+    "crit-rev2-2",
+    "crit-rev3-2",
+    "paper-hewitt-liang",
+    "rev1",
+    "rev2",
+    "rev3"
+   ]
+  },
+  {
+   "question": "Why did the pilot fail, and what's planned to test it?",
+   "retrieval": "why_failed",
+   "params": {
+    "term": "",
+    "criterion": 0
+   },
+   "gold": [
+    "amend-audit",
+    "art-audit-report",
+    "art-audit-sample",
+    "art-criteria",
+    "art-fig-drop",
+    "art-lemma-sites",
+    "crit-rev3-1",
+    "crit-rev3-3",
+    "crit-rev3-4",
+    "env-v-flap-v",
+    "find-lemma",
+    "find-power",
+    "find-sites",
+    "find-training",
+    "find-width",
+    "find-words",
+    "rev3"
+   ]
+  },
+  {
+   "question": "How does WavJEPA's best layer compare with MFCC under each split condition?",
+   "retrieval": "word_axis",
+   "params": {
+    "term": "",
+    "criterion": 0
+   },
+   "gold": [
+    "cond-joint",
+    "cond-random",
+    "cond-speaker",
+    "cond-word",
+    "curve:wavjepa:mean:joint:full",
+    "curve:wavjepa:mean:random:full",
+    "curve:wavjepa:mean:speaker_disjoint:full",
+    "curve:wavjepa:mean:word_disjoint:full"
+   ]
+  },
+  {
+   "question": "What does registration revision 3 specify that the pilot never used?",
+   "retrieval": "registered_not_run",
+   "params": {
+    "term": "",
+    "criterion": 0
+   },
+   "gold": [
+    "rep-wav2vec2"
+   ]
+  }
+ ]
+}
