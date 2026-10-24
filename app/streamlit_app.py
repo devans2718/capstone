@@ -1050,12 +1050,11 @@ with tab_graph:
     else:
         # Two independent inputs, no callback between them. With a callback
         # filling the text box from the pick, picking sent a real Chrome back
-        # to the first tab (2026-10-24; not reproducible headless).
+        # to the first tab (2026-10-24; not reproducible headless). Without
+        # it, confirmed in real Chrome, the tab stays put.
         picked = st.selectbox("Evaluated questions", GRAPHRAG_QUESTIONS,
                               index=None, placeholder="Pick one",
                               key="graph_example")
-        st.caption("If the page jumps to the Result tab after you pick a "
-                   "question, click Ask the graph again: the question is kept.")
         typed = st.text_input("Or type your own question", key="graph_question")
         question = typed.strip() or picked or ""
         if question:
