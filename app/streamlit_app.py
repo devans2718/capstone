@@ -962,10 +962,6 @@ with tab_audit:
 # -------------------------------------------------------------- ask the graph
 
 
-def use_example() -> None:
-    st.session_state.graph_question = st.session_state.graph_example
-
-
 def graph_log(message: str) -> None:
     """One line per Ask step on the server's stderr, so a run can be traced."""
     print(f"{datetime.now():%H:%M:%S} [ask the graph] {message}",
@@ -1052,15 +1048,23 @@ with tab_graph:
         st.warning(f"GraphRAG needs `neo4j` and `anthropic` "
                    f"(requirements-app.txt): {exc}")
     else:
-        st.selectbox("Evaluated questions", GRAPHRAG_QUESTIONS, index=None,
-                     placeholder="Pick one, or type your own below",
-                     key="graph_example", on_change=use_example)
-        question = st.text_input("Question", key="graph_question")
+        # Two independent inputs, no callback between them. With a callback
+        # filling the text box from the pick, picking sent a real Chrome back
+        # to the first tab (2026-10-24; not reproducible headless).
+        picked = st.selectbox("Evaluated questions", GRAPHRAG_QUESTIONS,
+                              index=None, placeholder="Pick one",
+                              key="graph_example")
+        st.caption("If the page jumps to the Result tab after you pick a "
+                   "question, click Ask the graph again: the question is kept.")
+        typed = st.text_input("Or type your own question", key="graph_question")
+        question = typed.strip() or picked or ""
+        if question:
+            st.markdown(f"**Will ask:** {question}")
         # Kept in session state: any widget on the page reruns the script, and
         # that must neither drop the answer nor pay for it again.
-        if st.button("Ask", disabled=not question.strip(), key="graph_ask"):
+        if st.button("Ask", disabled=not question, key="graph_ask"):
             with st.spinner(f"Routing, retrieving and answering ({graphrag.MODEL})"):
-                st.session_state.graph_run = ask_graph(graphrag, question.strip())
+                st.session_state.graph_run = ask_graph(graphrag, question)
 
         run = st.session_state.get("graph_run")
         if run and "error" in run:
