@@ -966,36 +966,76 @@ def use_example() -> None:
     st.session_state.graph_question = st.session_state.graph_example
 
 
+def graph_log(message: str) -> None:
+    """One line per Ask step on the server's stderr, so a run can be traced."""
+    print(f"{datetime.now():%H:%M:%S} [ask the graph] {message}",
+          file=sys.stderr, flush=True)
+
+
+@st.cache_data(show_spinner=False)
+def run_graphrag(question: str) -> dict:
+    """route -> retrieve -> answer, cached per question across sessions.
+
+    A lost session (a reconnect, a reload) drops session state; this cache
+    survives it, so asking again shows the answer already paid for. Errors
+    raise, and Streamlit caches only returns, so a failure is never reused.
+    `answered_at` is when the model actually ran, which is how the tab tells
+    a live answer from a cached one. Cleared when the server restarts.
+    """
+    graphrag = load_graphrag()
+    start = datetime.now()
+    graph_log(f"live run: {question!r}")
+    choice = graphrag.route(question)
+    graph_log(f"routed to {choice['retrieval']} (term={choice['term']!r}, "
+              f"criterion={choice['criterion']})")
+    rows = graphrag.retrieve(choice)
+    graph_log("rows: " + ", ".join(f"{k}={len(v)}" for k, v in rows.items()))
+    text = graphrag.answer(question, rows)
+    graph_log(f"answered in {(datetime.now() - start).total_seconds():.1f} s")
+    return {"question": question, "choice": choice, "rows": rows,
+            "answer": text, "answered_at": start}
+
+
 def ask_graph(graphrag, question: str) -> dict:
-    """route -> retrieve -> answer, as kg/graphrag.py runs them. Never raises.
+    """run_graphrag behind the tab's checks. Never raises.
 
     Neo4j is checked before the first model call, so a stopped server costs
-    nothing. Whatever fails, the error is returned for this tab to show.
+    nothing. Whatever fails, the error is logged and returned for this tab to
+    show. `cached` is true when the answer predates this click.
     """
     import neo4j.exceptions
 
+    graph_log(f"Ask: {question!r}")
     graphrag.load_dotenv()
     if not os.environ.get("ANTHROPIC_API_KEY"):
+        graph_log("error: no ANTHROPIC_API_KEY")
         return {"error": "No `ANTHROPIC_API_KEY`: set it in the environment or "
                          "in `.env` at the repo root (see kg/README.md, Setup)."}
     try:
         with graphrag.GraphDatabase.driver(graphrag.URI, auth=graphrag.AUTH) as d:
             d.verify_connectivity()
     except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as exc:
+        graph_log(f"error: no knowledge graph at {graphrag.URI}: {exc}")
         return {"error": f"No knowledge graph at `{graphrag.URI}` ({exc}). Start "
                          "it with `docker compose -f kg/compose.yaml up -d` "
                          "(see kg/README.md, Setup)."}
+    clicked = datetime.now()
     try:
-        choice = graphrag.route(question)
-        rows = graphrag.retrieve(choice)
-        text = graphrag.answer(question, rows)
+        run = run_graphrag(question)
     except graphrag.anthropic.APIError as exc:
-        return {"error": f"The model call failed: {exc}"}
+        error = f"The model call failed: {exc}"
     except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as exc:
-        return {"error": f"The retrieval failed: {exc}"}
+        error = f"The retrieval failed: {exc}"
     except SystemExit as exc:  # complete() exits on a refusal
-        return {"error": str(exc)}
-    return {"question": question, "choice": choice, "rows": rows, "answer": text}
+        error = str(exc)
+    else:
+        cached = run["answered_at"] < clicked
+        if cached:
+            graph_log(f"cached answer from {run['answered_at']:%H:%M:%S}, "
+                      "no model calls")
+        return {**run, "cached": cached}
+    graph_log(f"error: {error}")
+    return {"error": error}
 
 
 with tab_graph:
@@ -1039,6 +1079,15 @@ with tab_graph:
                     st.code(textwrap.dedent(cypher).strip(), language="cypher")
                 if rows:
                     st.dataframe(rows, hide_index=True, width="stretch")
+            at = f"{run['answered_at']:%H:%M:%S}"
             st.markdown(f"#### Answer ({graphrag.MODEL})")
+            # Shown above the answer, so a screenshot says whether it was live.
+            if run["cached"]:
+                st.warning(f"**Cached:** answered at {at} and reused, with no "
+                           "new model calls. The cache clears when the server "
+                           "restarts.")
+            else:
+                st.success(f"**Live:** answered at {at} by two model calls "
+                           "(route, then answer).")
             st.markdown(run["answer"])
             st.caption("Keys in [brackets] are node keys from the rows above.")
