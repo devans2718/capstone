@@ -1,0 +1,23 @@
+{
+ "time": "20261024-124638",
+ "model": "claude-opus-5-5",
+ "question": "What does registration revision 3 specify that the pilot never used?",
+ "choice": {
+  "retrieval": "registered_not_run",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "specified_unused": [
+   {
+    "key": "rep-wav2vec2",
+    "kind": "Representation",
+    "item": "facebook/wav2vec2-base",
+    "role": "exploratory",
+    "status": "planned",
+    "note": "Registered in rev 3 as an exploratory second encoder; not run. The span grid compares it with WavJEPA."
+   }
+  ]
+ },
+ "answer": "Registration revision 3 lists one item the pilot never used: the **facebook/wav2vec2-base** representation [rep-wav2vec2].\n\n- **What it is:** an exploratory second encoder, registered in rev 3 [rep-wav2vec2].\n- **Status:** \"planned\" and not yet run [rep-wav2vec2].\n- **Intended purpose:** the span grid is designed to compare it with WavJEPA [rep-wav2vec2]. Since it hasn't been run, that comparison has no results yet.\n\nThis is the only specified-but-unused item in the retrieved rows. The rows don't say why it wasn't run or when it might be. They also don't confirm whether rev 3 contains other unused specifications beyond what this query returned."
+}
