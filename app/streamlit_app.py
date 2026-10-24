@@ -34,9 +34,11 @@ WHY THERE ARE TWO UNCERTAINTY SECTIONS AND NOT ONE NUMBER
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
+import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,6 +77,18 @@ LOOKUP_LIMIT = 200
 # by scripts/draw_audit_sample.py; the questions are capstone.audit's.
 AUDIT_SAMPLE = ROOT / "results" / "flapping" / "audit-sample-20260926.tsv"
 VERDICT_LABELS = {"yes": "yes", "no": "no", "cant_tell": "can't tell"}
+
+# The Ask the graph tab runs kg/graphrag.py's pipeline as it is. The five
+# questions are the ones GraphRAG was evaluated on; each has a saved run in
+# kg/graphrag-runs/.
+GRAPHRAG = ROOT / "kg" / "graphrag.py"
+GRAPHRAG_QUESTIONS = [
+    "What's a flap?",
+    "How did criterion 2 get its final form?",
+    "Why did the pilot fail, and what's planned to test it?",
+    "How does WavJEPA's best layer compare with MFCC under each split condition?",
+    "What does registration revision 3 specify that the pilot never used?",
+]
 
 
 def criteria_commit() -> str:
@@ -409,6 +423,23 @@ st.session_state.setdefault("layer", BEST["joint"]["layer"])
 st.session_state.setdefault("pooling", "mean")
 
 
+@st.cache_resource
+def load_graphrag():
+    """kg/graphrag.py as a module, loaded from its path.
+
+    kg/ is a folder of scripts, not a package, and stays one: loading the one
+    file by path keeps facts.py and the loaders off sys.path, and leaves the
+    command line (`python kg/graphrag.py ...`) exactly as it was. A missing
+    neo4j or anthropic raises here, inside the tab, not at the top of the app.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("graphrag", GRAPHRAG)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def to_default_layer() -> None:
     st.session_state.layer = BEST[st.session_state.condition]["layer"]
     st.session_state.result_condition = st.session_state.condition
@@ -463,9 +494,11 @@ with st.sidebar:
 u = None if underlying == "either" else underlying
 c = None if correctness == "either" else (correctness == "correct")
 
-tab_result, tab_evidence, tab_compare, tab_uncertainty, tab_state, tab_audit = st.tabs(
+(tab_result, tab_evidence, tab_compare, tab_uncertainty, tab_state, tab_audit,
+ tab_graph) = st.tabs(
     ["Result", "Browse and listen", "Compare two splits",
-     "What this can and can't tell you", "Look up one site", "Audit (blind)"]
+     "What this can and can't tell you", "Look up one site", "Audit (blind)",
+     "Ask the graph"]
 )
 
 # --------------------------------------------------------------------- result
@@ -925,3 +958,87 @@ with tab_audit:
             st.caption("yes / (yes + no), Wilson 95% interval; can't tell is "
                        "reported beside the rate, not folded in. Per class "
                        "only: the sample is balanced, the inventory is not.")
+
+# -------------------------------------------------------------- ask the graph
+
+
+def use_example() -> None:
+    st.session_state.graph_question = st.session_state.graph_example
+
+
+def ask_graph(graphrag, question: str) -> dict:
+    """route -> retrieve -> answer, as kg/graphrag.py runs them. Never raises.
+
+    Neo4j is checked before the first model call, so a stopped server costs
+    nothing. Whatever fails, the error is returned for this tab to show.
+    """
+    import neo4j.exceptions
+
+    graphrag.load_dotenv()
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return {"error": "No `ANTHROPIC_API_KEY`: set it in the environment or "
+                         "in `.env` at the repo root (see kg/README.md, Setup)."}
+    try:
+        with graphrag.GraphDatabase.driver(graphrag.URI, auth=graphrag.AUTH) as d:
+            d.verify_connectivity()
+    except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as exc:
+        return {"error": f"No knowledge graph at `{graphrag.URI}` ({exc}). Start "
+                         "it with `docker compose -f kg/compose.yaml up -d` "
+                         "(see kg/README.md, Setup)."}
+    try:
+        choice = graphrag.route(question)
+        rows = graphrag.retrieve(choice)
+        text = graphrag.answer(question, rows)
+    except graphrag.anthropic.APIError as exc:
+        return {"error": f"The model call failed: {exc}"}
+    except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as exc:
+        return {"error": f"The retrieval failed: {exc}"}
+    except SystemExit as exc:  # complete() exits on a refusal
+        return {"error": str(exc)}
+    return {"question": question, "choice": choice, "rows": rows, "answer": text}
+
+
+with tab_graph:
+    st.write(
+        "Questions about the study's design, results and reasoning, answered "
+        "from its knowledge graph (`kg/`). The model picks one of five "
+        "reviewed retrievals and fills its parameter; it never writes Cypher. "
+        "It then answers from the returned rows only, citing their node keys. "
+        "The rows are shown first, so every claim can be checked against them."
+    )
+    try:
+        graphrag = load_graphrag()
+    except ImportError as exc:
+        st.warning(f"GraphRAG needs `neo4j` and `anthropic` "
+                   f"(requirements-app.txt): {exc}")
+    else:
+        st.selectbox("Evaluated questions", GRAPHRAG_QUESTIONS, index=None,
+                     placeholder="Pick one, or type your own below",
+                     key="graph_example", on_change=use_example)
+        question = st.text_input("Question", key="graph_question")
+        # Kept in session state: any widget on the page reruns the script, and
+        # that must neither drop the answer nor pay for it again.
+        if st.button("Ask", disabled=not question.strip(), key="graph_ask"):
+            with st.spinner(f"Routing, retrieving and answering ({graphrag.MODEL})"):
+                st.session_state.graph_run = ask_graph(graphrag, question.strip())
+
+        run = st.session_state.get("graph_run")
+        if run and "error" in run:
+            st.error(run["error"])
+        elif run:
+            choice = run["choice"]
+            st.markdown(f"**Question:** {run['question']}")
+            st.markdown(f"**Retrieval:** `{choice['retrieval']}` "
+                        f"(term = `{choice['term']!r}`, "
+                        f"criterion = `{choice['criterion']}`)")
+            statements = graphrag.RETRIEVALS[choice["retrieval"]]["statements"]
+            for name, cypher in statements.items():
+                rows = run["rows"][name]
+                st.markdown(f"##### `{name}`: {len(rows)} rows")
+                with st.expander("Cypher"):
+                    st.code(textwrap.dedent(cypher).strip(), language="cypher")
+                if rows:
+                    st.dataframe(rows, hide_index=True, width="stretch")
+            st.markdown(f"#### Answer ({graphrag.MODEL})")
+            st.markdown(run["answer"])
+            st.caption("Keys in [brackets] are node keys from the rows above.")

@@ -77,6 +77,18 @@ endpoint means rewriting one function. The retrievals read the design layer
 only, which holds aggregates and no Buckeye words, speakers or timestamps, so
 saved runs are safe to commit.
 
+### In the app
+
+The Streamlit app's **Ask the graph** tab (`app/streamlit_app.py`) runs the
+same three calls, unchanged, and shows what the CLI prints: the retrieval and
+its parameters, each statement's Cypher and rows, then the answer. The five
+evaluated questions are offered as examples. It loads `graphrag.py` by path
+with `importlib`, since `kg/` is a folder of scripts rather than a package.
+Neo4j and the API key are checked before the first model call; if either is
+missing, that tab says which and the other six are unaffected.
+`tests/test_graphrag.py` stubs `complete()` and the driver to check the
+hand-over between the three steps without either.
+
 ### The co-design iteration (2026-10-14)
 
 The `find-width` finding said a cue outside a site's 2–4 frames "is invisible to

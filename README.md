@@ -66,6 +66,7 @@ read against.
 | **What this can and can't tell you** | What the inventory left out, and per-layer 95% intervals from the run |
 | **Look up one site** | One site's state: scored, excluded before scoring, or not reached, never shown as a zero |
 | **Audit (blind)** | The human review: a pre-registered random sample of sites, judged by ear with nothing from the model on screen |
+| **Ask the graph** | A question about the study answered from its knowledge graph by `kg/graphrag.py` (route → retrieve → answer): the chosen retrieval, its Cypher and rows, then the answer citing node keys. Needs Neo4j and `ANTHROPIC_API_KEY` (see `kg/README.md`); without them only this tab says so |
 
 ### The Human–AI workflow
 
