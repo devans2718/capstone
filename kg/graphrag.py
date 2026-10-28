@@ -21,9 +21,18 @@ SWAPPING THE MODEL
     Both LLM calls go through complete(). Moving to another endpoint (e.g. a
     local Ollama model) means rewriting that one function.
 
+THE COMMUNITY SUMMARY (--community)
+    Adds COMMUNITY_STATEMENTS' rows to whatever the router retrieved: the
+    Louvain communities that kg/build_communities.py writes over the flaps'
+    phonetic environments. Kept out of RETRIEVALS on purpose, so the router's
+    menu, and the five evaluated questions the app caches, stay as they were.
+
 THE BUCKEYE RULE
     The retrievals read the design layer only (aggregates, no words, speaker
-    codes or timestamps), so a saved run is safe to commit.
+    codes or timestamps), so a saved run is safe to commit. The community
+    summary reads the community layer, which is built from the corpus, but
+    returns aggregates only: community sizes, /t/-/d/ counts and phone
+    labels, never a Site, Token, Lemma or Speaker key.
 """
 
 from __future__ import annotations
@@ -145,6 +154,18 @@ RETRIEVALS: dict[str, dict] = {
     },
 }
 
+# Not a retrieval the router can pick: added by --community (see the docstring).
+COMMUNITY_STATEMENTS: dict[str, str] = {
+    "communities": """
+        MATCH (c:Community)
+        WITH collect(c) AS cs, sum(c.n_d) AS d, sum(c.n_sites) AS n
+        UNWIND cs AS c
+        RETURN c.key AS key, c.n_sites AS sites, c.n_t AS t, c.n_d AS d,
+               c.share_d AS share_d, round(toFloat(d) / n, 4) AS base_share_d,
+               c.phones AS phones, c.modularity AS modularity
+        ORDER BY c.number""",
+}
+
 # ---------------------------------------------------------------------------
 # The one model call. Everything model-specific lives here.
 # ---------------------------------------------------------------------------
@@ -229,11 +250,18 @@ def route(question: str) -> dict:
     return json.loads(reply)
 
 
+def statements(choice: dict) -> dict[str, str]:
+    out = dict(RETRIEVALS[choice["retrieval"]]["statements"])
+    if choice.get("community"):
+        out.update(COMMUNITY_STATEMENTS)
+    return out
+
+
 def retrieve(choice: dict) -> dict[str, list[dict]]:
     params = {"term": choice["term"], "criterion": choice["criterion"]}
     out: dict[str, list[dict]] = {}
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
-        for name, cypher in RETRIEVALS[choice["retrieval"]]["statements"].items():
+        for name, cypher in statements(choice).items():
             records, _, _ = driver.execute_query(cypher, params)
             out[name] = [r.data() for r in records]
     return out
@@ -250,17 +278,22 @@ def main() -> None:
     ap.add_argument("question")
     ap.add_argument("--save", type=Path,
                     help="directory to write this run to, as JSON")
+    ap.add_argument("--community", action="store_true",
+                    help="add the community summary to the retrieved rows")
     args = ap.parse_args()
     load_dotenv()
 
     choice = route(args.question)
+    if args.community:
+        choice["community"] = True
     rows = retrieve(choice)
     text = answer(args.question, rows)
 
     print(f"QUESTION   {args.question}")
     print(f"RETRIEVAL  {choice['retrieval']}  "
-          f"(term={choice['term']!r}, criterion={choice['criterion']})")
-    for name, cypher in RETRIEVALS[choice["retrieval"]]["statements"].items():
+          f"(term={choice['term']!r}, criterion={choice['criterion']})"
+          + ("  + community summary" if args.community else ""))
+    for name, cypher in statements(choice).items():
         print(f"\n--- {name}: Cypher")
         print("\n".join(l[16:] if l.startswith(" " * 16) else l
                         for l in cypher.strip("\n").splitlines()))
@@ -272,7 +305,8 @@ def main() -> None:
     if args.save:
         args.save.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        path = args.save / f"{stamp}-{choice['retrieval']}.json"
+        path = args.save / (f"{stamp}-{choice['retrieval']}"
+                             + ("+community" if args.community else "") + ".json")
         path.write_text(json.dumps({
             "time": stamp, "model": MODEL, "question": args.question,
             "choice": choice, "rows": rows, "answer": text,

@@ -1,0 +1,384 @@
+{
+ "time": "20261028-161450",
+ "model": "claude-opus-5-5",
+ "question": "Do the flaps' phonetic environments group into communities, and do those communities line up with underlying /t/ versus /d/?",
+ "choice": {
+  "retrieval": "why_failed",
+  "term": "",
+  "criterion": 0,
+  "community": true
+ },
+ "rows": {
+  "failed_criteria": [
+   {
+    "key": "crit-rev3-1",
+    "criterion": 1,
+    "statement": "Best WavJEPA layer beats the MFCC baseline",
+    "threshold": "gap >= 0.05 balanced accuracy, and paired word-type bootstrap 95% lower bound > 0",
+    "result": "best layer 3: 0.5438; MFCC 0.5274; gap +0.0163 (needs >= 0.05); paired word-type bootstrap 95% CI [-0.0154, +0.0561] (lower bound needs > 0)"
+   },
+   {
+    "key": "crit-rev3-3",
+    "criterion": 3,
+    "statement": "Layer-wise curve is not flat",
+    "threshold": "best - worst >= 0.05",
+    "result": "best 0.5438 (layer 3) - worst 0.5185 (layer 2) = 0.0253 (needs >= 0.05)"
+   },
+   {
+    "key": "crit-rev3-4",
+    "criterion": 4,
+    "statement": "Minority-class F1 (/d/) at the best layer",
+    "threshold": ">= 0.45",
+    "result": "/d/ F1 at layer 3 0.3563 (needs >= 0.45; trivial floors 0.391 always-/d/, 0.327 coin, 0.243 base rate)"
+   }
+  ],
+  "findings": [
+   {
+    "key": "find-lemma",
+    "cause": "Lemma overlap",
+    "status": "limitation, registered before the run",
+    "statement": "25.1% of joint test sites (2,612) have their lemma in training with the same label; the split is disjoint by word form, not lemma. On the 7,586 lemma-unseen sites the gap to MFCC is +0.030, CI [-0.004, +0.073], still short of criterion 1.",
+    "explains_failed_criteria": [
+     1
+    ],
+    "evidenced_by": [
+     "Registration rev3 §1a",
+     "Artifact art-lemma-sites",
+     "Artifact art-criteria"
+    ]
+   },
+   {
+    "key": "find-power",
+    "cause": "Too little statistical power",
+    "status": "limitation",
+    "statement": "The gap to MFCC's paired word-type bootstrap interval is [-0.015, +0.056]: no evidence of an advantage over MFCC, which is not evidence of none.",
+    "explains_failed_criteria": [
+     1
+    ],
+    "evidenced_by": [
+     "Artifact art-criteria"
+    ]
+   },
+   {
+    "key": "find-sites",
+    "cause": "Sites aren't what the inventory says",
+    "status": "ruled out for the sites, not the labels",
+    "statement": "A blind listening audit of 80 sites heard a flap in 72 of 74 decidable cases (6 /d/ can't-tells), and the right word and a well-placed clip in all 80. The labels come from the dictionary form and can't be heard under a flap, so the audit clears the sites, not the labels.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Amendment amend-audit",
+     "Artifact art-audit-sample",
+     "Artifact art-audit-report"
+    ]
+   },
+   {
+    "key": "find-training",
+    "cause": "Too little training data",
+    "status": "ruled out",
+    "statement": "Retraining the single-axis conditions at joint's training size (about 64% of sites) costs 0.006–0.013 at the best layer, against a 0.108 drop from random to joint.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Curve curve:wavjepa:mean:word_disjoint:subsampled",
+     "Curve curve:wavjepa:mean:speaker_disjoint:subsampled",
+     "Curve curve:wavjepa:mean:random:subsampled"
+    ]
+   },
+   {
+    "key": "find-width",
+    "cause": "Site too narrow (2–4 frames)",
+    "status": "open",
+    "statement": "Sites are 2–4 encoder frames wide (median 3, 27.4 ms). For MFCC, whose 25 ms frames see only local audio (deltas reach ±40 ms), a cue outside those frames, such as the preceding vowel's length, is invisible to the probe. WavJEPA encodes the flap ± 200 ms as one excerpt, so at depth its flap frames can carry that context; for WavJEPA the pilot shows only that the cue wasn't linearly recoverable from those frames. Untested: the span grid, registered 2026-10-17, tests both.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Environment env-v-flap-v (status: planned) - The preceding stretch through the following segment.",
+     "Registration rev3 §2"
+    ]
+   },
+   {
+    "key": "find-words",
+    "cause": "The cue doesn't generalize to unseen words",
+    "status": "consistent with the result",
+    "statement": "The drop from random to joint is mostly the word axis: holding out speakers costs little, holding out word types costs most of the gap above chance.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Artifact art-fig-drop",
+     "Curve curve:wavjepa:mean:joint:full",
+     "Curve curve:wavjepa:mean:word_disjoint:full",
+     "Curve curve:wavjepa:mean:speaker_disjoint:full",
+     "Curve curve:wavjepa:mean:random:full"
+    ]
+   }
+  ],
+  "communities": [
+   {
+    "key": "community:1",
+    "sites": 1804,
+    "t": 1254,
+    "d": 550,
+    "share_d": 0.3049,
+    "base_share_d": 0.2432,
+    "phones": [
+     "a",
+     "awn",
+     "b",
+     "ih",
+     "iy",
+     "iyn",
+     "oy"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:2",
+    "sites": 1630,
+    "t": 1528,
+    "d": 102,
+    "share_d": 0.0626,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aa",
+     "ah",
+     "aw+1",
+     "eng",
+     "id",
+     "own"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:3",
+    "sites": 986,
+    "t": 731,
+    "d": 255,
+    "share_d": 0.2586,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aen",
+     "dh",
+     "eh",
+     "ehn",
+     "eyn",
+     "ih+1"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:4",
+    "sites": 902,
+    "t": 685,
+    "d": 217,
+    "share_d": 0.2406,
+    "base_share_d": 0.2432,
+    "phones": [
+     "er",
+     "uw"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:5",
+    "sites": 810,
+    "t": 647,
+    "d": 163,
+    "share_d": 0.2012,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ay"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:6",
+    "sites": 741,
+    "t": 488,
+    "d": 253,
+    "share_d": 0.3414,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ae",
+     "m"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:7",
+    "sites": 596,
+    "t": 255,
+    "d": 341,
+    "share_d": 0.5721,
+    "base_share_d": 0.2432,
+    "phones": [
+     "VOCNOISE",
+     "ahn",
+     "en",
+     "g",
+     "k",
+     "n",
+     "s",
+     "uh",
+     "w",
+     "z"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:8",
+    "sites": 596,
+    "t": 425,
+    "d": 171,
+    "share_d": 0.2869,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aon",
+     "ey"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:9",
+    "sites": 589,
+    "t": 516,
+    "d": 73,
+    "share_d": 0.1239,
+    "base_share_d": 0.2432,
+    "phones": [
+     "<EXCLUDE-name>",
+     "UNKNOWN",
+     "aan",
+     "ao"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:10",
+    "sites": 552,
+    "t": 489,
+    "d": 63,
+    "share_d": 0.1141,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aw",
+     "t",
+     "v",
+     "y"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:11",
+    "sites": 520,
+    "t": 344,
+    "d": 176,
+    "share_d": 0.3385,
+    "base_share_d": 0.2432,
+    "phones": [
+     "f",
+     "ihn",
+     "ow"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:12",
+    "sites": 301,
+    "t": 256,
+    "d": 45,
+    "share_d": 0.1495,
+    "base_share_d": 0.2432,
+    "phones": [
+     "el"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:13",
+    "sites": 175,
+    "t": 119,
+    "d": 56,
+    "share_d": 0.32,
+    "base_share_d": 0.2432,
+    "phones": [
+     "hh"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:14",
+    "sites": 47,
+    "t": 27,
+    "d": 20,
+    "share_d": 0.4255,
+    "base_share_d": 0.2432,
+    "phones": [
+     "l"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:15",
+    "sites": 37,
+    "t": 18,
+    "d": 19,
+    "share_d": 0.5135,
+    "base_share_d": 0.2432,
+    "phones": [
+     "r"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:16",
+    "sites": 18,
+    "t": 16,
+    "d": 2,
+    "share_d": 0.1111,
+    "base_share_d": 0.2432,
+    "phones": [
+     "dx"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:17",
+    "sites": 15,
+    "t": 8,
+    "d": 7,
+    "share_d": 0.4667,
+    "base_share_d": 0.2432,
+    "phones": [
+     "SIL"
+    ],
+    "modularity": 0.4706
+   },
+   {
+    "key": "community:18",
+    "sites": 15,
+    "t": 15,
+    "d": 0,
+    "share_d": 0.0,
+    "base_share_d": 0.2432,
+    "phones": [
+     "em"
+    ],
+    "modularity": 0.4706
+   }
+  ]
+ },
+ "answer": "**Yes, the environments form communities, but they only partly line up with /t/ versus /d/.** The rows don't say how the community graph was built or whether the modularity was tested against a null.\n\n**Grouping.** Phones partition into 18 communities with modularity 0.4706, a moderate level of structure [community:1]. Sizes range from 1,804 sites [community:1] down to 15 [community:17] [community:18].\n\n**Alignment with /t/ vs /d/.** Overall, 24.32% of sites are /d/. Most communities sit near that rate:\n\n- [community:3] 0.26\n- [community:4] 0.24\n- [community:5] 0.20\n- [community:8] 0.29\n\nA few large communities depart clearly:\n\n- [community:7] (n, en, s, z, k, g and others) is 57.2% /d/, the only sizeable /d/-majority group [community:7].\n- [community:2] is only 6.3% /d/ across 1,630 sites [community:2].\n- [community:9] (12.4%) [community:9] and [community:10] (11.4%) [community:10] lean /t/.\n\nThe other departures are tiny. /r/ is 51% /d/ on 37 sites [community:15], and /em/ is 0% on 15 sites [community:18]. No community is close to label-pure, and /t/ is the majority in all but two.\n\n**Caveat.** The /t/–/d/ labels come from the dictionary form, not from what is heard. The listening audit cleared the sites, not the labels [find-sites].\n\n**Missing.** To say whether these skews exceed chance or follow word identity, I'd need a significance test or a breakdown by word type."
+}

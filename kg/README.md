@@ -18,6 +18,9 @@ Co-Design).
 | `graphrag-runs/` | Saved GraphRAG runs (JSON) |
 | `export_design.py` | Read-only export of the design layer and the five retrievals' evidence, for the GNN |
 | `gnn/` | The GNN stage: `design-graph.json` (generated) and `design_gnn.ipynb` |
+| `build_communities.py` | Phone nodes for each flap's span-grid environment, then Louvain communities over them (Challenge 4 AI Design). Run after `build_corpus.py` |
+| `communities/summary.json` | Generated. The community run's aggregates: sizes, phones, /t/–/d/ counts, stability |
+| `plot_communities.py` | The community graph and the community × /t/–/d/ chart, as PNGs |
 
 ## Setup
 
