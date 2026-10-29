@@ -756,8 +756,9 @@ NODES += [
          "information peak? (C6)", status="reported, no threshold",
          statement="WavJEPA peaks early: layer 3 for ɾ, 4 for Vɾ and ɾV, 6 "
                    "for VɾV, as the pilot's ɾ curve did (layer 3). "
-                   "wav2vec2-base peaks at layer 9 on every span, its best "
-                   "layer's 95% range lies within layers 6–10 on every span. "
+                   "wav2vec2-base peaks at layer 9 on every span, and each "
+                   "span's 95% range for the best layer lies within layers "
+                   "6–10. "
                    "The pilot's 2026-09-26 prediction, that WavJEPA's "
                    "information sits higher than wav2vec2-base's, is "
                    "reversed."),
