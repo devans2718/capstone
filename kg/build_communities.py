@@ -55,6 +55,12 @@ THE COMMUNITY RUN
     reports the spread of modularity and the adjusted Rand index against the
     seeded partition, so the result does not rest on one draw.
 
+    The seed fixes the partition only for a fixed node order: Louvain visits
+    nodes in the order the graph was built. EXPORT therefore sorts by site
+    and role. Without that, a corpus reload changed the order Neo4j returned
+    the rows, and the same seed gave 19 communities where it had given 18
+    (fixed 2026-10-29).
+
     Then the cross-tabs: community x /t/-/d/ (chi-square, Cramer's V), set
     against vowel-following pair x /t/-/d/, which is what the communities
     group. If the communities only coarsen the pairs, their V can't exceed
@@ -176,6 +182,7 @@ def load_phones(driver, envs: list[dict]) -> None:
 EXPORT = """
 MATCH (s:Site)-[e:PRECEDED_BY|FOLLOWED_BY]->(p:Phone)
 RETURN s.key AS site, s.underlying AS label, type(e) AS role, p.label AS phone
+ORDER BY site, role
 """
 
 
