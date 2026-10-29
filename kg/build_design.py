@@ -15,6 +15,9 @@ WHAT IT DOES
         representation x pooling x condition x (full | subsampled), with the
         per-layer values as lists, so an encoder with any number of layers fits
       - 4 Outcomes, parsed from results/flapping/criteria-20260926.txt
+      - the span grid's Run and 17 Curves, from results/span-grid/: its
+        manifest, span-grid-results-20261029.csv, and the summary's per-block
+        table for the control test's p-value and C6's best-layer interval
       - each Artifact's commit, from `git log`
     Then it checks that every edge points at a node that exists, and writes
     kg/design.cypher. Standard library only.
@@ -52,8 +55,18 @@ MANIFEST_PATH = RESULTS / "run-manifest-pilot.json"
 OUT = REPO / "kg" / "design.cypher"
 COMMIT_MAP = REPO / "docs" / "provenance" / "commit-map.txt"
 
-REP_KEY = {"wavjepa": "rep-wavjepa", "mfcc": "rep-mfcc"}
-REP_NAME = {"wavjepa": "WavJEPA", "mfcc": "MFCC"}
+SG_RESULTS = REPO / "results" / "span-grid"
+SG_CSV = SG_RESULTS / "span-grid-results-20261029.csv"
+SG_COMPARISONS = SG_RESULTS / "span-grid-comparisons-20261029.csv"
+SG_SUMMARY = SG_RESULTS / "span-grid-summary-20261029.txt"
+SG_MANIFEST = SG_RESULTS / "run-manifest-span-grid.json"
+
+REP_KEY = {"wavjepa": "rep-wavjepa", "mfcc": "rep-mfcc", "wav2vec2": "rep-wav2vec2",
+           "duration": "rep-duration"}
+REP_NAME = {"wavjepa": "WavJEPA", "mfcc": "MFCC", "wav2vec2": "wav2vec2-base",
+            "duration": "Duration", "mfcc_duration": "MFCC + duration"}
+SPAN_KEY = {"r": "env-flap", "vr": "env-v-flap", "rv": "env-flap-v", "vrv": "env-v-flap-v"}
+SPAN_NAME = {"r": "ɾ", "vr": "Vɾ", "rv": "ɾV", "vrv": "VɾV"}
 COND_KEY = {"random": "cond-random", "speaker_disjoint": "cond-speaker",
             "word_disjoint": "cond-word", "joint": "cond-joint"}
 POOL_KEY = {"mean": "pool-mean", "max": "pool-max", "midpoint": "pool-midpoint"}
@@ -178,6 +191,111 @@ def curve_nodes(nodes: list, edges: list) -> dict:
         edges.append((key, "FOR_REPRESENTATION", REP_KEY[enc], {}))
         edges.append((key, "UNDER_CONDITION", COND_KEY[cond], {}))
         edges.append((key, "WITH_POOLING", POOL_KEY[pool], {}))
+        edges.append((key, "IN_ENVIRONMENT", "env-flap", {}))   # the pilot pooled the flap only
+        curves[key] = props
+    return curves
+
+
+def span_grid_run(nodes: list, edges: list) -> None:
+    """The span grid's pooled-design run, from its manifest and summary.
+
+    It ran in this repository, so its commits need no public_commit mapping.
+    """
+    m = json.loads(SG_MANIFEST.read_text())
+    feats = re.search(r"\(extracted at ([0-9a-f]+)\)", SG_SUMMARY.read_text())
+    if not feats:
+        sys.exit(f"couldn't read the features commit from {SG_SUMMARY.name}")
+    props = {
+        "name": m["run_id"], "run_id": m["run_id"], "date": "2026-10-29",
+        "code_commit": m["code_commit"][:7], "features_commit": feats[1][:7],
+        "context_ms": m["context_ms"], "inventory_hash": m["inventory_hash"],
+        "n_sites_scored": m["n_sites_scored"], "synthetic": m["synthetic"],
+        "verdict": "gates nothing (§6); reported",
+    }
+    props.update({f"seed_{k}": v for k, v in m["seeds"].items()})
+    nodes.append({"key": "run-span-grid", "labels": ["Run"], **props})
+
+    e = edges.append
+    e(("exp-flapping", "HAS_RUN", "run-span-grid", {}))
+    e(("run-span-grid", "REGISTERED_BY", "sg-rev1", {}))
+    e(("run-span-grid", "USED", "ds-buckeye", {}))
+    e(("run-span-grid", "USED", "rep-wavjepa", {"role": "compared"}))
+    e(("run-span-grid", "USED", "rep-wav2vec2", {"role": "compared"}))
+    e(("run-span-grid", "USED", "rep-mfcc", {"role": "baseline"}))
+    e(("run-span-grid", "USED", "rep-duration", {"role": "baseline"}))
+    e(("run-span-grid", "USED", "probe-linear", {"role": "primary"}))
+    e(("run-span-grid", "USED", "cond-joint", {"role": "only condition"}))
+    e(("run-span-grid", "USED", "pool-mean", {"role": "only pooling"}))
+    for env in SPAN_KEY.values():
+        e(("run-span-grid", "USED", env, {"role": "span"}))
+    e(("run-span-grid", "REALIZES", "task-voicing", {}))
+    e(("run-span-grid", "REALIZES", "task-control", {}))
+
+
+SG_LAYER_COLUMNS = ["balanced_acc", "ci_lo", "ci_hi", "control_balanced_acc",
+                    "lemma_unseen_balanced_acc", "unclipped_balanced_acc"]
+SG_BLOCK_LINE = re.compile(r"^(\w+?)_(r|vr|rv|vrv|clipped|full|vowel)\s+(\d+)\s+[\d.]+\s+"
+                           r"\[[\d.]+, [\d.]+\]\s+\[(\d+), (\d+)\]\s+([\d.]+)\s")
+
+
+def span_grid_curves(nodes: list, edges: list) -> dict:
+    """One Curve per span x representation and per baseline, from the results CSV.
+
+    The control test's p-value and C6's best-layer interval are written only in
+    the summary's per-block table, so they are parsed from there. No Curve here
+    carries `subsampled`, so the pilot's queries on it can't pick these up.
+    """
+    summary = {}
+    for line in SG_SUMMARY.read_text().splitlines():
+        if (mt := SG_BLOCK_LINE.match(line)):
+            summary[mt[1], mt[2]] = {"best_layer": int(mt[3]), "best_layer_lo": int(mt[4]),
+                                     "best_layer_hi": int(mt[5]), "control_p": float(mt[6])}
+    groups: dict[tuple, list] = defaultdict(list)
+    with SG_CSV.open(newline="") as fh:
+        for row in csv.DictReader(fh):
+            groups[(row["representation"], row["span"])].append(row)
+    if set(groups) != set(summary) or len(groups) != 17:
+        sys.exit(f"{SG_CSV.name} and {SG_SUMMARY.name} don't list the same 17 blocks")
+
+    curves = {}
+    for (rep, span), rows in sorted(groups.items()):
+        rows.sort(key=lambda r: int(r["layer"]))
+        key = f"curve:sg:{rep}:{span}"
+        props = {"name": f"{REP_NAME[rep]} · {SPAN_NAME.get(span, span)} · span grid",
+                 "representation": rep, "pooling": "mean", "condition": "joint",
+                 "n_layers": len(rows)}
+        if span in SPAN_KEY:
+            props["span"] = span
+        else:
+            props["variant"] = span
+        for col in SG_LAYER_COLUMNS:
+            props[col] = [_num(r[col]) for r in rows]
+        for col in ("n", "n_d"):
+            props[col] = _num(rows[0][col])
+        ba = props["balanced_acc"]
+        best = max(range(len(ba)), key=lambda i: ba[i])
+        if best != summary[rep, span]["best_layer"]:
+            sys.exit(f"{key}: best layer {best} in the CSV, "
+                     f"{summary[rep, span]['best_layer']} in the summary")
+        props.update(summary[rep, span])
+        props["best_balanced_acc"] = ba[best]
+        props["best_ci_lo"] = props["ci_lo"][best]
+        props["best_ci_hi"] = props["ci_hi"][best]
+        props["spread"] = round(max(ba) - min(ba), 6)
+        props["n_nonconverged"] = sum(int(r["n_nonconverged"]) for r in rows)
+
+        nodes.append({"key": key, "labels": ["Curve"], **props})
+        e = edges.append
+        e((key, "FROM_RUN", "run-span-grid", {}))
+        e((key, "UNDER_CONDITION", "cond-joint", {}))
+        e((key, "WITH_POOLING", "pool-mean", {}))
+        if rep == "mfcc_duration":
+            e((key, "FOR_REPRESENTATION", "rep-mfcc", {}))
+            e((key, "FOR_REPRESENTATION", "rep-duration", {}))
+        else:
+            e((key, "FOR_REPRESENTATION", REP_KEY[rep], {}))
+        if span in SPAN_KEY:
+            e((key, "IN_ENVIRONMENT", SPAN_KEY[span], {}))
         curves[key] = props
     return curves
 
@@ -209,7 +327,7 @@ def outcome_nodes(nodes: list, edges: list) -> None:
         sys.exit(f"expected 4 criteria in {CRITERIA_PATH.name}, parsed {found}")
 
 
-def artifact_links(nodes: list, edges: list, curves: dict) -> None:
+def artifact_links(nodes: list, edges: list, curves: dict, sg_curves: dict) -> None:
     """Commits from git; what each artifact reports; which came from the run."""
     for n in nodes:
         if "Artifact" in n["labels"]:
@@ -240,6 +358,12 @@ def artifact_links(nodes: list, edges: list, curves: dict) -> None:
                 "art-fig-curves", "art-fig-drop", "art-fig-controls",
                 "art-fig-pooling", "art-audit-sample", "art-audit-report"):
         edges.append((art, "FROM_RUN", "run-pilot", {}))
+    for art in ("art-sg-results", "art-sg-summary"):
+        for t in sg_curves:
+            edges.append((art, "REPORTS", t, {}))
+    for art in ("art-sg-results", "art-sg-cells", "art-sg-comparisons",
+                "art-sg-summary", "art-sg-manifest"):
+        edges.append((art, "FROM_RUN", "run-span-grid", {}))
 
 
 # ---------------------------------------------------------------------------
@@ -307,7 +431,9 @@ def main() -> None:
     run_nodes(nodes, edges)
     curves = curve_nodes(nodes, edges)
     outcome_nodes(nodes, edges)
-    artifact_links(nodes, edges, curves)
+    span_grid_run(nodes, edges)
+    sg_curves = span_grid_curves(nodes, edges)
+    artifact_links(nodes, edges, curves, sg_curves)
     label_of = check(nodes, edges)
     write_cypher(nodes, edges, label_of)
 
@@ -328,6 +454,20 @@ def main() -> None:
         full = curves[f"curve:wavjepa:mean:{cond}:full"]["best_balanced_acc"]
         sub = curves[f"curve:wavjepa:mean:{cond}:subsampled"]["best_balanced_acc"]
         print(f"  {cond:<17} {full - sub:+.4f}")
+
+    # The numbers the span grid's Findings quote, from results/span-grid/.
+    print("\nspan grid, best layer per block (find-sg-*):")
+    for key, c in sg_curves.items():
+        print(f"  {key:<30} layer {c['best_layer']:>2} [{c['best_layer_lo']}, "
+              f"{c['best_layer_hi']}]  {c['best_balanced_acc']:.4f}  "
+              f"[{c['best_ci_lo']:.4f}, {c['best_ci_hi']:.4f}]  control p {c['control_p']:.4f}")
+    print("span grid comparisons (C1, C4, C5, C7):")
+    with SG_COMPARISONS.open(newline="") as fh:
+        for r in csv.DictReader(fh):
+            if r["comparison"] != "C6":
+                print(f"  {r['comparison']}  {r['a']:<16} - {r['b']:<20} "
+                      f"{float(r['gap']):+.4f}  [{float(r['ci_lo']):+.4f}, "
+                      f"{float(r['ci_hi']):+.4f}]  {r['call']}")
 
 
 if __name__ == "__main__":

@@ -166,6 +166,56 @@ edge("sg-rev1", "FOLLOWS_UP", "rev3", reason="§5 names the 2–4 frame site "
      "width among the suspects for a failure near chance")
 edge("amend-span-grid", "POINTS_TO", "sg-rev1")
 
+# Its §8: dated entries appended after the span grid's registration.
+NODES += [
+    node("amend-sg-w2v2-geometry", "Amendment", date="2026-10-18", commit="0b530b7",
+         title="wav2vec2-base's geometry, verified", written_after_run=False,
+         summary="Stride 320 samples and receptive field 400, as the config "
+                 "says. Hidden state 0 is LayerNorm(projection + positional "
+                 "conv), not the CNN output. 160 of the 10,334 flaps hold no "
+                 "frame centre."),
+    node("amend-sg-crop-norm", "Amendment", date="2026-10-18", commit="0b530b7",
+         title="The cropped design's normalization covers one of two",
+         written_after_run=False,
+         summary="Conv layer 0's GroupNorm also normalizes over the whole "
+                 "input and can't be disabled. Resolved by the next entry."),
+    node("amend-sg-groupnorm", "Amendment", date="2026-10-18", commit="136d7a3",
+         title="GroupNorm in the cropped design: kept, and measured",
+         written_after_run=False,
+         summary="Kept as part of each encoder; its shift per crop is to be "
+                 "reported, not compared."),
+    node("amend-sg-clean-frames", "Amendment", date="2026-10-18", commit="8a362f6",
+         title="WavJEPA's spans take only frames that read real audio",
+         written_after_run=False,
+         summary="A span drops any WavJEPA frame whose receptive field runs "
+                 "past the excerpt. 616 spans affected, all ɾV or VɾV."),
+    node("amend-sg-float16", "Amendment", date="2026-10-18", commit="0b530b7",
+         title="Frame precision: the pilot's float16 is kept",
+         written_after_run=False,
+         summary="So the ɾ span gets the pilot's exact features and the "
+                 "reproduction check has no tolerance to set."),
+    node("amend-sg-deferred", "Amendment", date="2026-10-29", commit="84a9b55",
+         title="The cropped design is deferred", written_after_run=False,
+         summary="Only the pooled design runs. C2 and C3 are not tested; C4, "
+                 "C5 and C7 are read for the pooled design only."),
+    node("amend-sg-exclusions", "Amendment", date="2026-10-29", commit="f5a4b33",
+         title="The 55 exclusions meet the pilot's fixed machinery",
+         written_after_run=False,
+         summary="The pilot's control mapping, null mappings, bootstrap index "
+                 "and lemma subset are kept, restricted to the 10,334. Also "
+                 "fixes two readings: §7's unclipped sites (9,657) and C5's "
+                 "MFCC + duration half (Vɾ and VɾV)."),
+    node("amend-sg-c7", "Amendment", date="2026-10-29", commit="9afc0e4",
+         title="Written after the results: C7's rule is one-sided; the call "
+               "stands", written_after_run=True,
+         summary="No effect as registered; wav2vec2-base ahead by 0.062–0.075 "
+                 "on every span, reported, not called."),
+]
+for a in ("amend-sg-w2v2-geometry", "amend-sg-crop-norm", "amend-sg-groupnorm",
+          "amend-sg-clean-frames", "amend-sg-float16", "amend-sg-deferred",
+          "amend-sg-exclusions", "amend-sg-c7"):
+    edge(a, "AMENDS", "sg-rev1")
+
 # ---------------------------------------------------------------------------
 # Criteria: one node per criterion per revision.
 # ---------------------------------------------------------------------------
@@ -265,6 +315,11 @@ NODES += [
               "balanced accuracy 0.616–0.625. Ahead of MFCC on every span "
               "(C5). Index 0 is not the CNN output but LayerNorm(projection "
               "+ positional conv), so it carries position (span grid §8)."),
+    node("rep-duration", "Representation", name="Duration", status="used",
+         learned=False, n_layers=1, dim=1,
+         note="§5's baseline: the length of the sonorant stretch before the "
+              "flap, clipped to the excerpt (the compared one), unclipped, "
+              "or the vowel's alone; one number per site."),
     node("rep-hubert", "Representation", name="facebook/hubert-base-ls960",
          status="planned", learned=True),
     node("rep-wavlm", "Representation", name="microsoft/wavlm-base",
@@ -362,6 +417,7 @@ edge("sg-rev1", "SPECIFIES", "rep-wavjepa", role="compared")
 edge("sg-rev1", "SPECIFIES", "rep-wav2vec2", role="compared")
 edge("sg-rev1", "SPECIFIES", "rep-mfcc", role="baseline",
      construction="alone, and with the span's clipped duration appended")
+edge("sg-rev1", "SPECIFIES", "rep-duration", role="baseline")
 edge("sg-rev1", "SPECIFIES", "probe-linear", role="primary")
 edge("sg-rev1", "SPECIFIES", "task-voicing", role="primary")
 edge("sg-rev1", "SPECIFIES", "task-control", role="leak detector")
@@ -381,6 +437,7 @@ SCRIPTS = [
     "count_flap_sites", "extract_site_features", "run_probes",
     "plot_layer_curves", "draw_audit_sample", "summarize_audit",
     "measure_lemma_overlap", "simulate_control_spread", "measure_span_grid",
+    "score_span_grid",
 ]
 NODES += [node(f"code-{s}", "Code", kind="script", repo=REPO,
                path=f"scripts/{s}.py") for s in SCRIPTS]
@@ -421,6 +478,11 @@ ARTIFACTS = [
     ("art-lemma-report", "results/corpus-verification/buckeye-lemma-overlap-20260926.txt", "report", "measure_lemma_overlap", True),
     ("art-control-spread", "results/corpus-verification/buckeye-control-spread-20260926.txt", "report", "simulate_control_spread", False),
     ("art-inventory", "results/corpus-verification/buckeye-flap-sites-20260821.tsv", "tsv", "count_flap_sites", True),
+    ("art-sg-results", "results/span-grid/span-grid-results-20261029.csv", "csv", "score_span_grid", False),
+    ("art-sg-cells", "results/span-grid/span-grid-cells-20261029.csv", "csv", "score_span_grid", False),
+    ("art-sg-comparisons", "results/span-grid/span-grid-comparisons-20261029.csv", "csv", "score_span_grid", False),
+    ("art-sg-summary", "results/span-grid/span-grid-summary-20261029.txt", "report", "score_span_grid", False),
+    ("art-sg-manifest", "results/span-grid/run-manifest-span-grid.json", "manifest", "score_span_grid", False),
 ]
 # Which run_probes.py stage wrote each of its outputs. The stages recorded
 # different commits (see build_design.run_nodes).
@@ -580,17 +642,31 @@ NODES += [
     # Corrected 2026-10-14: said a cue outside the site's frames "is invisible
     # to the probe", true only for MFCC. WavJEPA encodes the whole excerpt
     # (scripts/extract_site_features.py:206-230), so attention mixes context in.
+    # Updated 2026-10-29 from the span grid's pooled design; wording and
+    # status approved by Daniel the same day.
     node("find-width", "Finding", candidate_cause="Site too narrow (2–4 frames)",
-         status="open",
-         statement="Sites are 2–4 encoder frames wide (median 3, 27.4 ms). For "
-                   "MFCC, whose 25 ms frames see only local audio (deltas "
-                   "reach ±40 ms), a cue outside those frames, such as the "
-                   "preceding vowel's length, is invisible to the probe. "
-                   "WavJEPA encodes the flap ± 200 ms as one excerpt, so at "
-                   "depth its flap frames can carry that context; for "
-                   "WavJEPA the pilot shows only that the cue wasn't linearly "
-                   "recoverable from those frames. Untested: the span grid, "
-                   "registered 2026-10-17, tests both."),
+         status="ruled out for MFCC; open for the encoders until the cropped "
+                "design runs",
+         statement="Sites are 2–4 encoder frames wide (median 3, 27.4 ms). "
+                   "MFCC's 25 ms frames see only local audio (deltas reach "
+                   "±40 ms), so for MFCC a cue outside the site's frames is "
+                   "invisible. WavJEPA and wav2vec2-base encode the flap "
+                   "± 200 ms as one excerpt, so at depth their flap frames "
+                   "can carry that context; for WavJEPA the pilot shows only "
+                   "that the cue wasn't linearly recoverable from those "
+                   "frames. The span grid's pooled design (2026-10-29) "
+                   "widened the pooled frames to the preceding stretch, the "
+                   "following segment, or both, and no representation gained "
+                   "(largest +0.015, none called). For MFCC, whose frames are "
+                   "local, that rules width out, and the stretch's duration "
+                   "alone is near chance (about 0.53). For the encoders the "
+                   "pooled design cannot rule it out: every span's frames had "
+                   "heard the whole excerpt, so pooling more of them changes "
+                   "which frames are read, not what was heard. That test is "
+                   "the cropped design, deferred (span grid §8, 2026-10-29). "
+                   "Narrow frames don't explain WavJEPA's score on their own: "
+                   "from the same ɾ span, wav2vec2-base reaches 0.616 under "
+                   "joint, against WavJEPA's 0.543."),
     node("find-words", "Finding", candidate_cause="The cue doesn't generalize "
          "to unseen words", status="consistent with the result",
          statement="The drop from random to joint is mostly the word axis: "
@@ -640,6 +716,104 @@ edge("find-lemma", "EVIDENCED_BY", "art-lemma-sites")
 edge("find-lemma", "EVIDENCED_BY", "rev3", section="§1a")
 
 # ---------------------------------------------------------------------------
+# The span grid's findings: what its pooled design found (2026-10-29), one per
+# registered question. Wording approved by Daniel 2026-10-29. Every number is
+# from results/span-grid/ (004ea19); kg/build_design.py reprints them. The
+# Run and the sg Curves come from kg/build_design.py.
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("find-sg-span", "Finding", question="Does pooling over more of the "
+         "neighbouring speech help, when the encoder heard the whole excerpt? "
+         "(C1)", status="no effect",
+         statement="Widening the pooled span helps no representation. Of the "
+                   "nine gaps (Vɾ, ɾV and VɾV minus ɾ, for WavJEPA, "
+                   "wav2vec2-base and MFCC), none reaches 0.05 and every "
+                   "paired 95% interval includes zero; the largest is +0.015 "
+                   "(MFCC, VɾV). The registered prediction, that Vɾ beats ɾ, "
+                   "is not supported."),
+    node("find-sg-encoders", "Finding", question="Does an encoder know more "
+         "than the stretch's duration, and does it beat MFCC? (C4, C5)",
+         status="effect for wav2vec2-base; none for WavJEPA",
+         statement="wav2vec2-base scores 0.616–0.625 at its best layer on "
+                   "every span. It is called ahead of MFCC on all four spans "
+                   "(gaps +0.081 to +0.092), of MFCC with the clipped "
+                   "duration on Vɾ and VɾV (+0.070, +0.079), and of the "
+                   "clipped duration alone on Vɾ and VɾV (+0.089, +0.098). "
+                   "WavJEPA scores 0.543–0.555 and is called ahead of none of "
+                   "them; its largest gap to MFCC is +0.025 (Vɾ), half the "
+                   "threshold."),
+    node("find-sg-duration", "Finding", question="How far does the stretch's "
+         "duration alone separate /t/ from /d/? (§5's baselines)",
+         status="reported, not compared",
+         statement="The preceding stretch's duration alone is near chance: "
+                   "0.527 clipped to the excerpt, 0.529 unclipped, 0.524 for "
+                   "the vowel alone, each 95% interval including 0.50. "
+                   "Clipping costs 0.0015. Under a linear probe, lengthening "
+                   "before an underlying /d/, the cue the study set out to "
+                   "locate, barely separates /t/ from /d/ on these sites."),
+    node("find-sg-depth", "Finding", question="At what depth does the "
+         "information peak? (C6)", status="reported, no threshold",
+         statement="WavJEPA peaks early: layer 3 for ɾ, 4 for Vɾ and ɾV, 6 "
+                   "for VɾV, as the pilot's ɾ curve did (layer 3). "
+                   "wav2vec2-base peaks at layer 9 on every span, its best "
+                   "layer's 95% range lies within layers 6–10 on every span. "
+                   "The pilot's 2026-09-26 prediction, that WavJEPA's "
+                   "information sits higher than wav2vec2-base's, is "
+                   "reversed."),
+    node("find-sg-c7", "Finding", question="Which encoder is better? (C7)",
+         status="no effect, as registered; the reverse reported, not called",
+         statement="C7 is computed as WavJEPA − wav2vec2-base, and §6's rule "
+                   "is one-sided, so it can call only a WavJEPA advantage: "
+                   "the registered call is no effect on all four spans. "
+                   "Reported, not called: wav2vec2-base is ahead by "
+                   "0.062–0.075 on every span, every 95% interval below zero "
+                   "(§8, 2026-10-29). The encoders' order rests on C5, which "
+                   "calls wav2vec2-base ahead of MFCC on every span and "
+                   "WavJEPA on none."),
+    node("find-sg-checks", "Finding", question="Can the grid's numbers be "
+         "trusted? (§5's checks)", status="passed",
+         statement="The WavJEPA ɾ span reproduced the pilot's joint curve "
+                   "exactly on its 10,389 sites (largest difference 0.0). On "
+                   "the grid's 10,334, every control-task p-value is above "
+                   "0.05 (smallest 0.095); the lemma-unseen and unclipped "
+                   "re-scores track the full scores within about 0.02; all "
+                   "5,650 fits converged."),
+]
+
+SG_REPS = ("wavjepa", "wav2vec2", "mfcc")
+SG_SPANS = ("r", "vr", "rv", "vrv")
+for f in ("find-sg-span", "find-sg-encoders", "find-sg-duration",
+          "find-sg-depth", "find-sg-c7", "find-sg-checks"):
+    edge(f, "FROM_RUN", "run-span-grid")
+    edge(f, "EVIDENCED_BY", "art-sg-summary")
+for f in ("find-sg-span", "find-sg-encoders", "find-sg-c7"):
+    edge(f, "EVIDENCED_BY", "art-sg-comparisons")
+for rep in SG_REPS:
+    for span in SG_SPANS:
+        edge("find-sg-span", "EVIDENCED_BY", f"curve:sg:{rep}:{span}")
+for enc in ("wavjepa", "wav2vec2"):
+    for span in SG_SPANS:
+        for f in ("find-sg-encoders", "find-sg-depth", "find-sg-c7"):
+            edge(f, "EVIDENCED_BY", f"curve:sg:{enc}:{span}")
+for span in SG_SPANS:
+    edge("find-sg-encoders", "EVIDENCED_BY", f"curve:sg:mfcc:{span}")
+for span in ("vr", "vrv"):
+    edge("find-sg-encoders", "EVIDENCED_BY", f"curve:sg:mfcc_duration:{span}")
+for variant in ("clipped", "full", "vowel"):
+    edge("find-sg-duration", "EVIDENCED_BY", f"curve:sg:duration:{variant}")
+edge("find-sg-encoders", "EVIDENCED_BY", "curve:sg:duration:clipped")
+edge("find-sg-depth", "TESTS", "amend-prediction")
+edge("find-sg-c7", "EVIDENCED_BY", "amend-sg-c7")
+edge("find-sg-checks", "EVIDENCED_BY", "art-sg-results")
+
+# What the span grid says about the pilot's width suspect.
+edge("find-width", "EVIDENCED_BY", "find-sg-span")
+edge("find-width", "EVIDENCED_BY", "find-sg-duration")
+edge("find-width", "EVIDENCED_BY", "amend-sg-deferred")
+edge("amend-sg-deferred", "POINTS_TO", "find-width")
+
+# ---------------------------------------------------------------------------
 # Display names. Neo4j Browser captions a node with its `name`, so every node
 # gets a short one; longer text stays in its own property.
 # ---------------------------------------------------------------------------
@@ -651,6 +825,14 @@ SHORT_NAMES = {
     "amend-audit": "Audit (after run)",
     "amend-span-grid": "Span grid pointer",
     "sg-rev1": "Span grid (rev 1)",
+    "amend-sg-w2v2-geometry": "wav2vec2 geometry",
+    "amend-sg-crop-norm": "Crop normalization",
+    "amend-sg-groupnorm": "GroupNorm kept",
+    "amend-sg-clean-frames": "Clean frames only",
+    "amend-sg-float16": "float16 kept",
+    "amend-sg-deferred": "Cropped design deferred",
+    "amend-sg-exclusions": "The 55 and the pilot's machinery",
+    "amend-sg-c7": "C7 one-sided (after results)",
     "task-voicing": "Voicing task",
     "task-control": "Control task",
     "task-speaker": "Speaker ID",
@@ -661,6 +843,12 @@ SHORT_NAMES = {
     "find-training": "Too little training data?",
     "find-power": "Too little power",
     "find-lemma": "Lemma overlap",
+    "find-sg-span": "Wider spans don't help",
+    "find-sg-encoders": "wav2vec2 beats the baselines; WavJEPA doesn't",
+    "find-sg-duration": "Duration alone near chance",
+    "find-sg-depth": "Depth: WavJEPA early, wav2vec2 layer 9",
+    "find-sg-c7": "C7: no effect as registered",
+    "find-sg-checks": "Checks passed",
 }
 for n in NODES:
     labels = n["labels"]
