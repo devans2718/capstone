@@ -10,16 +10,16 @@
   "algorithm": "louvain (networkx 3.7)",
   "seed": 20261028,
   "resolution": 1.0,
-  "modularity": 0.4706,
-  "n_communities": 18,
-  "sites_with_vowel_and_following_in_own_community": 2414
+  "modularity": 0.4708,
+  "n_communities": 20,
+  "sites_with_vowel_and_following_in_own_community": 2408
  },
  "stability": {
   "seeds": "1-20",
   "n_communities": [
    [
     18,
-    1
+    2
    ],
    [
     19,
@@ -27,18 +27,18 @@
    ],
    [
     20,
-    12
+    11
    ]
   ],
   "modularity_min": 0.4701,
   "modularity_max": 0.4708,
-  "ari_vs_seeded_min": 0.833,
-  "ari_vs_seeded_median": 0.893
+  "ari_vs_seeded_min": 0.834,
+  "ari_vs_seeded_median": 0.895
  },
  "label_association": {
   "community_x_label": {
-   "cramers_v": 0.296,
-   "p": 1.341368652937632e-181
+   "cramers_v": 0.299,
+   "p": 6.124262729511403e-184
   },
   "pair_x_label": {
    "cramers_v": 0.536,
@@ -55,9 +55,9 @@
   {
    "number": 1,
    "n_sites": 1804,
-   "n_t": 1254,
-   "n_d": 550,
-   "share_d": 0.3049,
+   "n_t": 1249,
+   "n_d": 555,
+   "share_d": 0.3076,
    "phones": [
     "a",
     "awn",
@@ -70,15 +70,15 @@
    "top_vowels": [
     [
      "ih",
-     1007
+     1001
     ],
     [
      "ah",
-     360
+     366
     ],
     [
      "iy",
-     292
+     290
     ],
     [
      "aa",
@@ -86,29 +86,29 @@
     ],
     [
      "eh",
-     30
+     32
     ]
    ],
    "top_following": [
     [
      "ih",
-     812
+     818
     ],
     [
      "iy",
-     805
+     807
     ],
     [
      "ah",
-     170
-    ],
-    [
-     "eh",
-     7
+     164
     ],
     [
      "aa",
      6
+    ],
+    [
+     "eh",
+     5
     ]
    ],
    "n_pairs": 19
@@ -116,9 +116,9 @@
   {
    "number": 2,
    "n_sites": 1630,
-   "n_t": 1528,
-   "n_d": 102,
-   "share_d": 0.0626,
+   "n_t": 1532,
+   "n_d": 98,
+   "share_d": 0.0601,
    "phones": [
     "aa",
     "ah",
@@ -134,11 +134,11 @@
     ],
     [
      "ah",
-     517
+     511
     ],
     [
      "ih",
-     185
+     191
     ],
     [
      "eng",
@@ -152,11 +152,11 @@
    "top_following": [
     [
      "ah",
-     1073
+     1079
     ],
     [
      "ih",
-     415
+     409
     ],
     [
      "aa",
@@ -176,9 +176,9 @@
   {
    "number": 3,
    "n_sites": 986,
-   "n_t": 731,
-   "n_d": 255,
-   "share_d": 0.2586,
+   "n_t": 732,
+   "n_d": 254,
+   "share_d": 0.2576,
    "phones": [
     "aen",
     "dh",
@@ -190,7 +190,7 @@
    "top_vowels": [
     [
      "eh",
-     617
+     615
     ],
     [
      "ah",
@@ -206,13 +206,13 @@
     ],
     [
      "iy",
-     8
+     10
     ]
    ],
    "top_following": [
     [
      "eh",
-     433
+     435
     ],
     [
      "ih",
@@ -228,7 +228,7 @@
     ],
     [
      "iy",
-     53
+     51
     ]
    ],
    "n_pairs": 25
@@ -402,82 +402,17 @@
   },
   {
    "number": 7,
-   "n_sites": 596,
-   "n_t": 255,
-   "n_d": 341,
-   "share_d": 0.5721,
-   "phones": [
-    "VOCNOISE",
-    "ahn",
-    "en",
-    "g",
-    "k",
-    "n",
-    "s",
-    "uh",
-    "w",
-    "z"
-   ],
-   "top_vowels": [
-    [
-     "uh",
-     387
-    ],
-    [
-     "ih",
-     50
-    ],
-    [
-     "ah",
-     31
-    ],
-    [
-     "ae",
-     25
-    ],
-    [
-     "ow",
-     19
-    ]
-   ],
-   "top_following": [
-    [
-     "ih",
-     114
-    ],
-    [
-     "ah",
-     104
-    ],
-    [
-     "w",
-     86
-    ],
-    [
-     "uh",
-     70
-    ],
-    [
-     "en",
-     49
-    ]
-   ],
-   "n_pairs": 71
-  },
-  {
-   "number": 8,
-   "n_sites": 596,
-   "n_t": 425,
+   "n_sites": 594,
+   "n_t": 423,
    "n_d": 171,
-   "share_d": 0.2869,
+   "share_d": 0.2879,
    "phones": [
-    "aon",
     "ey"
    ],
    "top_vowels": [
     [
      "ey",
-     476
+     475
     ],
     [
      "aa",
@@ -518,10 +453,10 @@
      64
     ]
    ],
-   "n_pairs": 19
+   "n_pairs": 17
   },
   {
-   "number": 9,
+   "number": 8,
    "n_sites": 589,
    "n_t": 516,
    "n_d": 73,
@@ -579,37 +514,100 @@
    "n_pairs": 29
   },
   {
+   "number": 9,
+   "n_sites": 541,
+   "n_t": 236,
+   "n_d": 305,
+   "share_d": 0.5638,
+   "phones": [
+    "VOCNOISE",
+    "ahn",
+    "aon",
+    "g",
+    "k",
+    "n",
+    "s",
+    "uh",
+    "w",
+    "z"
+   ],
+   "top_vowels": [
+    [
+     "uh",
+     383
+    ],
+    [
+     "ih",
+     33
+    ],
+    [
+     "ah",
+     29
+    ],
+    [
+     "ae",
+     20
+    ],
+    [
+     "ow",
+     16
+    ]
+   ],
+   "top_following": [
+    [
+     "ih",
+     110
+    ],
+    [
+     "ah",
+     100
+    ],
+    [
+     "w",
+     86
+    ],
+    [
+     "uh",
+     70
+    ],
+    [
+     "eh",
+     40
+    ]
+   ],
+   "n_pairs": 58
+  },
+  {
    "number": 10,
-   "n_sites": 552,
-   "n_t": 489,
-   "n_d": 63,
-   "share_d": 0.1141,
+   "n_sites": 528,
+   "n_t": 474,
+   "n_d": 54,
+   "share_d": 0.1023,
    "phones": [
     "aw",
     "t",
-    "v",
-    "y"
+    "v"
    ],
    "top_vowels": [
     [
      "aw",
-     388
+     387
     ],
     [
      "ih",
-     52
+     48
     ],
     [
      "aa",
-     26
+     24
     ],
     [
      "eh",
-     22
+     20
     ],
     [
      "ah",
-     17
+     9
     ]
    ],
    "top_following": [
@@ -630,11 +628,11 @@
      32
     ],
     [
-     "y",
-     24
+     "ey",
+     11
     ]
    ],
-   "n_pairs": 39
+   "n_pairs": 30
   },
   {
    "number": 11,
@@ -789,6 +787,53 @@
   },
   {
    "number": 14,
+   "n_sites": 57,
+   "n_t": 21,
+   "n_d": 36,
+   "share_d": 0.6316,
+   "phones": [
+    "en"
+   ],
+   "top_vowels": [
+    [
+     "ih",
+     17
+    ],
+    [
+     "en",
+     8
+    ],
+    [
+     "uh",
+     5
+    ],
+    [
+     "ae",
+     5
+    ],
+    [
+     "aa",
+     4
+    ]
+   ],
+   "top_following": [
+    [
+     "en",
+     49
+    ],
+    [
+     "ih",
+     4
+    ],
+    [
+     "ah",
+     4
+    ]
+   ],
+   "n_pairs": 15
+  },
+  {
+   "number": 15,
    "n_sites": 47,
    "n_t": 27,
    "n_d": 20,
@@ -827,7 +872,7 @@
    "n_pairs": 9
   },
   {
-   "number": 15,
+   "number": 16,
    "n_sites": 37,
    "n_t": 18,
    "n_d": 19,
@@ -866,7 +911,46 @@
    "n_pairs": 9
   },
   {
-   "number": 16,
+   "number": 17,
+   "n_sites": 24,
+   "n_t": 15,
+   "n_d": 9,
+   "share_d": 0.375,
+   "phones": [
+    "y"
+   ],
+   "top_vowels": [
+    [
+     "ah",
+     8
+    ],
+    [
+     "ih",
+     4
+    ],
+    [
+     "iy",
+     3
+    ],
+    [
+     "aa",
+     2
+    ],
+    [
+     "eh",
+     2
+    ]
+   ],
+   "top_following": [
+    [
+     "y",
+     24
+    ]
+   ],
+   "n_pairs": 9
+  },
+  {
+   "number": 18,
    "n_sites": 18,
    "n_t": 16,
    "n_d": 2,
@@ -905,7 +989,7 @@
    "n_pairs": 9
   },
   {
-   "number": 17,
+   "number": 19,
    "n_sites": 15,
    "n_t": 8,
    "n_d": 7,
@@ -944,7 +1028,7 @@
    "n_pairs": 8
   },
   {
-   "number": 18,
+   "number": 20,
    "n_sites": 15,
    "n_t": 15,
    "n_d": 0,

@@ -1,0 +1,303 @@
+{
+ "time": "20261029-180450",
+ "model": "claude-opus-5-5",
+ "question": "Do the flaps' phonetic environments group into communities, and do those communities line up with underlying /t/ versus /d/?",
+ "choice": {
+  "retrieval": "concept",
+  "term": "flap",
+  "criterion": 0,
+  "community": true
+ },
+ "rows": {
+  "concept": [
+   {
+    "key": "con-flap",
+    "term": "flap",
+    "definition": "A very quick tap of the tongue tip against the ridge behind the upper teeth, written [ɾ]. In American English /t/ and /d/ are usually pronounced this way between vowels when the second is unstressed: 'water', 'ladder'.",
+    "related": [
+     "con-phone: phone"
+    ],
+    "experiments": [
+     "English flapping"
+    ]
+   }
+  ],
+  "communities": [
+   {
+    "key": "community:1",
+    "sites": 1804,
+    "t": 1249,
+    "d": 555,
+    "share_d": 0.3076,
+    "base_share_d": 0.2432,
+    "phones": [
+     "a",
+     "awn",
+     "b",
+     "ih",
+     "iy",
+     "iyn",
+     "oy"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:2",
+    "sites": 1630,
+    "t": 1532,
+    "d": 98,
+    "share_d": 0.0601,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aa",
+     "ah",
+     "aw+1",
+     "eng",
+     "id",
+     "own"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:3",
+    "sites": 986,
+    "t": 732,
+    "d": 254,
+    "share_d": 0.2576,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aen",
+     "dh",
+     "eh",
+     "ehn",
+     "eyn",
+     "ih+1"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:4",
+    "sites": 902,
+    "t": 685,
+    "d": 217,
+    "share_d": 0.2406,
+    "base_share_d": 0.2432,
+    "phones": [
+     "er",
+     "uw"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:5",
+    "sites": 810,
+    "t": 647,
+    "d": 163,
+    "share_d": 0.2012,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ay"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:6",
+    "sites": 741,
+    "t": 488,
+    "d": 253,
+    "share_d": 0.3414,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ae",
+     "m"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:7",
+    "sites": 594,
+    "t": 423,
+    "d": 171,
+    "share_d": 0.2879,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ey"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:8",
+    "sites": 589,
+    "t": 516,
+    "d": 73,
+    "share_d": 0.1239,
+    "base_share_d": 0.2432,
+    "phones": [
+     "<EXCLUDE-name>",
+     "UNKNOWN",
+     "aan",
+     "ao"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:9",
+    "sites": 541,
+    "t": 236,
+    "d": 305,
+    "share_d": 0.5638,
+    "base_share_d": 0.2432,
+    "phones": [
+     "VOCNOISE",
+     "ahn",
+     "aon",
+     "g",
+     "k",
+     "n",
+     "s",
+     "uh",
+     "w",
+     "z"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:10",
+    "sites": 528,
+    "t": 474,
+    "d": 54,
+    "share_d": 0.1023,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aw",
+     "t",
+     "v"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:11",
+    "sites": 520,
+    "t": 344,
+    "d": 176,
+    "share_d": 0.3385,
+    "base_share_d": 0.2432,
+    "phones": [
+     "f",
+     "ihn",
+     "ow"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:12",
+    "sites": 301,
+    "t": 256,
+    "d": 45,
+    "share_d": 0.1495,
+    "base_share_d": 0.2432,
+    "phones": [
+     "el"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:13",
+    "sites": 175,
+    "t": 119,
+    "d": 56,
+    "share_d": 0.32,
+    "base_share_d": 0.2432,
+    "phones": [
+     "hh"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:14",
+    "sites": 57,
+    "t": 21,
+    "d": 36,
+    "share_d": 0.6316,
+    "base_share_d": 0.2432,
+    "phones": [
+     "en"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:15",
+    "sites": 47,
+    "t": 27,
+    "d": 20,
+    "share_d": 0.4255,
+    "base_share_d": 0.2432,
+    "phones": [
+     "l"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:16",
+    "sites": 37,
+    "t": 18,
+    "d": 19,
+    "share_d": 0.5135,
+    "base_share_d": 0.2432,
+    "phones": [
+     "r"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:17",
+    "sites": 24,
+    "t": 15,
+    "d": 9,
+    "share_d": 0.375,
+    "base_share_d": 0.2432,
+    "phones": [
+     "y"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:18",
+    "sites": 18,
+    "t": 16,
+    "d": 2,
+    "share_d": 0.1111,
+    "base_share_d": 0.2432,
+    "phones": [
+     "dx"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:19",
+    "sites": 15,
+    "t": 8,
+    "d": 7,
+    "share_d": 0.4667,
+    "base_share_d": 0.2432,
+    "phones": [
+     "SIL"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:20",
+    "sites": 15,
+    "t": 15,
+    "d": 0,
+    "share_d": 0.0,
+    "base_share_d": 0.2432,
+    "phones": [
+     "em"
+    ],
+    "modularity": 0.4708
+   }
+  ]
+ },
+ "answer": "**Yes, they group, but the groups track /t/ versus /d/ only partially.**\n\nThe flap environments split into 20 communities with a modularity of 0.4708, which indicates substantial community structure [community:1].\n\nThe share of underlying /d/ varies across communities, compared with an overall baseline of 0.2432:\n\n- **Leaning /t/:**\n  - community:2 is the second-largest (1,630 sites) and only 6.0% /d/ [community:2].\n  - community:10 is 10.2% /d/ [community:10].\n  - community:8 is 12.4% /d/ [community:8].\n- **Leaning /d/:**\n  - community:9 is 56.4% /d/ over 541 sites [community:9].\n  - community:14 is 63.2% /d/, but on only 57 sites [community:14].\n- **Near baseline:**\n  - community:3 is 25.8% [community:3].\n  - community:4 is 24.1% [community:4].\n  - community:5 is 20.1% [community:5].\n\nNo community is purely /t/ or /d/, apart from tiny ones. community:20 is 0% /d/ on just 15 sites [community:20], so it says little. Several other small communities are also too small to interpret reliably, such as r with 37 sites, SIL with 15, and dx with 18 [community:16][community:19][community:18].\n\nThe communities are partly correlated with /t/ versus /d/ but do not cleanly separate them. The rows include no significance test or summary statistic for this association, so whether the skews exceed chance is not established here."
+}
