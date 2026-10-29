@@ -1,0 +1,82 @@
+Span grid, pooled design — per-span scores and C1, C4-C7
+Run 20261029. `joint`, out-of-fold over 25 cells, 10,334 sites (2,513 /d/), 983 of the pilot's 991 type keys. Chance is 0.50.
+
+code commit       ea7151bf4182107b99e73f210dd0121d700aa26c
+features          /data/embeddings/spans-b378c303ca90 (extracted at 8a362f6a9e071e0837debeedd4c52c5d1d8054ff)
+inventory sha256  b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162
+exclusion sha256  964e7ab99882340560b6da10fffb7a54f6efb92e519b8247f95f0602b480db21
+seeds             folds 20260926, subsample 20260926, control 20260927, bootstrap 20260928, control_null 20260929
+fits              5,650, 0 did not converge (none refit); 30.4 min
+lemma-unseen      7,546 sites (1,727 /d/), 797 of 805 type keys
+unclipped         9,657 sites
+
+Per span x representation, at the best layer (95% word-type bootstrap interval)
+-------------------------------------------------------------------------------
+block                best  bal. acc.             95% CI  best-layer CI  ctrl p   lemma  unclip  cells min/med/max
+wavjepa_r               3     0.5432  [0.5092, 0.5768]         [3, 8]  0.1614  0.5359  0.5419  0.476/0.541/0.661
+wavjepa_vr              4     0.5549  [0.5174, 0.5924]         [2, 6]  0.1170  0.5522  0.5500  0.445/0.576/0.602
+wavjepa_rv              4     0.5524  [0.5190, 0.5882]         [4, 9]  0.0954  0.5511  0.5513  0.427/0.564/0.639
+wavjepa_vrv             6     0.5508  [0.5097, 0.5921]        [1, 12]  0.1237  0.5547  0.5462  0.419/0.577/0.648
+wav2vec2_r              9     0.6163  [0.5820, 0.6483]        [9, 10]  0.1758  0.6144  0.6151  0.530/0.618/0.725
+wav2vec2_vr             9     0.6168  [0.5773, 0.6572]        [6, 10]  0.1589  0.5949  0.6150  0.559/0.617/0.721
+wav2vec2_rv             9     0.6218  [0.5897, 0.6557]         [9, 9]  0.2809  0.6085  0.6237  0.497/0.624/0.700
+wav2vec2_vrv            9     0.6254  [0.5875, 0.6646]         [8, 9]  0.1312  0.6049  0.6247  0.508/0.637/0.732
+mfcc_r                  0     0.5291  [0.4769, 0.5818]         [0, 0]  0.2034  0.5131  0.5301  0.438/0.556/0.627
+mfcc_vr                 0     0.5296  [0.4803, 0.5790]         [0, 0]  0.2893  0.5151  0.5276  0.393/0.529/0.663
+mfcc_rv                 0     0.5299  [0.4805, 0.5793]         [0, 0]  0.3165  0.5185  0.5276  0.446/0.535/0.637
+mfcc_vrv                0     0.5443  [0.4959, 0.5921]         [0, 0]  0.2167  0.5359  0.5407  0.429/0.546/0.707
+duration_clipped        0     0.5274  [0.4715, 0.5839]         [0, 0]  0.2709  0.5260  0.5178  0.404/0.542/0.615
+duration_full           0     0.5289  [0.4735, 0.5845]         [0, 0]  0.2667  0.5283  0.5192  0.407/0.545/0.619
+duration_vowel          0     0.5243  [0.4708, 0.5767]         [0, 0]  0.8219  0.5250  0.5148  0.392/0.540/0.631
+mfcc_duration_vr        0     0.5473  [0.4944, 0.6022]         [0, 0]  0.1999  0.5366  0.5395  0.427/0.567/0.647
+mfcc_duration_vrv       0     0.5468  [0.4926, 0.6019]         [0, 0]  0.3290  0.5408  0.5408  0.450/0.560/0.680
+
+Comparisons (§6: gap >= 0.05 and paired 95% lower bound > 0)
+-------------------------------------------------------------
+C1  wavjepa_vr       - wavjepa_r              +0.0117  [-0.0023, +0.0267]  no effect
+C1  wavjepa_rv       - wavjepa_r              +0.0092  [-0.0030, +0.0219]  no effect
+C1  wavjepa_vrv      - wavjepa_r              +0.0076  [-0.0069, +0.0221]  no effect
+C1  wav2vec2_vr      - wav2vec2_r             +0.0004  [-0.0199, +0.0222]  no effect
+C1  wav2vec2_rv      - wav2vec2_r             +0.0055  [-0.0121, +0.0213]  no effect
+C1  wav2vec2_vrv     - wav2vec2_r             +0.0090  [-0.0129, +0.0291]  no effect
+C1  mfcc_vr          - mfcc_r                 +0.0005  [-0.0237, +0.0255]  no effect
+C1  mfcc_rv          - mfcc_r                 +0.0008  [-0.0152, +0.0186]  no effect
+C1  mfcc_vrv         - mfcc_r                 +0.0152  [-0.0111, +0.0409]  no effect
+C4  wavjepa_vr       - duration_clipped       +0.0275  [-0.0291, +0.0984]  no effect
+C4  wavjepa_vrv      - duration_clipped       +0.0234  [-0.0363, +0.0955]  no effect
+C4  wav2vec2_vr      - duration_clipped       +0.0894  [+0.0281, +0.1603]  effect
+C4  wav2vec2_vrv     - duration_clipped       +0.0979  [+0.0358, +0.1705]  effect
+C5  wavjepa_r        - mfcc_r                 +0.0141  [-0.0180, +0.0539]  no effect
+C5  wavjepa_vr       - mfcc_vr                +0.0254  [+0.0004, +0.0560]  no effect
+C5  wavjepa_rv       - mfcc_rv                +0.0226  [-0.0096, +0.0625]  no effect
+C5  wavjepa_vrv      - mfcc_vrv               +0.0066  [-0.0200, +0.0394]  no effect
+C5  wavjepa_vr       - mfcc_duration_vr       +0.0077  [-0.0212, +0.0432]  no effect
+C5  wavjepa_vrv      - mfcc_duration_vrv      +0.0041  [-0.0263, +0.0403]  no effect
+C5  wav2vec2_r       - mfcc_r                 +0.0873  [+0.0499, +0.1298]  effect
+C5  wav2vec2_vr      - mfcc_vr                +0.0872  [+0.0606, +0.1184]  effect
+C5  wav2vec2_rv      - mfcc_rv                +0.0919  [+0.0551, +0.1308]  effect
+C5  wav2vec2_vrv     - mfcc_vrv               +0.0811  [+0.0512, +0.1159]  effect
+C5  wav2vec2_vr      - mfcc_duration_vr       +0.0695  [+0.0369, +0.1046]  effect
+C5  wav2vec2_vrv     - mfcc_duration_vrv      +0.0786  [+0.0402, +0.1192]  effect
+C7  wavjepa_r        - wav2vec2_r             -0.0731  [-0.0893, -0.0542]  no effect
+C7  wavjepa_vr       - wav2vec2_vr            -0.0618  [-0.0877, -0.0341]  no effect
+C7  wavjepa_rv       - wav2vec2_rv            -0.0694  [-0.0852, -0.0477]  no effect
+C7  wavjepa_vrv      - wav2vec2_vrv           -0.0745  [-0.1023, -0.0433]  no effect
+
+C6, best layer (2.5-97.5 percentile of its index over the resamples)
+    wavjepa_r        layer 3  [3, 8]
+    wavjepa_vr       layer 4  [2, 6]
+    wavjepa_rv       layer 4  [4, 9]
+    wavjepa_vrv      layer 6  [1, 12]
+    wav2vec2_r       layer 9  [9, 10]
+    wav2vec2_vr      layer 9  [6, 10]
+    wav2vec2_rv      layer 9  [9, 9]
+    wav2vec2_vrv     layer 9  [8, 9]
+
+No multiple-comparison correction is registered; 29 gaps are called.
+
+WavJEPA spans that lost a padded frame (616), by span and clipped-following:
+    r    clipped-following    0   not    0
+    vr   clipped-following    0   not    0
+    rv   clipped-following  236   not   72
+    vrv  clipped-following  236   not   72

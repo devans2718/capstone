@@ -1,0 +1,36 @@
+{
+  "checkpoint_revision": "6be4a50",
+  "code_commit": "ea7151bf4182107b99e73f210dd0121d700aa26c",
+  "context_ms": 200.0,
+  "encoders": [
+    "wavjepa_r",
+    "wavjepa_vr",
+    "wavjepa_rv",
+    "wavjepa_vrv",
+    "wav2vec2_r",
+    "wav2vec2_vr",
+    "wav2vec2_rv",
+    "wav2vec2_vrv",
+    "mfcc_r",
+    "mfcc_vr",
+    "mfcc_rv",
+    "mfcc_vrv",
+    "duration_clipped",
+    "duration_full",
+    "duration_vowel",
+    "mfcc_duration_vr",
+    "mfcc_duration_vrv"
+  ],
+  "inventory_hash": "b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162",
+  "n_sites_scored": 10334,
+  "run_id": "span-grid-20261029",
+  "seeds": {
+    "bootstrap": 20260928,
+    "control": 20260927,
+    "control_null": 20260929,
+    "folds": 20260926,
+    "subsample": 20260926
+  },
+  "split_scheme": "capstone.splits, `joint` only (span grid \u00a75): the pilot's 5x5 grid, folds assigned over its 10,389 eligible sites keyed by type_key; the 55 \u00a71 exclusions then leave every cell's train and test sets (\u00a78, 2026-10-29). Out-of-fold predictions pooled over the 25 cells, 10,334 sites.",
+  "synthetic": false
+}

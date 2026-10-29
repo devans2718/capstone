@@ -1,0 +1,38 @@
+comparison,per,a,b,gap,ci_lo,ci_hi,call
+C1,wavjepa,wavjepa_vr,wavjepa_r,0.011716,-0.002337,0.026667,no effect
+C1,wavjepa,wavjepa_rv,wavjepa_r,0.009235,-0.003049,0.021871,no effect
+C1,wavjepa,wavjepa_vrv,wavjepa_r,0.007607,-0.006938,0.022124,no effect
+C1,wav2vec2,wav2vec2_vr,wav2vec2_r,0.000446,-0.019867,0.022229,no effect
+C1,wav2vec2,wav2vec2_rv,wav2vec2_r,0.005478,-0.012150,0.021282,no effect
+C1,wav2vec2,wav2vec2_vrv,wav2vec2_r,0.009038,-0.012915,0.029126,no effect
+C1,mfcc,mfcc_vr,mfcc_r,0.000487,-0.023680,0.025452,no effect
+C1,mfcc,mfcc_rv,mfcc_r,0.000819,-0.015185,0.018601,no effect
+C1,mfcc,mfcc_vrv,mfcc_r,0.015195,-0.011132,0.040947,no effect
+C4,wavjepa,wavjepa_vr,duration_clipped,0.027511,-0.029071,0.098372,no effect
+C4,wavjepa,wavjepa_vrv,duration_clipped,0.023402,-0.036293,0.095517,no effect
+C4,wav2vec2,wav2vec2_vr,duration_clipped,0.089359,0.028071,0.160331,effect
+C4,wav2vec2,wav2vec2_vrv,duration_clipped,0.097950,0.035753,0.170534,effect
+C5,wavjepa,wavjepa_r,mfcc_r,0.014143,-0.017963,0.053923,no effect
+C5,wavjepa,wavjepa_vr,mfcc_vr,0.025371,0.000434,0.055957,no effect
+C5,wavjepa,wavjepa_rv,mfcc_rv,0.022559,-0.009625,0.062535,no effect
+C5,wavjepa,wavjepa_vrv,mfcc_vrv,0.006555,-0.020030,0.039408,no effect
+C5,wavjepa,wavjepa_vr,mfcc_duration_vr,0.007651,-0.021246,0.043169,no effect
+C5,wavjepa,wavjepa_vrv,mfcc_duration_vrv,0.004060,-0.026313,0.040342,no effect
+C5,wav2vec2,wav2vec2_r,mfcc_r,0.087260,0.049882,0.129783,effect
+C5,wav2vec2,wav2vec2_vr,mfcc_vr,0.087219,0.060633,0.118385,effect
+C5,wav2vec2,wav2vec2_rv,mfcc_rv,0.091920,0.055060,0.130811,effect
+C5,wav2vec2,wav2vec2_vrv,mfcc_vrv,0.081103,0.051230,0.115899,effect
+C5,wav2vec2,wav2vec2_vr,mfcc_duration_vr,0.069499,0.036897,0.104648,effect
+C5,wav2vec2,wav2vec2_vrv,mfcc_duration_vrv,0.078608,0.040247,0.119151,effect
+C7,r,wavjepa_r,wav2vec2_r,-0.073118,-0.089277,-0.054158,no effect
+C7,vr,wavjepa_vr,wav2vec2_vr,-0.061848,-0.087710,-0.034113,no effect
+C7,rv,wavjepa_rv,wav2vec2_rv,-0.069361,-0.085235,-0.047683,no effect
+C7,vrv,wavjepa_vrv,wav2vec2_vrv,-0.074548,-0.102327,-0.043330,no effect
+C6,wavjepa,wavjepa_r,,3.000000,3.000000,8.000000,best layer; no threshold
+C6,wavjepa,wavjepa_vr,,4.000000,2.000000,6.000000,best layer; no threshold
+C6,wavjepa,wavjepa_rv,,4.000000,4.000000,9.000000,best layer; no threshold
+C6,wavjepa,wavjepa_vrv,,6.000000,1.000000,12.000000,best layer; no threshold
+C6,wav2vec2,wav2vec2_r,,9.000000,9.000000,10.000000,best layer; no threshold
+C6,wav2vec2,wav2vec2_vr,,9.000000,6.000000,10.000000,best layer; no threshold
+C6,wav2vec2,wav2vec2_rv,,9.000000,9.000000,9.000000,best layer; no threshold
+C6,wav2vec2,wav2vec2_vrv,,9.000000,8.000000,9.000000,best layer; no threshold
