@@ -74,7 +74,7 @@ See the docstring in `build_corpus.py`.
 | `criterion_provenance` | multi-hop | Registration → Criterion → SUPERSEDES → Criterion; Paper → JUSTIFIES |
 | `why_failed` | research | Run → failed Outcome → Criterion; Finding → EXPLAINS; Finding → EVIDENCED_BY |
 | `word_axis` | results | WavJEPA and MFCC curves per split condition |
-| `registered_not_run` | plans | Revision 3 SPECIFIES, never USED by a run |
+| `registered_not_run` | plans | Revision 3 SPECIFIES, each item flagged used or not, with the runs that USED it |
 | `span_grid` | results | sg-rev1 ← REGISTERED_BY ← Run ← FROM_RUN ← Finding, Curve → IN_ENVIRONMENT (live-only; not among the evaluated five) |
 
 Model: `claude-opus-5-5`. Both LLM calls go through `complete()`, so another

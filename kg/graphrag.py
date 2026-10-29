@@ -140,16 +140,26 @@ RETRIEVALS: dict[str, dict] = {
         },
     },
     "registered_not_run": {
-        "description": "Plans: what pre-registration revision 3 specifies "
-                       "that the pilot never used (planned encoders, "
-                       "analysis windows, probes).",
+        # Every specified item, flagged, since 2026-10-29 (approved by
+        # Daniel): once the span grid used wav2vec2-base, the old "never
+        # USED" filter returned nothing, and the model could not tell "all
+        # used" from a gap in the graph.
+        "description": "Plans: everything pre-registration revision 3 "
+                       "specifies (encoders, analysis windows, probes, "
+                       "controls), each flagged used or not used, with the "
+                       "runs that used it, so what the pilot never used is "
+                       "the items no pilot run used.",
         "statements": {
-            "specified_unused": """
+            "specified": """
                 MATCH (:Registration {revision: 3})-[s:SPECIFIES]->(x)
-                WHERE NOT EXISTS { (:Run)-[:USED|REALIZES]->(x) }
+                OPTIONAL MATCH (r:Run)-[:USED|REALIZES]->(x)
+                WITH x, s, r ORDER BY r.key
+                WITH x, s, collect(DISTINCT r.key) AS used_by
                 RETURN x.key AS key, labels(x)[0] AS kind,
                        coalesce(x.name, x.key) AS item, s.role AS role,
-                       x.status AS status, x.note AS note""",
+                       size(used_by) > 0 AS used, used_by,
+                       x.status AS status, x.note AS note
+                ORDER BY used, key""",
         },
     },
     # Added 2026-10-29, approved by Daniel; live-only until it is evaluated,
