@@ -1,0 +1,215 @@
+{
+ "time": "20261029-180559",
+ "model": "claude-opus-5-5",
+ "question": "What does registration revision 3 specify that the pilot never used?",
+ "choice": {
+  "retrieval": "registered_not_run",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "specified": [
+   {
+    "key": "cond-joint",
+    "kind": "Condition",
+    "item": "joint",
+    "role": "gated",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "cond-random",
+    "kind": "Condition",
+    "item": "random",
+    "role": "reported",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "cond-speaker",
+    "kind": "Condition",
+    "item": "speaker_disjoint",
+    "role": "reported",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "cond-word",
+    "kind": "Condition",
+    "item": "word_disjoint",
+    "role": "reported",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "ctrl-lookup",
+    "kind": "Control",
+    "item": "Word lookup",
+    "role": "baseline",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "env-flap",
+    "kind": "Environment",
+    "item": "[ɾ]",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": null
+   },
+   {
+    "key": "pool-max",
+    "kind": "Pooling",
+    "item": "max",
+    "role": "secondary",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "pool-mean",
+    "kind": "Pooling",
+    "item": "mean",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "pool-midpoint",
+    "kind": "Pooling",
+    "item": "midpoint",
+    "role": "secondary",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "probe-linear",
+    "kind": "Probe",
+    "item": "Linear probe",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": null
+   },
+   {
+    "key": "rep-mfcc",
+    "kind": "Representation",
+    "item": "MFCC",
+    "role": "baseline",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": "13 coefficients incl. c0 + deltas + delta-deltas, librosa, 25 ms window / 10 ms hop. Features with no learned structure."
+   },
+   {
+    "key": "rep-wav2vec2",
+    "kind": "Representation",
+    "item": "facebook/wav2vec2-base",
+    "role": "exploratory",
+    "used": true,
+    "used_by": [
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": "Run in the span grid's pooled design (2026-10-29), on the 10,334 sites under joint: best layer 9 on every span, balanced accuracy 0.616–0.625. Ahead of MFCC on every span (C5). Index 0 is not the CNN output but LayerNorm(projection + positional conv), so it carries position (span grid §8)."
+   },
+   {
+    "key": "rep-wavjepa",
+    "kind": "Representation",
+    "item": "WavJEPA",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": "Index 0 is the input to the first layer; 1–12 are layer outputs. Pretraining data not yet checked against the paper."
+   },
+   {
+    "key": "task-control",
+    "kind": "Control",
+    "item": "Control task",
+    "role": "leak detector",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "task-speaker",
+    "kind": "Task",
+    "item": "Speaker ID",
+    "role": "diagnostic",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "task-voicing",
+    "kind": "Task",
+    "item": "Voicing task",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   }
+  ]
+ },
+ "answer": "**One item: the facebook/wav2vec2-base representation** [rep-wav2vec2]. It is listed with an exploratory role, and its only recorded user is the span grid run, not the pilot [rep-wav2vec2].\n\nwav2vec2 wasn't left unused overall. It was run in the span grid's pooled design on 2026-10-29, on the 10,334 sites under the joint condition [rep-wav2vec2, cond-joint]. There:\n\n- The best layer was 9 on every span.\n- Balanced accuracy ranged from 0.616 to 0.625.\n- It scored above MFCC on every span (C5) [rep-wav2vec2, rep-mfcc].\n\nThe note adds that index 0 is not the CNN output but LayerNorm(projection + positional conv), so it carries position information [rep-wav2vec2].\n\nEvery other specified item lists the pilot among its users. That covers:\n\n- the four conditions [cond-joint, cond-random, cond-speaker, cond-word]\n- the word lookup baseline [ctrl-lookup]\n- the [ɾ] environment [env-flap]\n- the three poolings [pool-max, pool-mean, pool-midpoint]\n- the linear probe [probe-linear]\n- the MFCC and WavJEPA representations [rep-mfcc, rep-wavjepa]\n- the control, speaker ID and voicing tasks [task-control, task-speaker, task-voicing]\n\nAll specified items are marked as used by at least one run, so nothing in the specification went entirely unused.\n\nThe rows don't say they come from revision 3 specifically. If revision 3 differs from what these rows reflect, they can't show that."
+}
