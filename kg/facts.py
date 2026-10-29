@@ -258,10 +258,13 @@ NODES += [
          note="13 coefficients incl. c0 + deltas + delta-deltas, librosa, "
               "25 ms window / 10 ms hop. Features with no learned structure."),
     node("rep-wav2vec2", "Representation", name="facebook/wav2vec2-base",
-         status="planned", learned=True, n_layers=13, dim=768,
+         status="used", learned=True, n_layers=13, dim=768,
          checkpoint="0b5b8e8",
-         note="Registered in rev 3 as an exploratory second encoder; not run. "
-              "The span grid compares it with WavJEPA."),
+         note="Run in the span grid's pooled design (2026-10-29), on the "
+              "10,334 sites under joint: best layer 9 on every span, "
+              "balanced accuracy 0.616–0.625. Ahead of MFCC on every span "
+              "(C5). Index 0 is not the CNN output but LayerNorm(projection "
+              "+ positional conv), so it carries position (span grid §8)."),
     node("rep-hubert", "Representation", name="facebook/hubert-base-ls960",
          status="planned", learned=True),
     node("rep-wavlm", "Representation", name="microsoft/wavlm-base",
@@ -297,15 +300,15 @@ NODES += [
          description="The site's frame at or before its temporal midpoint."),
     node("env-flap", "Environment", name="[ɾ]", status="used",
          description="The flap's own frames only."),
-    node("env-v-flap", "Environment", name="[Vɾ]", status="planned",
+    node("env-v-flap", "Environment", name="[Vɾ]", status="used",
          description="The preceding sonorant stretch through the flap: back "
                      "through any sonorant coda (r, l, n, m, ng, nx) to the "
                      "start of the vowel before it. V includes syllabic "
                      "consonants."),
-    node("env-flap-v", "Environment", name="[ɾV]", status="planned",
+    node("env-flap-v", "Environment", name="[ɾV]", status="used",
          description="The flap through the following segment, whatever it "
                      "is."),
-    node("env-v-flap-v", "Environment", name="[VɾV]", status="planned",
+    node("env-v-flap-v", "Environment", name="[VɾV]", status="used",
          description="The preceding stretch through the following segment."),
 ]
 
