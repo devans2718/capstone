@@ -60,7 +60,7 @@ See the docstring in `build_corpus.py`.
 .venv-app/bin/python kg/graphrag.py --save kg/graphrag-runs "What's a flap?"
 ```
 
-1. **Route.** The LLM picks one of five retrievals and fills its parameter. It
+1. **Route.** The LLM picks one of six retrievals and fills its parameter. It
    chooses; it never writes Cypher, so every query that runs is one a human has
    read.
 2. **Retrieve.** The chosen Cypher runs against the graph.
@@ -74,6 +74,7 @@ See the docstring in `build_corpus.py`.
 | `why_failed` | research | Run → failed Outcome → Criterion; Finding → EXPLAINS; Finding → EVIDENCED_BY |
 | `word_axis` | results | WavJEPA and MFCC curves per split condition |
 | `registered_not_run` | plans | Revision 3 SPECIFIES, never USED by a run |
+| `span_grid` | results | sg-rev1 ← REGISTERED_BY ← Run ← FROM_RUN ← Finding, Curve → IN_ENVIRONMENT (live-only; not among the evaluated five) |
 
 Model: `claude-opus-5-5`. Both LLM calls go through `complete()`, so another
 endpoint means rewriting one function. The retrievals read the design layer

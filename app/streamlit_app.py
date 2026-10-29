@@ -1037,7 +1037,7 @@ def ask_graph(graphrag, question: str) -> dict:
 with tab_graph:
     st.write(
         "Questions about the study's design, results and reasoning, answered "
-        "from its knowledge graph (`kg/`). The model picks one of five "
+        "from its knowledge graph (`kg/`). The model picks one of six "
         "reviewed retrievals and fills its parameter; it never writes Cypher. "
         "It then answers from the returned rows only, citing their node keys. "
         "The rows are shown first, so every claim can be checked against them."

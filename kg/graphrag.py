@@ -152,6 +152,38 @@ RETRIEVALS: dict[str, dict] = {
                        x.status AS status, x.note AS note""",
         },
     },
+    # Added 2026-10-29, approved by Daniel; live-only until it is evaluated,
+    # so the app's five cached questions don't include it.
+    "span_grid": {
+        "description": "Results: what the span grid (the follow-up "
+                       "registration, sg-rev1) found. Its findings, one per "
+                       "registered comparison, with status and full "
+                       "statement, and each span x representation's best "
+                       "layer, balanced accuracy, interval and control-task "
+                       "p-value.",
+        "statements": {
+            "findings": """
+                MATCH (:Registration {key: 'sg-rev1'})<-[:REGISTERED_BY]-(:Run)
+                      <-[:FROM_RUN]-(f:Finding)
+                OPTIONAL MATCH (f)-[:EVIDENCED_BY]->(x)
+                RETURN f.key AS key, f.question AS question, f.status AS status,
+                       f.statement AS statement,
+                       collect(DISTINCT x.key) AS evidenced_by
+                ORDER BY key""",
+            "curves": """
+                MATCH (:Registration {key: 'sg-rev1'})<-[:REGISTERED_BY]-(r:Run)
+                      <-[:FROM_RUN]-(c:Curve)
+                OPTIONAL MATCH (c)-[:IN_ENVIRONMENT]->(e:Environment)
+                RETURN c.key AS key, c.representation AS representation,
+                       coalesce(e.name, c.variant) AS span,
+                       c.best_layer AS best_layer,
+                       [c.best_layer_lo, c.best_layer_hi] AS best_layer_range,
+                       round(c.best_balanced_acc, 4) AS balanced_acc,
+                       [round(c.best_ci_lo, 4), round(c.best_ci_hi, 4)] AS ci_95,
+                       c.control_p AS control_p
+                ORDER BY representation, span""",
+        },
+    },
 }
 
 # Not a retrieval the router can pick: added by --community (see the docstring).
