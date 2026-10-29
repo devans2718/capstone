@@ -337,5 +337,26 @@ float16 frames, so the pooled design's ɾ span gets the pilot's exact features
 and the reproduction check (§5) compares like with like, with no tolerance to
 set.
 
+**2026-10-29 — The cropped design is deferred (§3, §6, §7).** Decided
+2026-10-24 and appended before any span has been probed: the pooled design's
+spans are extracted (2026-10-18), and no probe has been fit to them. Only the
+pooled design runs now. The cropped design's machinery (§3's normalization
+path and its check against the standard path, noise matched to each track's
+pauses, the padding-only control, and the GroupNorm measure in the entries
+above) is a lot to build and to understand, and the remaining time goes to
+the pooled design and to reviewing the study. It is deferred, not dropped:
+§3's specification and §6's predictions stand as registered, and if it runs
+later it is read against them as written, with that run's date stated.
+
+What this leaves untested, by §6's comparisons:
+
+- **C2 and C3: not tested.** Both need the cropped design.
+- **C4, C5 and C7: the pooled design only.** Each is registered for both
+  designs; only its pooled half is read.
+- **C1 and C6: unaffected.** Both are pooled-design comparisons.
+
+From §7, the padding-only control and the GroupNorm measure are not produced;
+the rest of §7 is reported for the pooled design.
+
 ---
 
