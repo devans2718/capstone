@@ -388,5 +388,17 @@ redrawn.
 The ɾ span is fit twice: on the 10,389 for §5's reproduction check, and on the
 10,334 for the grid, which is the one compared.
 
+**2026-10-29 — C7's rule is one-sided; the call stands (§6). Written after
+the pooled design's results were read.** §6 calls an effect when a gap is
+≥ 0.05 and its paired bootstrap 95% lower bound is > 0, and C7 is computed as
+WavJEPA − wav2vec 2.0. As written, the rule can call only a WavJEPA advantage,
+though C7 asks which encoder is better and no direction was predicted. The
+registered call stands: no effect on all four spans. Reported, not called:
+the gap is negative on every span, wav2vec2-base ahead by 0.062 to 0.075 with
+every 95% interval below zero (`results/span-grid/`, `004ea19`). The rule is
+not re-read in reverse here because the reading would be chosen after the
+result. The encoders' order is supported by registered comparisons: C5 calls
+wav2vec2-base ahead of MFCC on every span and WavJEPA on none.
+
 ---
 
