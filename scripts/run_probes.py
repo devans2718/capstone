@@ -6,6 +6,11 @@ HOW TO RUN (in .venv-app, after scripts/extract_site_features.py)
     .venv-app/bin/python scripts/run_probes.py rest       # everything else
     .venv-app/bin/python scripts/run_probes.py assemble   # CSVs, parquet, manifest
 
+    The span grid (experiments/span-grid/README.md), pooled design only:
+    .venv-app/bin/python scripts/run_probes.py span-repro  # §5's reproduction check
+    .venv-app/bin/python scripts/run_probes.py span-grid   # the 10,334; then
+    .venv-app/bin/python scripts/score_span_grid.py        # scores and C1-C7
+
     gate fits only what the criteria read: mean pooling, `joint`, WavJEPA and
     MFCC, real and control probes, and the lookup. It then writes
     results/flapping/criteria-20260926.txt. The result being waited on is not
@@ -36,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -64,6 +70,14 @@ SPAN_RUN_DIR = Path(f"/data/embeddings/span-run-{SPAN_DATE}")
 SPANS = ("r", "vr", "rv", "vrv")
 SPAN_REPRESENTATIONS = ("wavjepa", "wav2vec2", "mfcc")
 SPAN_REVISIONS = {"wavjepa": "6be4a50", "wav2vec2": "0b5b8e8"}   # span grid §4
+# The grid proper: the 10,334 (§1). Its ɾ is a second fit of the span, so it
+# lives apart from the reproduction check's block in SPAN_RUN_DIR.
+GRID_DIR = SPAN_RUN_DIR / "grid"
+GRID_FEATURES = GRID_DIR / "features"
+# §5's duration baselines, from spans.tsv: one column each, then the clipped
+# duration appended to the span's MFCC for Vɾ and VɾV (§8, 2026-10-29).
+DURATIONS = {"clipped": "stretch_clipped_ms", "full": "stretch_ms", "vowel": "vowel_ms"}
+MFCC_DURATION_SPANS = ("vr", "vrv")
 
 assert seeds.FOLDS == seeds.SUBSAMPLE  # iter_splits takes one seed for both
 
@@ -150,11 +164,14 @@ def _fit(path, layer, train, test, y_train):
 
 
 def run_block(d: Data, kind, rep, pooling, condition, subsampled, n_jobs,
-              features=FEATURES, run_dir=RUN_DIR):
+              features=FEATURES, run_dir=RUN_DIR, sites=None):
     """Fit one block and cache it. kind: 'probe' (real + control) or 'speaker'.
 
     The span grid passes its own features and run directories, with a span in
-    place of the pooling; the pilot's stages take the defaults.
+    place of the pooling; the pilot's stages take the defaults. `sites`, a bool
+    mask, drops every other site from each cell's train and test sets after the
+    folds are assigned (span grid §5): the grid's 55 exclusions. Unscored sites
+    keep fold -1 and NaN predictions.
     """
     import numpy as np
     from joblib import Parallel, delayed
@@ -165,6 +182,9 @@ def run_block(d: Data, kind, rep, pooling, condition, subsampled, n_jobs,
     path = features_path(rep, pooling, features)
     n_layers = np.load(path, mmap_mode="r").shape[1]
     splits = d.splits(condition, subsampled)
+    if sites is not None:
+        splits = [replace(s, train=s.train[sites[s.train]], test=s.test[sites[s.test]])
+                  for s in splits]
 
     targets = {"probe": {"real": d.is_d, "control": d.control_is_d},
                "speaker": {"speaker": d.speaker_code}}[kind]
@@ -364,6 +384,22 @@ class SpanData(Data):
         assert self.in_grid.sum() == 10_334, "§1's 10,334 changed"
         self.spans_manifest = sm
 
+        def column(name):
+            a = np.full(self.n, np.nan)
+            a[self.elig_idx] = [float(r[name]) if r[name] else np.nan for r in rows]
+            return a
+
+        self.durations = {k: column(c) for k, c in DURATIONS.items()}
+        self.clipped = np.zeros(self.n, dtype=bool)
+        self.clipped[self.elig_idx] = [r["clipped_pre"] == "1" or r["clipped_post"] == "1"
+                                       for r in rows]
+        self.clipped_post = np.zeros(self.n, dtype=bool)
+        self.clipped_post[self.elig_idx] = [r["clipped_post"] == "1" for r in rows]
+        self.spans_rows = rows
+        for k, a in self.durations.items():
+            if (np.isnan(a) != ~self.in_grid).any():
+                raise SystemExit(f"spans.tsv: {DURATIONS[k]} is not set for exactly the grid's sites")
+
         # NaN exactly where no site is scored: the clamped for ɾ, and the
         # clamped and the 55 for the other spans.
         for span in SPANS:
@@ -432,6 +468,55 @@ def span_repro(n_jobs) -> int:
     print(f"REPRODUCTION: {'PASS' if passed else 'FAIL — nothing else in the span grid is read'}")
     print(f"wrote {SPAN_RUN_DIR / 'repro.json'}")
     return 0 if passed else 1
+
+
+def build_baselines(d: SpanData):
+    """§5's duration baselines as feature arrays, in the spans' row layout.
+
+    duration_{clipped,full,vowel}.npy (n, 1, 1), and mfcc_duration_{vr,vrv}.npy
+    (n, 1, 40): the span's 39 MFCC dimensions and the clipped duration. NaN where
+    the grid scores no site. Under /data with the rest of the run.
+    """
+    import numpy as np
+
+    GRID_FEATURES.mkdir(parents=True, exist_ok=True)
+    for k, a in d.durations.items():
+        np.save(features_path("duration", k, GRID_FEATURES), a.astype(np.float32)[:, None, None])
+    clipped = d.durations["clipped"].astype(np.float32)[:, None, None]
+    for span in MFCC_DURATION_SPANS:
+        m = np.load(features_path("mfcc", span, SPANS_DIR))
+        np.save(features_path("mfcc_duration", span, GRID_FEATURES),
+                np.concatenate([m, clipped], axis=2))
+
+
+def span_grid(n_jobs) -> int:
+    """The pooled design's probes on the 10,334, `joint` only (span grid §5).
+
+    Every span x representation, then the duration baselines, each a real and a
+    control probe in every cell. Blocks are cached under GRID_DIR, so the stage
+    resumes after an interruption. Scoring is scripts/score_span_grid.py.
+    """
+    import time
+
+    d = SpanData()
+    build_baselines(d)
+    blocks = [(rep, span, SPANS_DIR) for rep in SPAN_REPRESENTATIONS for span in SPANS]
+    blocks += [("duration", k, GRID_FEATURES) for k in DURATIONS]
+    blocks += [("mfcc_duration", span, GRID_FEATURES) for span in MFCC_DURATION_SPANS]
+    print(f"span-grid: {len(blocks)} blocks on {int(d.in_grid.sum()):,} sites -> {GRID_DIR}",
+          flush=True)
+    t0 = time.perf_counter()
+    timing = {}
+    for rep, span, features in blocks:
+        t = time.perf_counter()
+        run_block(d, "probe", rep, span, "joint", False, n_jobs,
+                  features=features, run_dir=GRID_DIR, sites=d.in_grid)
+        timing[f"{rep}_{span}"] = time.perf_counter() - t
+        print(f"    {timing[f'{rep}_{span}']:.0f} s; {(time.perf_counter() - t0) / 60:.1f} min "
+              "so far", flush=True)
+    (GRID_DIR / "timing.json").write_text(json.dumps(
+        {"blocks_seconds": timing, "total_seconds": time.perf_counter() - t0}, indent=2))
+    return 0
 
 
 # ------------------------------------------------------------------------ rest
@@ -594,7 +679,8 @@ def _write_control(cols, site_ids, d, path):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro"))
+    ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro",
+                                          "span-grid"))
     ap.add_argument("--jobs", type=int, default=-1, help="parallel fits (default: all cores)")
     args = ap.parse_args()
     if args.stage == "gate":
@@ -603,6 +689,8 @@ def main() -> int:
         return rest(args.jobs)
     if args.stage == "span-repro":
         return span_repro(args.jobs)
+    if args.stage == "span-grid":
+        return span_grid(args.jobs)
     return assemble()
 
 
