@@ -358,5 +358,35 @@ What this leaves untested, by §6's comparisons:
 From §7, the padding-only control and the GroupNorm measure are not produced;
 the rest of §7 is reported for the pooled design.
 
+**2026-10-29 — The 55 exclusions meet the pilot's fixed machinery, and two
+readings of the text (§1, §2, §5–§7).** §5 keeps the pilot's folds, assigned
+over its 10,389 sites, with the 55 leaving after assignment, and does not say
+how the 55 meet the rest of the pilot's fixed machinery. Fixed here before any
+grid result is read: the 55 leave every probe's training and test sets, and
+everything else is the pilot's, restricted to the 10,334 and never rebuilt or
+redrawn.
+
+- **Control task.** The pilot's control mapping over its 991 type keys (seed
+  20260927) and its 10,000 null mappings (seed 20260929) are kept. Each site
+  keeps its type's control label. The 8 types whose sites are all among the
+  55 drop out of scoring.
+- **Word-type bootstrap.** The pilot's index over the 991 types and its
+  resample weights (seed 20260928) are kept; the 8 types carry no sites.
+- **Lemma-unseen re-score.** The pilot's fixed subset of 7,586 sites,
+  intersected with the 10,334: 7,546 sites (1,727 /d/) in 797 of its 805 type
+  keys. Its bootstrap keeps the pilot's 805-type index.
+- **Counts.** The 10,334 hold 2,513 /d/ (the pilot's 10,389, 2,529). The
+  smallest of the 25 test cells holds 310 sites, 57 of them /d/.
+- **§7's unclipped sites.** "Each span on the unclipped sites alone" (§2, §7)
+  is read as the 9,657 sites with neither clip flag, scored from the existing
+  out-of-fold predictions without refitting, as the lemma-unseen re-score is.
+- **C5's MFCC + duration gap.** §6's table says "each span"; §5 builds the
+  MFCC + clipped-duration baseline for Vɾ and VɾV only, and the duration is
+  that of the stretch before the flap, which ɾ and ɾV do not contain. That
+  half of C5 is read for Vɾ and VɾV.
+
+The ɾ span is fit twice: on the 10,389 for §5's reproduction check, and on the
+10,334 for the grid, which is the one compared.
+
 ---
 
