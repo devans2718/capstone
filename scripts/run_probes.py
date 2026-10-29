@@ -55,6 +55,16 @@ REPRESENTATIONS = ("wavjepa", "mfcc")
 POOLINGS = ("mean", "max", "midpoint")
 SPEAKER_CONDITIONS = ("random", "word_disjoint")
 
+# The span grid (experiments/span-grid/README.md): pooled design only (§8,
+# 2026-10-29). A span takes the place of the pilot's pooling: span s for
+# representation rep is SPANS_DIR/{rep}_{s}.npy, in the pilot's row layout.
+SPANS_DIR = Path("/data/embeddings/spans-b378c303ca90")
+SPAN_DATE = "20261029"
+SPAN_RUN_DIR = Path(f"/data/embeddings/span-run-{SPAN_DATE}")
+SPANS = ("r", "vr", "rv", "vrv")
+SPAN_REPRESENTATIONS = ("wavjepa", "wav2vec2", "mfcc")
+SPAN_REVISIONS = {"wavjepa": "6be4a50", "wav2vec2": "0b5b8e8"}   # span grid §4
+
 assert seeds.FOLDS == seeds.SUBSAMPLE  # iter_splits takes one seed for both
 
 
@@ -119,8 +129,8 @@ class Data:
         return out
 
 
-def features_path(rep, pooling):
-    return FEATURES / f"{rep}_{pooling}.npy"
+def features_path(rep, pooling, features=FEATURES):
+    return features / f"{rep}_{pooling}.npy"
 
 
 def block_name(kind, rep, pooling, condition, subsampled):
@@ -139,15 +149,20 @@ def _fit(path, layer, train, test, y_train):
     return fit_predict(np.asarray(X[train, layer]), y_train, np.asarray(X[test, layer]))
 
 
-def run_block(d: Data, kind, rep, pooling, condition, subsampled, n_jobs):
-    """Fit one block and cache it. kind: 'probe' (real + control) or 'speaker'."""
+def run_block(d: Data, kind, rep, pooling, condition, subsampled, n_jobs,
+              features=FEATURES, run_dir=RUN_DIR):
+    """Fit one block and cache it. kind: 'probe' (real + control) or 'speaker'.
+
+    The span grid passes its own features and run directories, with a span in
+    place of the pooling; the pilot's stages take the defaults.
+    """
     import numpy as np
     from joblib import Parallel, delayed
 
-    out = RUN_DIR / block_name(kind, rep, pooling, condition, subsampled)
+    out = run_dir / block_name(kind, rep, pooling, condition, subsampled)
     if out.exists():
         return out
-    path = features_path(rep, pooling)
+    path = features_path(rep, pooling, features)
     n_layers = np.load(path, mmap_mode="r").shape[1]
     splits = d.splits(condition, subsampled)
 
@@ -171,7 +186,7 @@ def run_block(d: Data, kind, rep, pooling, condition, subsampled, n_jobs):
         arrays[t][L, splits[k].test] = pred
         arrays[f"{t}_converged"][L, k] = conv
 
-    RUN_DIR.mkdir(parents=True, exist_ok=True)
+    run_dir.mkdir(parents=True, exist_ok=True)
     np.savez(out, **arrays)
     nc = sum(int((~arrays[f"{t}_converged"]).sum()) for t in targets)
     print(f"  {out.name}: {len(jobs)} fits, {nc} did not converge", flush=True)
@@ -291,6 +306,132 @@ def gate(n_jobs) -> int:
     print("\n" + text)
     print(f"wrote {path}")
     return 0
+
+
+# ------------------------------------------------------------------ span grid
+
+
+class SpanData(Data):
+    """Data, plus the span extraction's checks, made before any span is read.
+
+    At least what the pilot checks of its features (inventory order, a full
+    extraction), and that the spans are the registered extraction: the same
+    inventory and exclusion list, the pinned revisions, float16 frames, ɾ equal
+    to the pilot's features, and NaN exactly where no site is scored.
+    """
+
+    def __init__(self):
+        import csv
+
+        import numpy as np
+
+        from measure_span_grid import EXPECTED_SHA256, exclusion_digest
+
+        super().__init__()
+        ids = (SPANS_DIR / "site_ids.txt").read_text().split()
+        if ids != list(self.inv.site_id):
+            raise SystemExit(f"{SPANS_DIR}/site_ids.txt is not in inventory order")
+        sm = json.loads((SPANS_DIR / "extract-manifest.json").read_text())
+        problems = []
+        if sm.get("limit"):
+            problems.append("a --limit smoke test, not a full extraction")
+        if sm["inventory_sha256"] != self.features_manifest["inventory_sha256"]:
+            problems.append("a different inventory from the pilot's features")
+        if sm["exclusion_sha256"] != EXPECTED_SHA256:
+            problems.append("an exclusion list other than the registered one (§1)")
+        if sm["checkpoint_revisions"] != SPAN_REVISIONS:
+            problems.append(f"revisions {sm['checkpoint_revisions']}, §4 pins {SPAN_REVISIONS}")
+        if sm["frame_dtype"] != "float16" or sm["pooling"] != "mean":
+            problems.append("not float16 frames mean-pooled (§4, §8)")
+        for rep, r in sm["r_vs_pilot"].items():
+            if r["rows_identical"] != r["rows"] or r["max_abs_diff"] != 0:
+                problems.append(f"ɾ for {rep} differs from the pilot's features")
+
+        with (SPANS_DIR / "spans.tsv").open(newline="") as fh:
+            rows = list(csv.DictReader(fh, delimiter="\t"))
+        if [r["site_id"] for r in rows] != list(self.inv.site_id.to_numpy()[self.elig_idx]):
+            problems.append("spans.tsv is not the eligible sites in inventory order")
+        out = [(r["site_id"], None) for r in rows if r["in_grid"] == "0"]
+        if exclusion_digest(out) != EXPECTED_SHA256:
+            problems.append("spans.tsv's excluded sites are not the registered 55")
+        if problems:
+            raise SystemExit(f"{SPANS_DIR}: " + "; ".join(problems))
+
+        # The grid's sites (§1): eligible, less the 55. Folds stay the pilot's,
+        # assigned over the 10,389; the 55 leave after assignment (§5).
+        self.in_grid = np.zeros(self.n, dtype=bool)
+        self.in_grid[self.elig_idx] = [r["in_grid"] == "1" for r in rows]
+        assert self.in_grid.sum() == 10_334, "§1's 10,334 changed"
+        self.spans_manifest = sm
+
+        # NaN exactly where no site is scored: the clamped for ɾ, and the
+        # clamped and the 55 for the other spans.
+        for span in SPANS:
+            scored = self.eligible if span == "r" else self.in_grid
+            for rep in SPAN_REPRESENTATIONS:
+                X = np.load(features_path(rep, span, SPANS_DIR), mmap_mode="r")
+                if X.shape[0] != self.n:
+                    raise SystemExit(f"{rep}_{span}.npy has {X.shape[0]} rows, not {self.n}")
+                nan = np.isnan(X[:, 0, 0])
+                if (nan != ~scored).any():
+                    raise SystemExit(f"{rep}_{span}.npy: NaN rows are not the unscored sites")
+
+
+def span_repro(n_jobs) -> int:
+    """§5's reproduction check: the pooled design's ɾ for WavJEPA, on the pilot's
+    10,389 sites and folds, against the pilot's `joint` mean-pooled curve.
+
+    The ɾ features are the pilot's bit for bit, so the curve has to match
+    exactly: any difference in an out-of-fold prediction fails the check, and
+    nothing else in the span grid is read. Aggregates only are printed and
+    written (span-run dir, /data); no site ID leaves it.
+    """
+    import time
+
+    import numpy as np
+
+    from capstone.predictions import code_commit
+    from capstone.probes.scoring import balanced_accuracy
+
+    d = SpanData()
+    e = d.elig_idx
+    y = d.is_d[e]
+    print("span-repro: WavJEPA ɾ, joint, the pilot's 10,389 sites", flush=True)
+    t0 = time.perf_counter()
+    path = run_block(d, "probe", "wavjepa", "r", "joint", False, n_jobs,
+                     features=SPANS_DIR, run_dir=SPAN_RUN_DIR)
+    seconds = time.perf_counter() - t0
+
+    new = np.load(path)
+    old = np.load(RUN_DIR / block_name("probe", "wavjepa", "mean", "joint", False))
+    rows, worst = [], {}
+    for t in ("real", "control"):
+        if not np.array_equal(new["fold"], old["fold"]):
+            raise SystemExit("the folds differ from the pilot's")
+        a, b = new[t][:, e], old[t][:, e]
+        ba_new = [balanced_accuracy(y if t == "real" else d.control_is_d[e], p > 0.5) for p in a]
+        ba_old = [balanced_accuracy(y if t == "real" else d.control_is_d[e], p > 0.5) for p in b]
+        worst[t] = {"max_abs_p_d": float(np.abs(a - b).max()),
+                    "max_abs_ba": float(max(abs(x - z) for x, z in zip(ba_new, ba_old)))}
+        rows += [{"target": t, "layer": L, "span_r": x, "pilot_mean": z}
+                 for L, (x, z) in enumerate(zip(ba_new, ba_old))]
+    passed = all(w["max_abs_p_d"] == 0 and w["max_abs_ba"] == 0 for w in worst.values())
+
+    report = {"code_commit": code_commit(), "spans_dir": str(SPANS_DIR),
+              "extracted_at": d.spans_manifest["code_commit"],
+              "fit_seconds": seconds, "cached": seconds < 1.0,
+              "n_sites": len(e), "n_d": int(y.sum()), "max_abs_diff": worst,
+              "passed": passed, "by_layer": rows}
+    (SPAN_RUN_DIR / "repro.json").write_text(json.dumps(report, indent=2))
+    print("layer  span ɾ   pilot mean   (real probe, balanced accuracy)")
+    for r in rows:
+        if r["target"] == "real":
+            print(f"{r['layer']:>5}  {r['span_r']:.6f} {r['pilot_mean']:.6f}")
+    print(f"max |diff|: {worst}")
+    print(f"fit time: {seconds:.0f} s{' (cached block; not a timing)' if report['cached'] else ''}")
+    print(f"REPRODUCTION: {'PASS' if passed else 'FAIL — nothing else in the span grid is read'}")
+    print(f"wrote {SPAN_RUN_DIR / 'repro.json'}")
+    return 0 if passed else 1
 
 
 # ------------------------------------------------------------------------ rest
@@ -453,13 +594,15 @@ def _write_control(cols, site_ids, d, path):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("stage", choices=("gate", "rest", "assemble"))
+    ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro"))
     ap.add_argument("--jobs", type=int, default=-1, help="parallel fits (default: all cores)")
     args = ap.parse_args()
     if args.stage == "gate":
         return gate(args.jobs)
     if args.stage == "rest":
         return rest(args.jobs)
+    if args.stage == "span-repro":
+        return span_repro(args.jobs)
     return assemble()
 
 
