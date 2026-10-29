@@ -1,0 +1,14 @@
+{
+ "time": "20261029-153033",
+ "model": "claude-opus-5-5",
+ "question": "What does registration revision 3 specify that the pilot never used?",
+ "choice": {
+  "retrieval": "registered_not_run",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "specified_unused": []
+ },
+ "answer": "The retrieved rows don't identify anything that registration revision 3 specifies and the pilot never used. The only result is an empty `specified_unused` list, with no node keys to cite.\n\nAn empty list can mean two different things, and the rows don't say which:\n\n- **Nothing to report:** the query ran against revision 3 and found no specified-but-unused elements.\n- **Nothing matched:** the query never found revision 3, or the graph doesn't link registration specifications to pilot usage.\n\nSome rows would separate these cases:\n\n- the node for registration revision 3 itself, which would confirm it exists in the graph,\n- the elements it specifies, such as measures, analyses, exclusion rules or sample criteria,\n- the pilot's procedures or analyses that those elements would be compared against.\n\nWith those, it would be possible to say whether the empty result reflects a real finding or a gap in coverage. Based on the rows alone, I can't claim that revision 3 contains no unused specifications."
+}
