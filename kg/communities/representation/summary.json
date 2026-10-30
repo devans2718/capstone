@@ -1,0 +1,1418 @@
+{
+ "exploratory": "not registered; no probe trained, retrained or tuned",
+ "sites": {
+  "n": 10334,
+  "n_d": 2513,
+  "base_share_d": 0.2432,
+  "speakers": 40,
+  "words": 983,
+  "lemmas": 855,
+  "top5_word_share": 0.2863
+ },
+ "setup": {
+  "features": "/data/embeddings/spans-b378c303ca90",
+  "span": "r",
+  "layers": {
+   "wav2vec2": 9,
+   "wavjepa": 3,
+   "mfcc": 0
+  },
+  "standardize": "z-score per dimension over the grid's sites",
+  "metric": "cosine",
+  "k": 15,
+  "k_sensitivity": [
+   5,
+   30
+  ],
+  "graph": "undirected union of kNN edges, unweighted",
+  "algorithm": "louvain (networkx 3.7)",
+  "resolution": 1.0,
+  "seed": 20261030,
+  "comparison": "adjusted mutual information (sklearn, arithmetic); Cramer's V plain and bias-corrected (Bergsma 2013) for /t/-/d/",
+  "word_bootstrap": {
+   "unit": "type_key",
+   "resamples": 10000,
+   "seed": 20261030
+  }
+ },
+ "representations": {
+  "wav2vec2": {
+   "layer": 9,
+   "dims": 768,
+   "graph": {
+    "edges": 121984,
+    "max_degree": 115,
+    "median_degree": 20.0
+   },
+   "run": {
+    "seed": 20261030,
+    "n_communities": 14,
+    "modularity": 0.6985
+   },
+   "stability": {
+    "seeds": "1-20",
+    "n_communities": [
+     [
+      13,
+      5
+     ],
+     [
+      14,
+      8
+     ],
+     [
+      15,
+      6
+     ],
+     [
+      16,
+      1
+     ]
+    ],
+    "modularity_min": 0.6967,
+    "modularity_max": 0.7093,
+    "ari_vs_seeded_min": 0.526,
+    "ari_vs_seeded_median": 0.563,
+    "ami_range": {
+     "label": [
+      0.0067,
+      0.0118
+     ],
+     "vowel": [
+      0.0686,
+      0.1054
+     ],
+     "following": [
+      0.0503,
+      0.0695
+     ],
+     "pair": [
+      0.0823,
+      0.1068
+     ],
+     "speaker": [
+      0.0264,
+      0.0332
+     ],
+     "word": [
+      0.0842,
+      0.1188
+     ],
+     "lemma": [
+      0.0834,
+      0.1172
+     ],
+     "site_phone": [
+      0.0527,
+      0.0722
+     ]
+    }
+   },
+   "k_sensitivity": {
+    "5": {
+     "n_communities": 19,
+     "modularity": 0.7454,
+     "ari_vs_k15": 0.501,
+     "ami": {
+      "label": 0.0142,
+      "vowel": 0.0959,
+      "following": 0.0683,
+      "pair": 0.107,
+      "speaker": 0.031,
+      "word": 0.119,
+      "lemma": 0.1181,
+      "site_phone": 0.0733,
+      "label_cramers_v": 0.223,
+      "label_cramers_v_corrected": 0.219
+     }
+    },
+    "30": {
+     "n_communities": 12,
+     "modularity": 0.6765,
+     "ari_vs_k15": 0.531,
+     "ami": {
+      "label": 0.0063,
+      "vowel": 0.0913,
+      "following": 0.0534,
+      "pair": 0.0931,
+      "speaker": 0.0297,
+      "word": 0.1041,
+      "lemma": 0.1027,
+      "site_phone": 0.0623,
+      "label_cramers_v": 0.14,
+      "label_cramers_v_corrected": 0.136
+     }
+    }
+   },
+   "comparison": {
+    "label": 0.0071,
+    "vowel": 0.08,
+    "following": 0.054,
+    "pair": 0.0889,
+    "speaker": 0.0302,
+    "word": 0.0955,
+    "lemma": 0.0953,
+    "site_phone": 0.0601,
+    "label_cramers_v": 0.152,
+    "label_cramers_v_corrected": 0.147
+   },
+   "intervals": {
+    "n_communities": 14,
+    "exclude_base_wilson": 10,
+    "exclude_base_word_resampled": 2,
+    "width_ratio_word_over_wilson_median": 3.34,
+    "sites_in_communities_whose_top5_words_hold_half": 627
+   },
+   "communities": [
+    {
+     "number": 1,
+     "n_sites": 1611,
+     "n_d": 270,
+     "share_d": 0.1676,
+     "n_words": 211,
+     "top5_word_share": 0.3849,
+     "wilson_95": [
+      0.1502,
+      0.1866
+     ],
+     "word_resampled_95": [
+      0.0878,
+      0.3057
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 2,
+     "n_sites": 1354,
+     "n_d": 294,
+     "share_d": 0.2171,
+     "n_words": 185,
+     "top5_word_share": 0.483,
+     "wilson_95": [
+      0.196,
+      0.2399
+     ],
+     "word_resampled_95": [
+      0.1124,
+      0.3994
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 3,
+     "n_sites": 1290,
+     "n_d": 308,
+     "share_d": 0.2388,
+     "n_words": 318,
+     "top5_word_share": 0.2636,
+     "wilson_95": [
+      0.2163,
+      0.2628
+     ],
+     "word_resampled_95": [
+      0.1648,
+      0.3405
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 4,
+     "n_sites": 977,
+     "n_d": 261,
+     "share_d": 0.2671,
+     "n_words": 271,
+     "top5_word_share": 0.2825,
+     "wilson_95": [
+      0.2404,
+      0.2958
+     ],
+     "word_resampled_95": [
+      0.1816,
+      0.3844
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 5,
+     "n_sites": 941,
+     "n_d": 341,
+     "share_d": 0.3624,
+     "n_words": 298,
+     "top5_word_share": 0.2062,
+     "wilson_95": [
+      0.3323,
+      0.3936
+     ],
+     "word_resampled_95": [
+      0.2707,
+      0.4695
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 6,
+     "n_sites": 662,
+     "n_d": 184,
+     "share_d": 0.2779,
+     "n_words": 231,
+     "top5_word_share": 0.2523,
+     "wilson_95": [
+      0.2452,
+      0.3133
+     ],
+     "word_resampled_95": [
+      0.1964,
+      0.3839
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 7,
+     "n_sites": 559,
+     "n_d": 140,
+     "share_d": 0.2504,
+     "n_words": 177,
+     "top5_word_share": 0.3005,
+     "wilson_95": [
+      0.2163,
+      0.288
+     ],
+     "word_resampled_95": [
+      0.1637,
+      0.3687
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 8,
+     "n_sites": 545,
+     "n_d": 188,
+     "share_d": 0.345,
+     "n_words": 161,
+     "top5_word_share": 0.2826,
+     "wilson_95": [
+      0.3063,
+      0.3858
+     ],
+     "word_resampled_95": [
+      0.2235,
+      0.4973
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 9,
+     "n_sites": 502,
+     "n_d": 116,
+     "share_d": 0.2311,
+     "n_words": 156,
+     "top5_word_share": 0.508,
+     "wilson_95": [
+      0.1963,
+      0.2699
+     ],
+     "word_resampled_95": [
+      0.114,
+      0.4688
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 10,
+     "n_sites": 471,
+     "n_d": 165,
+     "share_d": 0.3503,
+     "n_words": 184,
+     "top5_word_share": 0.2718,
+     "wilson_95": [
+      0.3086,
+      0.3945
+     ],
+     "word_resampled_95": [
+      0.2509,
+      0.4799
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 11,
+     "n_sites": 469,
+     "n_d": 83,
+     "share_d": 0.177,
+     "n_words": 119,
+     "top5_word_share": 0.3838,
+     "wilson_95": [
+      0.1451,
+      0.2141
+     ],
+     "word_resampled_95": [
+      0.1059,
+      0.2937
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 12,
+     "n_sites": 427,
+     "n_d": 69,
+     "share_d": 0.1616,
+     "n_words": 106,
+     "top5_word_share": 0.3607,
+     "wilson_95": [
+      0.1297,
+      0.1995
+     ],
+     "word_resampled_95": [
+      0.0927,
+      0.2708
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 13,
+     "n_sites": 401,
+     "n_d": 79,
+     "share_d": 0.197,
+     "n_words": 128,
+     "top5_word_share": 0.3791,
+     "wilson_95": [
+      0.161,
+      0.2387
+     ],
+     "word_resampled_95": [
+      0.1253,
+      0.3179
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 14,
+     "n_sites": 125,
+     "n_d": 15,
+     "share_d": 0.12,
+     "n_words": 24,
+     "top5_word_share": 0.8,
+     "wilson_95": [
+      0.0741,
+      0.1886
+     ],
+     "word_resampled_95": [
+      0.009,
+      0.5435
+     ],
+     "resamples_without_tokens": 0
+    }
+   ]
+  },
+  "wavjepa": {
+   "layer": 3,
+   "dims": 768,
+   "graph": {
+    "edges": 114917,
+    "max_degree": 86,
+    "median_degree": 20.0
+   },
+   "run": {
+    "seed": 20261030,
+    "n_communities": 12,
+    "modularity": 0.5996
+   },
+   "stability": {
+    "seeds": "1-20",
+    "n_communities": [
+     [
+      10,
+      2
+     ],
+     [
+      11,
+      9
+     ],
+     [
+      12,
+      7
+     ],
+     [
+      13,
+      2
+     ]
+    ],
+    "modularity_min": 0.5938,
+    "modularity_max": 0.608,
+    "ari_vs_seeded_min": 0.408,
+    "ari_vs_seeded_median": 0.471,
+    "ami_range": {
+     "label": [
+      0.0014,
+      0.0029
+     ],
+     "vowel": [
+      0.0239,
+      0.0514
+     ],
+     "following": [
+      0.0217,
+      0.0415
+     ],
+     "pair": [
+      0.0313,
+      0.0573
+     ],
+     "speaker": [
+      0.2091,
+      0.2724
+     ],
+     "word": [
+      0.0352,
+      0.0575
+     ],
+     "lemma": [
+      0.0348,
+      0.0568
+     ],
+     "site_phone": [
+      0.0227,
+      0.0361
+     ]
+    }
+   },
+   "k_sensitivity": {
+    "5": {
+     "n_communities": 16,
+     "modularity": 0.6624,
+     "ari_vs_k15": 0.333,
+     "ami": {
+      "label": 0.0022,
+      "vowel": 0.0389,
+      "following": 0.0397,
+      "pair": 0.0542,
+      "speaker": 0.2563,
+      "word": 0.0522,
+      "lemma": 0.0521,
+      "site_phone": 0.0333,
+      "label_cramers_v": 0.091,
+      "label_cramers_v_corrected": 0.083
+     }
+    },
+    "30": {
+     "n_communities": 11,
+     "modularity": 0.5657,
+     "ari_vs_k15": 0.507,
+     "ami": {
+      "label": 0.003,
+      "vowel": 0.0334,
+      "following": 0.0252,
+      "pair": 0.0406,
+      "speaker": 0.2372,
+      "word": 0.04,
+      "lemma": 0.0395,
+      "site_phone": 0.0272,
+      "label_cramers_v": 0.098,
+      "label_cramers_v_corrected": 0.093
+     }
+    }
+   },
+   "comparison": {
+    "label": 0.0024,
+    "vowel": 0.0362,
+    "following": 0.027,
+    "pair": 0.0427,
+    "speaker": 0.2343,
+    "word": 0.045,
+    "lemma": 0.0448,
+    "site_phone": 0.0277,
+    "label_cramers_v": 0.09,
+    "label_cramers_v_corrected": 0.084
+   },
+   "intervals": {
+    "n_communities": 12,
+    "exclude_base_wilson": 4,
+    "exclude_base_word_resampled": 0,
+    "width_ratio_word_over_wilson_median": 3.26,
+    "sites_in_communities_whose_top5_words_hold_half": 0
+   },
+   "communities": [
+    {
+     "number": 1,
+     "n_sites": 1855,
+     "n_d": 414,
+     "share_d": 0.2232,
+     "n_words": 351,
+     "top5_word_share": 0.262,
+     "wilson_95": [
+      0.2048,
+      0.2427
+     ],
+     "word_resampled_95": [
+      0.1513,
+      0.3229
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 2,
+     "n_sites": 1621,
+     "n_d": 368,
+     "share_d": 0.227,
+     "n_words": 365,
+     "top5_word_share": 0.3362,
+     "wilson_95": [
+      0.2073,
+      0.248
+     ],
+     "word_resampled_95": [
+      0.1521,
+      0.3382
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 3,
+     "n_sites": 1396,
+     "n_d": 311,
+     "share_d": 0.2228,
+     "n_words": 288,
+     "top5_word_share": 0.2822,
+     "wilson_95": [
+      0.2017,
+      0.2454
+     ],
+     "word_resampled_95": [
+      0.1531,
+      0.3229
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 4,
+     "n_sites": 1205,
+     "n_d": 275,
+     "share_d": 0.2282,
+     "n_words": 195,
+     "top5_word_share": 0.3452,
+     "wilson_95": [
+      0.2054,
+      0.2528
+     ],
+     "word_resampled_95": [
+      0.1295,
+      0.3741
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 5,
+     "n_sites": 769,
+     "n_d": 250,
+     "share_d": 0.3251,
+     "n_words": 267,
+     "top5_word_share": 0.2965,
+     "wilson_95": [
+      0.2929,
+      0.359
+     ],
+     "word_resampled_95": [
+      0.2284,
+      0.4551
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 6,
+     "n_sites": 761,
+     "n_d": 143,
+     "share_d": 0.1879,
+     "n_words": 149,
+     "top5_word_share": 0.3903,
+     "wilson_95": [
+      0.1617,
+      0.2172
+     ],
+     "word_resampled_95": [
+      0.1088,
+      0.316
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 7,
+     "n_sites": 757,
+     "n_d": 247,
+     "share_d": 0.3263,
+     "n_words": 249,
+     "top5_word_share": 0.2338,
+     "wilson_95": [
+      0.2938,
+      0.3605
+     ],
+     "word_resampled_95": [
+      0.2348,
+      0.441
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 8,
+     "n_sites": 607,
+     "n_d": 166,
+     "share_d": 0.2735,
+     "n_words": 202,
+     "top5_word_share": 0.3344,
+     "wilson_95": [
+      0.2395,
+      0.3103
+     ],
+     "word_resampled_95": [
+      0.1841,
+      0.4025
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 9,
+     "n_sites": 555,
+     "n_d": 131,
+     "share_d": 0.236,
+     "n_words": 169,
+     "top5_word_share": 0.2811,
+     "wilson_95": [
+      0.2026,
+      0.2731
+     ],
+     "word_resampled_95": [
+      0.1569,
+      0.3472
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 10,
+     "n_sites": 317,
+     "n_d": 82,
+     "share_d": 0.2587,
+     "n_words": 107,
+     "top5_word_share": 0.3407,
+     "wilson_95": [
+      0.2136,
+      0.3096
+     ],
+     "word_resampled_95": [
+      0.1591,
+      0.4054
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 11,
+     "n_sites": 277,
+     "n_d": 71,
+     "share_d": 0.2563,
+     "n_words": 109,
+     "top5_word_share": 0.3141,
+     "wilson_95": [
+      0.2085,
+      0.3108
+     ],
+     "word_resampled_95": [
+      0.1484,
+      0.4018
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 12,
+     "n_sites": 214,
+     "n_d": 55,
+     "share_d": 0.257,
+     "n_words": 74,
+     "top5_word_share": 0.3598,
+     "wilson_95": [
+      0.2031,
+      0.3195
+     ],
+     "word_resampled_95": [
+      0.1504,
+      0.4152
+     ],
+     "resamples_without_tokens": 0
+    }
+   ]
+  },
+  "mfcc": {
+   "layer": 0,
+   "dims": 39,
+   "graph": {
+    "edges": 107939,
+    "max_degree": 63,
+    "median_degree": 19.0
+   },
+   "run": {
+    "seed": 20261030,
+    "n_communities": 10,
+    "modularity": 0.5802
+   },
+   "stability": {
+    "seeds": "1-20",
+    "n_communities": [
+     [
+      9,
+      5
+     ],
+     [
+      10,
+      4
+     ],
+     [
+      11,
+      9
+     ],
+     [
+      12,
+      2
+     ]
+    ],
+    "modularity_min": 0.5653,
+    "modularity_max": 0.5812,
+    "ari_vs_seeded_min": 0.403,
+    "ari_vs_seeded_median": 0.465,
+    "ami_range": {
+     "label": [
+      0.0037,
+      0.0085
+     ],
+     "vowel": [
+      0.1174,
+      0.1386
+     ],
+     "following": [
+      0.0798,
+      0.1278
+     ],
+     "pair": [
+      0.1355,
+      0.1711
+     ],
+     "speaker": [
+      0.1185,
+      0.1436
+     ],
+     "word": [
+      0.1254,
+      0.1475
+     ],
+     "lemma": [
+      0.1223,
+      0.1442
+     ],
+     "site_phone": [
+      0.0775,
+      0.1021
+     ]
+    }
+   },
+   "k_sensitivity": {
+    "5": {
+     "n_communities": 20,
+     "modularity": 0.6433,
+     "ari_vs_k15": 0.294,
+     "ami": {
+      "label": 0.0053,
+      "vowel": 0.1265,
+      "following": 0.0925,
+      "pair": 0.1498,
+      "speaker": 0.1647,
+      "word": 0.1376,
+      "lemma": 0.1351,
+      "site_phone": 0.0888,
+      "label_cramers_v": 0.138,
+      "label_cramers_v_corrected": 0.131
+     }
+    },
+    "30": {
+     "n_communities": 11,
+     "modularity": 0.5412,
+     "ari_vs_k15": 0.48,
+     "ami": {
+      "label": 0.0049,
+      "vowel": 0.1465,
+      "following": 0.112,
+      "pair": 0.1689,
+      "speaker": 0.1297,
+      "word": 0.1475,
+      "lemma": 0.1425,
+      "site_phone": 0.1057,
+      "label_cramers_v": 0.121,
+      "label_cramers_v_corrected": 0.117
+     }
+    }
+   },
+   "comparison": {
+    "label": 0.0072,
+    "vowel": 0.1416,
+    "following": 0.1038,
+    "pair": 0.1595,
+    "speaker": 0.1256,
+    "word": 0.1425,
+    "lemma": 0.1384,
+    "site_phone": 0.0926,
+    "label_cramers_v": 0.141,
+    "label_cramers_v_corrected": 0.138
+   },
+   "intervals": {
+    "n_communities": 10,
+    "exclude_base_wilson": 8,
+    "exclude_base_word_resampled": 1,
+    "width_ratio_word_over_wilson_median": 4.65,
+    "sites_in_communities_whose_top5_words_hold_half": 560
+   },
+   "communities": [
+    {
+     "number": 1,
+     "n_sites": 1693,
+     "n_d": 311,
+     "share_d": 0.1837,
+     "n_words": 206,
+     "top5_word_share": 0.4223,
+     "wilson_95": [
+      0.166,
+      0.2029
+     ],
+     "word_resampled_95": [
+      0.0914,
+      0.3407
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 2,
+     "n_sites": 1589,
+     "n_d": 233,
+     "share_d": 0.1466,
+     "n_words": 203,
+     "top5_word_share": 0.3587,
+     "wilson_95": [
+      0.1301,
+      0.1649
+     ],
+     "word_resampled_95": [
+      0.0896,
+      0.2429
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 3,
+     "n_sites": 1531,
+     "n_d": 480,
+     "share_d": 0.3135,
+     "n_words": 345,
+     "top5_word_share": 0.3089,
+     "wilson_95": [
+      0.2908,
+      0.3372
+     ],
+     "word_resampled_95": [
+      0.2161,
+      0.4449
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 4,
+     "n_sites": 1446,
+     "n_d": 409,
+     "share_d": 0.2828,
+     "n_words": 303,
+     "top5_word_share": 0.2759,
+     "wilson_95": [
+      0.2602,
+      0.3066
+     ],
+     "word_resampled_95": [
+      0.1832,
+      0.417
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 5,
+     "n_sites": 986,
+     "n_d": 241,
+     "share_d": 0.2444,
+     "n_words": 251,
+     "top5_word_share": 0.3702,
+     "wilson_95": [
+      0.2186,
+      0.2722
+     ],
+     "word_resampled_95": [
+      0.1605,
+      0.375
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 6,
+     "n_sites": 928,
+     "n_d": 279,
+     "share_d": 0.3006,
+     "n_words": 214,
+     "top5_word_share": 0.3944,
+     "wilson_95": [
+      0.272,
+      0.3309
+     ],
+     "word_resampled_95": [
+      0.1852,
+      0.473
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 7,
+     "n_sites": 785,
+     "n_d": 209,
+     "share_d": 0.2662,
+     "n_words": 188,
+     "top5_word_share": 0.2917,
+     "wilson_95": [
+      0.2365,
+      0.2982
+     ],
+     "word_resampled_95": [
+      0.1709,
+      0.3953
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 8,
+     "n_sites": 560,
+     "n_d": 110,
+     "share_d": 0.1964,
+     "n_words": 86,
+     "top5_word_share": 0.6661,
+     "wilson_95": [
+      0.1656,
+      0.2314
+     ],
+     "word_resampled_95": [
+      0.0852,
+      0.5035
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 9,
+     "n_sites": 436,
+     "n_d": 124,
+     "share_d": 0.2844,
+     "n_words": 129,
+     "top5_word_share": 0.3761,
+     "wilson_95": [
+      0.2441,
+      0.3285
+     ],
+     "word_resampled_95": [
+      0.1716,
+      0.4527
+     ],
+     "resamples_without_tokens": 0
+    },
+    {
+     "number": 10,
+     "n_sites": 380,
+     "n_d": 117,
+     "share_d": 0.3079,
+     "n_words": 121,
+     "top5_word_share": 0.3605,
+     "wilson_95": [
+      0.2636,
+      0.356
+     ],
+     "word_resampled_95": [
+      0.1934,
+      0.4717
+     ],
+     "resamples_without_tokens": 0
+    }
+   ]
+  }
+ },
+ "site_phone_reference": {
+  "comparison": {
+   "label": 0.0303,
+   "vowel": 0.4807,
+   "following": 0.4338,
+   "pair": 0.6708,
+   "speaker": 0.0169,
+   "word": 0.307,
+   "lemma": 0.3073,
+   "site_phone": 1.0,
+   "label_cramers_v": 0.299,
+   "label_cramers_v_corrected": 0.296
+  },
+  "intervals": {
+   "n_communities": 20,
+   "exclude_base_wilson": 16,
+   "exclude_base_word_resampled": 5,
+   "width_ratio_word_over_wilson_median": 4.07,
+   "sites_in_communities_whose_top5_words_hold_half": 4707
+  },
+  "communities": [
+   {
+    "number": 1,
+    "n_sites": 1804,
+    "n_d": 555,
+    "share_d": 0.3076,
+    "n_words": 272,
+    "top5_word_share": 0.3304,
+    "wilson_95": [
+     0.2868,
+     0.3293
+    ],
+    "word_resampled_95": [
+     0.192,
+     0.4615
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 2,
+    "n_sites": 1630,
+    "n_d": 98,
+    "share_d": 0.0601,
+    "n_words": 132,
+    "top5_word_share": 0.5755,
+    "wilson_95": [
+     0.0496,
+     0.0727
+    ],
+    "word_resampled_95": [
+     0.0302,
+     0.1343
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 3,
+    "n_sites": 986,
+    "n_d": 254,
+    "share_d": 0.2576,
+    "n_words": 146,
+    "top5_word_share": 0.3682,
+    "wilson_95": [
+     0.2313,
+     0.2858
+    ],
+    "word_resampled_95": [
+     0.1469,
+     0.4258
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 4,
+    "n_sites": 902,
+    "n_d": 217,
+    "share_d": 0.2406,
+    "n_words": 200,
+    "top5_word_share": 0.4279,
+    "wilson_95": [
+     0.2138,
+     0.2695
+    ],
+    "word_resampled_95": [
+     0.1459,
+     0.3952
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 5,
+    "n_sites": 810,
+    "n_d": 163,
+    "share_d": 0.2012,
+    "n_words": 98,
+    "top5_word_share": 0.6062,
+    "wilson_95": [
+     0.1751,
+     0.2302
+    ],
+    "word_resampled_95": [
+     0.0972,
+     0.4395
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 6,
+    "n_sites": 741,
+    "n_d": 253,
+    "share_d": 0.3414,
+    "n_words": 83,
+    "top5_word_share": 0.7099,
+    "wilson_95": [
+     0.3082,
+     0.3763
+    ],
+    "word_resampled_95": [
+     0.0836,
+     0.7406
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 7,
+    "n_sites": 594,
+    "n_d": 171,
+    "share_d": 0.2879,
+    "n_words": 163,
+    "top5_word_share": 0.2912,
+    "wilson_95": [
+     0.2529,
+     0.3256
+    ],
+    "word_resampled_95": [
+     0.1667,
+     0.4324
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 8,
+    "n_sites": 589,
+    "n_d": 73,
+    "share_d": 0.1239,
+    "n_words": 104,
+    "top5_word_share": 0.4737,
+    "wilson_95": [
+     0.0997,
+     0.153
+    ],
+    "word_resampled_95": [
+     0.0724,
+     0.2245
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 9,
+    "n_sites": 541,
+    "n_d": 305,
+    "share_d": 0.5638,
+    "n_words": 85,
+    "top5_word_share": 0.6063,
+    "wilson_95": [
+     0.5217,
+     0.605
+    ],
+    "word_resampled_95": [
+     0.2598,
+     0.835
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 10,
+    "n_sites": 528,
+    "n_d": 54,
+    "share_d": 0.1023,
+    "n_words": 73,
+    "top5_word_share": 0.7519,
+    "wilson_95": [
+     0.0792,
+     0.1311
+    ],
+    "word_resampled_95": [
+     0.0447,
+     0.3333
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 11,
+    "n_sites": 520,
+    "n_d": 176,
+    "share_d": 0.3385,
+    "n_words": 112,
+    "top5_word_share": 0.4654,
+    "wilson_95": [
+     0.2991,
+     0.3802
+    ],
+    "word_resampled_95": [
+     0.1501,
+     0.5955
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 12,
+    "n_sites": 301,
+    "n_d": 45,
+    "share_d": 0.1495,
+    "n_words": 47,
+    "top5_word_share": 0.7309,
+    "wilson_95": [
+     0.1136,
+     0.1942
+    ],
+    "word_resampled_95": [
+     0.0337,
+     0.4697
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 13,
+    "n_sites": 175,
+    "n_d": 56,
+    "share_d": 0.32,
+    "n_words": 58,
+    "top5_word_share": 0.4229,
+    "wilson_95": [
+     0.2554,
+     0.3923
+    ],
+    "word_resampled_95": [
+     0.1778,
+     0.532
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 14,
+    "n_sites": 57,
+    "n_d": 36,
+    "share_d": 0.6316,
+    "n_words": 32,
+    "top5_word_share": 0.4737,
+    "wilson_95": [
+     0.5018,
+     0.7448
+    ],
+    "word_resampled_95": [
+     0.3774,
+     0.8571
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 15,
+    "n_sites": 47,
+    "n_d": 20,
+    "share_d": 0.4255,
+    "n_words": 22,
+    "top5_word_share": 0.5106,
+    "wilson_95": [
+     0.2951,
+     0.5672
+    ],
+    "word_resampled_95": [
+     0.1875,
+     0.7
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 16,
+    "n_sites": 37,
+    "n_d": 19,
+    "share_d": 0.5135,
+    "n_words": 22,
+    "top5_word_share": 0.5405,
+    "wilson_95": [
+     0.3589,
+     0.6655
+    ],
+    "word_resampled_95": [
+     0.2308,
+     0.8108
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 17,
+    "n_sites": 24,
+    "n_d": 9,
+    "share_d": 0.375,
+    "n_words": 15,
+    "top5_word_share": 0.5833,
+    "wilson_95": [
+     0.2116,
+     0.5729
+    ],
+    "word_resampled_95": [
+     0.1429,
+     0.7692
+    ],
+    "resamples_without_tokens": 1
+   },
+   {
+    "number": 18,
+    "n_sites": 18,
+    "n_d": 2,
+    "share_d": 0.1111,
+    "n_words": 10,
+    "top5_word_share": 0.7222,
+    "wilson_95": [
+     0.031,
+     0.328
+    ],
+    "word_resampled_95": [
+     0.0,
+     0.3532
+    ],
+    "resamples_without_tokens": 1
+   },
+   {
+    "number": 19,
+    "n_sites": 15,
+    "n_d": 7,
+    "share_d": 0.4667,
+    "n_words": 12,
+    "top5_word_share": 0.5333,
+    "wilson_95": [
+     0.2481,
+     0.6988
+    ],
+    "word_resampled_95": [
+     0.1765,
+     0.8
+    ],
+    "resamples_without_tokens": 0
+   },
+   {
+    "number": 20,
+    "n_sites": 15,
+    "n_d": 0,
+    "share_d": 0.0,
+    "n_words": 9,
+    "top5_word_share": 0.7333,
+    "wilson_95": [
+     -0.0,
+     0.2039
+    ],
+    "word_resampled_95": [
+     0.0,
+     0.0
+    ],
+    "resamples_without_tokens": 0
+   }
+  ]
+ },
+ "label_ami_of_the_labels_themselves": {
+  "vowel": 0.036,
+  "following": 0.013,
+  "pair": 0.05,
+  "speaker": 0.0017,
+  "word": 0.1845,
+  "lemma": 0.1876
+ },
+ "ari_between_representations": {
+  "wav2vec2-wavjepa": 0.022,
+  "wav2vec2-mfcc": 0.041,
+  "wavjepa-mfcc": 0.085
+ }
+}
