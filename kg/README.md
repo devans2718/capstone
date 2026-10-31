@@ -79,11 +79,13 @@ See the docstring in `build_corpus.py`.
 | `word_axis` | results | WavJEPA and MFCC curves per split condition |
 | `registered_not_run` | plans | Revision 3 SPECIFIES, each item flagged used or not, with the runs that USED it |
 | `span_grid` | results | sg-rev1 ← REGISTERED_BY ← Run ← FROM_RUN ← Finding, Curve → IN_ENVIRONMENT (live-only; not among the evaluated five) |
+| `communities` | results | the representation-communities Run ← FROM_RUN ← Finding; Run → USED → Representation (the AMI profile, on the edge); the Site–Phone Community nodes (live-only; not among the evaluated five) |
 
 Model: `claude-opus-5-5`. Both LLM calls go through `complete()`, so another
-endpoint means rewriting one function. The retrievals read the design layer
-only, which holds aggregates and no Buckeye words, speakers or timestamps, so
-saved runs are safe to commit.
+endpoint means rewriting one function. The retrievals read the design layer,
+which holds aggregates and no Buckeye words, speakers or timestamps;
+`communities` also reads the Site–Phone Community nodes, which hold sizes,
+/t/–/d/ counts and phone labels only. So saved runs are safe to commit.
 
 ### In the app
 

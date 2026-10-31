@@ -28,11 +28,12 @@ THE COMMUNITY SUMMARY (--community)
     menu, and the five evaluated questions the app caches, stay as they were.
 
 THE BUCKEYE RULE
-    The retrievals read the design layer only (aggregates, no words, speaker
-    codes or timestamps), so a saved run is safe to commit. The community
-    summary reads the community layer, which is built from the corpus, but
-    returns aggregates only: community sizes, /t/-/d/ counts and phone
-    labels, never a Site, Token, Lemma or Speaker key.
+    The retrievals read the design layer (aggregates, no words, speaker
+    codes or timestamps), so a saved run is safe to commit. The Site-Phone
+    community summary (the `communities` retrieval's site_phone statement,
+    and --community) reads the community layer, which is built from the
+    corpus, but returns aggregates only: community sizes, /t/-/d/ counts and
+    phone labels, never a Site, Token, Lemma or Speaker key.
 """
 
 from __future__ import annotations
@@ -196,17 +197,60 @@ RETRIEVALS: dict[str, dict] = {
     },
 }
 
-# Not a retrieval the router can pick: added by --community (see the docstring).
-COMMUNITY_STATEMENTS: dict[str, str] = {
-    "communities": """
+# The Site-Phone communities' summary (community layer, aggregates only).
+# Shared by the `communities` retrieval and by --community.
+SITE_PHONE_SUMMARY = """
         MATCH (c:Community)
         WITH collect(c) AS cs, sum(c.n_d) AS d, sum(c.n_sites) AS n
         UNWIND cs AS c
         RETURN c.key AS key, c.n_sites AS sites, c.n_t AS t, c.n_d AS d,
                c.share_d AS share_d, round(toFloat(d) / n, 4) AS base_share_d,
                c.phones AS phones, c.modularity AS modularity
-        ORDER BY c.number""",
+        ORDER BY c.number"""
+
+# Added 2026-10-31, approved by Daniel; live-only until it is evaluated.
+# Communities are not retrieval objects (unstable across seeds, confounded
+# with word; decided 2026-10-30): this returns what was found about them,
+# never community members as context for other questions. Its Site-Phone
+# statement is named site_phone so it can't collide with --community's.
+RETRIEVALS["communities"] = {
+    "description": "Results about communities: Louvain groupings of the "
+                   "flaps, (a) over the encoders' features (wav2vec2-base, "
+                   "WavJEPA, MFCC; exploratory, 2026-10-30), with how much "
+                   "each one's communities share with /t/-/d/, the phonetic "
+                   "environment, speaker and word (AMI), and (b) the "
+                   "Site-Phone communities over the flaps' phonetic "
+                   "environments (built 10-28, re-run sorted 10-29), with "
+                   "each one's size and /d/ share. What was found about "
+                   "communities, not communities as evidence for other "
+                   "questions.",
+    "statements": {
+        "findings": """
+                MATCH (:Run {key: 'run-rep-communities'})<-[:FROM_RUN]-(f:Finding)
+                OPTIONAL MATCH (f)-[:EVIDENCED_BY]->(x)
+                RETURN f.key AS key, f.question AS question, f.status AS status,
+                       f.statement AS statement,
+                       collect(DISTINCT x.key) AS evidenced_by
+                ORDER BY key""",
+        "profile": """
+                MATCH (r:Run {key: 'run-rep-communities'})-[u:USED]->(rep:Representation)
+                RETURN rep.key AS key, rep.name AS representation, u.layer AS layer,
+                       u.n_communities AS communities, u.modularity AS modularity,
+                       u.ari_seed_median AS ari_across_seeds,
+                       u.ami_label AS ami_t_d, u.ami_vowel AS ami_vowel,
+                       u.ami_following AS ami_following, u.ami_pair AS ami_pair,
+                       u.ami_speaker AS ami_speaker, u.ami_word AS ami_word,
+                       u.ami_lemma AS ami_lemma, u.ami_site_phone AS ami_site_phone,
+                       u.v_label_corrected AS cramers_v_t_d_corrected,
+                       r.site_phone_ami_label AS site_phone_ami_t_d,
+                       r.site_phone_ami_pair AS site_phone_ami_pair
+                ORDER BY key""",
+        "site_phone": SITE_PHONE_SUMMARY,
+    },
 }
+
+# Not a retrieval the router can pick: added by --community (see the docstring).
+COMMUNITY_STATEMENTS: dict[str, str] = {"communities": SITE_PHONE_SUMMARY}
 
 # ---------------------------------------------------------------------------
 # The one model call. Everything model-specific lives here.
