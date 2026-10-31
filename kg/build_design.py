@@ -18,6 +18,11 @@ WHAT IT DOES
       - the span grid's Run and 17 Curves, from results/span-grid/: its
         manifest, span-grid-results-20261029.csv, and the summary's per-block
         table for the control test's p-value and C6's best-layer interval
+      - the 2026-10-30 representation-communities Run (exploratory, not
+        registered), from kg/communities/representation/summary.json, with
+        each representation's AMI profile on its USED edge; and a check that
+        every number the find-rc-* Findings quote matches that file and
+        kg/communities/summary.json
       - each Artifact's commit, from `git log`
     Then it checks that every edge points at a node that exists, and writes
     kg/design.cypher. Standard library only.
@@ -60,6 +65,12 @@ SG_CSV = SG_RESULTS / "span-grid-results-20261029.csv"
 SG_COMPARISONS = SG_RESULTS / "span-grid-comparisons-20261029.csv"
 SG_SUMMARY = SG_RESULTS / "span-grid-summary-20261029.txt"
 SG_MANIFEST = SG_RESULTS / "run-manifest-span-grid.json"
+
+RC_SUMMARY = REPO / "kg" / "communities" / "representation" / "summary.json"
+COMM_SUMMARY = REPO / "kg" / "communities" / "summary.json"
+RC_SCRIPT = "kg/representation_communities.py"
+RC_GROUPINGS = ["label", "vowel", "following", "pair", "speaker", "word",
+                "lemma", "site_phone"]
 
 REP_KEY = {"wavjepa": "rep-wavjepa", "mfcc": "rep-mfcc", "wav2vec2": "rep-wav2vec2",
            "duration": "rep-duration"}
@@ -300,6 +311,136 @@ def span_grid_curves(nodes: list, edges: list) -> dict:
     return curves
 
 
+def _git_commit(path: str) -> str:
+    return subprocess.run(["git", "log", "-1", "--format=%h", "--", path],
+                          cwd=REPO, capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def rep_communities_run(nodes: list, edges: list) -> None:
+    """The 2026-10-30 communities over the encoders' features, from its summary.
+
+    Exploratory, not registered: no REGISTERED_BY edge, so the span_grid
+    retrieval (which follows REGISTERED_BY sg-rev1) can't pick it up. Each
+    representation's results go on its USED edge, which says which run and
+    which layer they belong to; the Representation nodes stay run-neutral.
+    """
+    d = json.loads(RC_SUMMARY.read_text())
+    st, sp = d["setup"], d["site_phone_reference"]
+    props = {
+        "name": "representation-communities-20261030",
+        "run_id": "representation-communities-20261030", "date": "2026-10-30",
+        "code_commit": _git_commit(RC_SCRIPT), "exploratory": True,
+        "synthetic": False, "n_sites_scored": d["sites"]["n"],
+        "span": st["span"], "k": st["k"], "k_sensitivity": st["k_sensitivity"],
+        "metric": st["metric"], "algorithm": st["algorithm"],
+        "resolution": st["resolution"], "seed": st["seed"],
+        "verdict": "exploratory; not registered",
+    }
+    props.update({f"site_phone_ami_{g}": sp["comparison"][g]
+                  for g in RC_GROUPINGS if g != "site_phone"})
+    nodes.append({"key": "run-rep-communities", "labels": ["Run"], **props})
+
+    e = edges.append
+    e(("exp-flapping", "HAS_RUN", "run-rep-communities", {}))
+    e(("run-rep-communities", "USED", "ds-buckeye", {}))
+    e(("run-rep-communities", "USED", "env-flap", {"role": "span"}))
+    for rep, r in d["representations"].items():
+        c, stab, iv = r["comparison"], r["stability"], r["intervals"]
+        p = {"role": "baseline" if rep == "mfcc" else "compared",
+             "layer": r["layer"], "n_communities": r["run"]["n_communities"],
+             "modularity": r["run"]["modularity"],
+             "ari_seed_median": stab["ari_vs_seeded_median"],
+             "ari_seed_min": stab["ari_vs_seeded_min"],
+             "v_label": c["label_cramers_v"],
+             "v_label_corrected": c["label_cramers_v_corrected"],
+             "exclude_base_wilson": iv["exclude_base_wilson"],
+             "exclude_base_word": iv["exclude_base_word_resampled"]}
+        for g in RC_GROUPINGS:
+            p[f"ami_{g}"] = c[g]
+            p[f"ami_{g}_seed_range"] = stab["ami_range"][g]
+        e(("run-rep-communities", "USED", REP_KEY[rep], p))
+
+
+def check_rc_findings(nodes: list) -> list[tuple[str, str]]:
+    """Every number the find-rc-* statements quote, recomputed; stop on a miss.
+
+    Formatted as the statements write them: AMI to 3 decimals, /t/-/d/ AMI
+    and seed ranges to 4. Also checks the orderings the statements assert.
+    """
+    d = json.loads(RC_SUMMARY.read_text())
+    comm = json.loads(COMM_SUMMARY.read_text())
+    R = d["representations"]
+    w, j, m = R["wav2vec2"], R["wavjepa"], R["mfcc"]
+    sp = d["site_phone_reference"]
+    f3 = lambda x: f"{x:.3f}"
+    f4 = lambda x: f"{x:.4f}"
+    rng = lambda r, g: "–".join(f4(x) for x in r["stability"]["ami_range"][g])
+    C = lambda r, g: r["comparison"][g]
+    want = {
+        "find-rc-mfcc": [f"{d['sites']['n']:,}", f"k = {d['setup']['k']}",
+                         *(f3(C(r, g)) for g in ("pair", "vowel", "following")
+                           for r in (m, w, j)),
+                         f"layer {w['layer']}", f"layer {j['layer']}",
+                         rng(m, "pair"), rng(w, "pair"),
+                         f3(sp["comparison"]["pair"])],
+        "find-rc-speaker": [f3(C(j, "speaker")), rng(j, "speaker"),
+                            f3(C(m, "speaker")), f3(C(w, "speaker")),
+                            f3(C(j, "pair")), f"layer {w['layer']}"],
+        "find-rc-voicing": [*(f4(C(r, "label")) for r in (w, m, j)),
+                            *(f3(C(r, "label_cramers_v_corrected")) for r in (w, m, j)),
+                            rng(w, "label"), rng(j, "label"), rng(m, "label"),
+                            f4(w["k_sensitivity"]["5"]["ami"]["label"]),
+                            f4(m["k_sensitivity"]["5"]["ami"]["label"]),
+                            f4(w["k_sensitivity"]["30"]["ami"]["label"]),
+                            f4(m["k_sensitivity"]["30"]["ami"]["label"]),
+                            f4(sp["comparison"]["label"]),
+                            f3(d["label_ami_of_the_labels_themselves"]["pair"])],
+        "find-rc-stability": [*(f3(r["stability"]["ari_vs_seeded_median"])
+                                for r in (w, j, m)),
+                              f3(comm["stability"]["ari_vs_seeded_median"]),
+                              *(f3(C(r, g)) for r in (m, w, j)
+                                for g in ("word", "pair")),
+                              f3(sp["comparison"]["word"])],
+        "find-rc-site-phone": [f"The {comm['run']['n_communities']} ",
+                               f4(comm["run"]["modularity"]),
+                               f3(comm["label_association"]["community_x_label"]["cramers_v"]),
+                               f3(comm["label_association"]["pair_x_label"]["cramers_v"]),
+                               f3(comm["label_association"]["vowel_x_label"]["cramers_v"]),
+                               f"{sp['intervals']['exclude_base_word_resampled']} of the "
+                               f"{sp['intervals']['n_communities']}",
+                               f"{100 * comm['graph']['base_share_d']:.1f}%",
+                               f"at {sp['intervals']['exclude_base_wilson']}"],
+    }
+    # The two summaries must describe the same Site-Phone partition.
+    if sp["intervals"]["n_communities"] != comm["run"]["n_communities"]:
+        sys.exit("the two summaries describe different Site-Phone partitions")
+    # The orderings the statements assert.
+    phon = ("vowel", "following", "pair")
+    pairs = [(rep, g) for rep in R for g in RC_GROUPINGS]
+    disjoint = lambda g, a, b: (a["stability"]["ami_range"][g][1] < b["stability"]["ami_range"][g][0]
+                                or b["stability"]["ami_range"][g][1] < a["stability"]["ami_range"][g][0])
+    claims = {
+        "MFCC above both encoders on every phonetic grouping":
+            all(C(m, g) > max(C(w, g), C(j, g)) for g in phon),
+        "WavJEPA's speaker AMI is the largest value in the table":
+            all(C(j, "speaker") >= C(R[r], g) for r, g in pairs),
+        "WavJEPA lowest of the three on every phonetic grouping":
+            all(C(j, g) < min(C(w, g), C(m, g)) for g in phon),
+        "seed ranges disjoint for every grouping but /t/-/d/":
+            all(disjoint(g, a, b) for g in RC_GROUPINGS if g != "label"
+                for a, b in ((w, j), (w, m), (j, m))),
+        "/t/-/d/: wav2vec2 and MFCC overlap; WavJEPA below both":
+            not disjoint("label", w, m) and disjoint("label", w, j),
+    }
+    bad = [c for c, ok in claims.items() if not ok]
+    statements = {n["key"]: n["statement"] for n in nodes if n["key"] in want}
+    missing = [(k, x) for k, xs in want.items() for x in xs if x not in statements[k]]
+    if missing or bad:
+        sys.exit(f"find-rc-* statements disagree with the summaries: {missing} {bad}")
+    return [(k, x) for k, xs in want.items() for x in xs] + [(c, "holds") for c in claims]
+
+
 CRITERION_LINE = re.compile(r"^Criterion (\d) — (.+): (PASS|FAIL)$")
 
 
@@ -364,6 +505,7 @@ def artifact_links(nodes: list, edges: list, curves: dict, sg_curves: dict) -> N
     for art in ("art-sg-results", "art-sg-cells", "art-sg-comparisons",
                 "art-sg-summary", "art-sg-manifest"):
         edges.append((art, "FROM_RUN", "run-span-grid", {}))
+    edges.append(("art-rc-summary", "FROM_RUN", "run-rep-communities", {}))
 
 
 # ---------------------------------------------------------------------------
@@ -433,6 +575,19 @@ def main() -> None:
     outcome_nodes(nodes, edges)
     span_grid_run(nodes, edges)
     sg_curves = span_grid_curves(nodes, edges)
+    rep_communities_run(nodes, edges)
+    rc_checked = check_rc_findings(nodes)
+    # find-rc-speaker: "Layer 3 is WavJEPA's best on ɾ in the span grid, but
+    # that best-layer interval is wide"; the layers chosen are the grid's best.
+    rc_layers = json.loads(RC_SUMMARY.read_text())["setup"]["layers"]
+    for rep in ("wav2vec2", "wavjepa"):
+        c = sg_curves[f"curve:sg:{rep}:r"]
+        if c["best_layer"] != rc_layers[rep]:
+            sys.exit(f"{rep}: communities used layer {rc_layers[rep]}, the grid's "
+                     f"best on ɾ is {c['best_layer']}")
+    c = sg_curves["curve:sg:wavjepa:r"]
+    rc_checked.append(("WavJEPA's best-layer interval on ɾ",
+                       f"[{c['best_layer_lo']}, {c['best_layer_hi']}]"))
     artifact_links(nodes, edges, curves, sg_curves)
     label_of = check(nodes, edges)
     write_cypher(nodes, edges, label_of)
@@ -468,6 +623,10 @@ def main() -> None:
                 print(f"  {r['comparison']}  {r['a']:<16} - {r['b']:<20} "
                       f"{float(r['gap']):+.4f}  [{float(r['ci_lo']):+.4f}, "
                       f"{float(r['ci_hi']):+.4f}]  {r['call']}")
+
+    print("\nrepresentation communities (find-rc-*), each found in its statement:")
+    for key, x in rc_checked:
+        print(f"  {key:<56} {x}")
 
 
 if __name__ == "__main__":

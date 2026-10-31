@@ -457,6 +457,11 @@ edge("ctrl-lookup", "IMPLEMENTED_BY", "code-mod-controls")
 edge("task-control", "IMPLEMENTED_BY", "code-mod-controls")
 edge("rep-wavjepa", "IMPLEMENTED_BY", "code-mod-extraction")
 
+# The knowledge graph's own analysis scripts, under kg/ rather than scripts/.
+KG_SCRIPTS = ["build_communities", "representation_communities"]
+NODES += [node(f"code-{s}", "Code", kind="script", repo=REPO,
+               path=f"kg/{s}.py") for s in KG_SCRIPTS]
+
 # ---------------------------------------------------------------------------
 # Artifacts. kg/build_design.py fills `commit` from git (the commit that
 # added the file). local_only = carries Buckeye-derived rows; never published.
@@ -483,6 +488,8 @@ ARTIFACTS = [
     ("art-sg-comparisons", "results/span-grid/span-grid-comparisons-20261029.csv", "csv", "score_span_grid", False),
     ("art-sg-summary", "results/span-grid/span-grid-summary-20261029.txt", "report", "score_span_grid", False),
     ("art-sg-manifest", "results/span-grid/run-manifest-span-grid.json", "manifest", "score_span_grid", False),
+    ("art-comm-summary", "kg/communities/summary.json", "summary", "build_communities", False),
+    ("art-rc-summary", "kg/communities/representation/summary.json", "summary", "representation_communities", False),
 ]
 # Which run_probes.py stage wrote each of its outputs. The stages recorded
 # different commits (see build_design.run_nodes).
@@ -815,6 +822,101 @@ edge("find-width", "EVIDENCED_BY", "amend-sg-deferred")
 edge("amend-sg-deferred", "POINTS_TO", "find-width")
 
 # ---------------------------------------------------------------------------
+# Communities: what was found about them (exploratory, not registered). The
+# 2026-10-30 run (kg/representation_communities.py) compared Louvain
+# communities over three representations' ɾ-span features, and re-counted the
+# Site–Phone communities' intervals by word. Wording approved by Daniel
+# 2026-10-31. Every number is from kg/communities/representation/summary.json
+# or kg/communities/summary.json (the 20-community partition, sorted 10-29);
+# kg/build_design.py recomputes each one and stops if a statement disagrees.
+# The Run comes from kg/build_design.py. Communities are not retrieval
+# objects (decided 2026-10-30): these Findings say what was found about them.
+# ---------------------------------------------------------------------------
+
+NODES += [
+    node("find-rc-mfcc", "Finding",
+         question="Which representation's communities follow the phonetic "
+                  "environment most?",
+         status="exploratory, not registered",
+         statement="MFCC's. Louvain communities over each representation's ɾ-span "
+                   "features (kNN graph, k = 15, cosine distance, z-scored; 10,334 "
+                   "sites; no probe trained) share more with the phonetic "
+                   "environment for MFCC than for either encoder. Adjusted mutual "
+                   "information (AMI) with the vowel–following pair is 0.160, "
+                   "against 0.089 for wav2vec2-base layer 9 and 0.043 for WavJEPA "
+                   "layer 3. With the preceding vowel it is 0.142 (0.080, 0.036), "
+                   "and with the following segment 0.104 (0.054, 0.027). Over "
+                   "seeds 1–20, MFCC's range for the pair (0.1355–0.1711) doesn't "
+                   "overlap wav2vec2-base's (0.0823–0.1068). None comes near the "
+                   "Site–Phone communities (built 10-28, re-run sorted 10-29), "
+                   "which come from the environment labels themselves (pair "
+                   "0.671)."),
+    node("find-rc-speaker", "Finding",
+         question="What do WavJEPA layer 3's communities group by?",
+         status="exploratory, not registered",
+         statement="Mostly speaker. AMI with speaker is 0.234 (seeds 1–20: "
+                   "0.2091–0.2724), the largest value for any representation and "
+                   "any grouping, against 0.126 for MFCC and 0.030 for "
+                   "wav2vec2-base layer 9. Its AMI with every phonetic grouping is "
+                   "the lowest of the three (pair 0.043). Layer 3 is WavJEPA's "
+                   "best on ɾ in the span grid, but that best-layer interval is "
+                   "wide, so a later layer could group differently; none was run."),
+    node("find-rc-voicing", "Finding",
+         question="Do the encoders' communities line up with underlying /t/ "
+                  "versus /d/?",
+         status="exploratory, not registered",
+         statement="Barely, for all three. AMI with /t/–/d/ is 0.0071 for "
+                   "wav2vec2-base layer 9, 0.0072 for MFCC and 0.0024 for WavJEPA "
+                   "layer 3 (bias-corrected Cramér's V 0.147, 0.138, 0.084). "
+                   "wav2vec2-base is above WavJEPA on every seed (0.0067–0.0118 "
+                   "against 0.0014–0.0029) but tied with MFCC (0.0037–0.0085). At "
+                   "k = 5 the gap to MFCC widens (0.0142 against 0.0053); at k = "
+                   "30 it is 0.0063 against 0.0049, so it isn't settled. For "
+                   "scale, the Site–Phone communities (built 10-28, re-run sorted "
+                   "10-29) reach 0.0303, and the vowel–following pair itself "
+                   "0.050."),
+    node("find-rc-stability", "Finding",
+         question="How far can the encoders' communities be read?",
+         status="exploratory, not registered",
+         statement="As a comparison, not as objects. The partitions change with "
+                   "the seed: their adjusted Rand index against the seeded run, "
+                   "median over seeds 1–20, is 0.563 for wav2vec2-base, 0.471 for "
+                   "WavJEPA and 0.465 for MFCC, against 0.895 for the Site–Phone "
+                   "communities (built 10-28, re-run sorted 10-29). What they "
+                   "share with each grouping is stable: the three representations' "
+                   "seed ranges of AMI don't overlap for any grouping except "
+                   "/t/–/d/. Word and environment can't be told apart in this "
+                   "data. For every representation, AMI with word is close to AMI "
+                   "with the vowel–following pair (MFCC 0.142 and 0.160, "
+                   "wav2vec2-base 0.096 and 0.089, WavJEPA 0.045 and 0.043). Even "
+                   "the Site–Phone communities, built from the environments alone, "
+                   "have word AMI 0.307. So \"groups by word\" and \"groups by "
+                   "environment\" are one observation here."),
+    node("find-rc-site-phone", "Finding",
+         question="Do the Site–Phone communities over the phonetic environments "
+                  "line up with underlying /t/ versus /d/?",
+         status="exploratory; corrected 2026-10-30",
+         statement="Weakly, and less than the environments they're built from. The "
+                   "20 Site–Phone communities (built 10-28, re-run sorted 10-29; "
+                   "Louvain over the Site–Phone graph, modularity 0.4708) have "
+                   "Cramér's V 0.299 with /t/–/d/, below the vowel–following "
+                   "pair's own 0.536 and the preceding vowel's 0.335, so they "
+                   "coarsen the environments. Resampling by word, 5 of the 20 "
+                   "communities have a 95% interval for their /d/ share that "
+                   "excludes the base rate (24.3%). Wilson intervals, which treat "
+                   "every site as independent (as the 10-28 figure's did), put it "
+                   "at 16. Words recur across sites, so the word-resampled count "
+                   "is the one to use."),
+]
+
+for f in ("find-rc-mfcc", "find-rc-speaker", "find-rc-voicing",
+          "find-rc-stability", "find-rc-site-phone"):
+    edge(f, "FROM_RUN", "run-rep-communities")
+    edge(f, "EVIDENCED_BY", "art-rc-summary")
+edge("find-rc-site-phone", "EVIDENCED_BY", "art-comm-summary")
+edge("find-rc-stability", "EVIDENCED_BY", "art-comm-summary")
+
+# ---------------------------------------------------------------------------
 # Display names. Neo4j Browser captions a node with its `name`, so every node
 # gets a short one; longer text stays in its own property.
 # ---------------------------------------------------------------------------
@@ -850,6 +952,11 @@ SHORT_NAMES = {
     "find-sg-depth": "Depth: WavJEPA early, wav2vec2 layer 9",
     "find-sg-c7": "C7: no effect as registered",
     "find-sg-checks": "Checks passed",
+    "find-rc-mfcc": "MFCC's communities most phonetic",
+    "find-rc-speaker": "WavJEPA L3's communities follow speaker",
+    "find-rc-voicing": "Communities barely track /t/–/d/",
+    "find-rc-stability": "Partitions unstable; comparison stable",
+    "find-rc-site-phone": "Site–Phone communities: 5 of 20 by word",
 }
 for n in NODES:
     labels = n["labels"]
