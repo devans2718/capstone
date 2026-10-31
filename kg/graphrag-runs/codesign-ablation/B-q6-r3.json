@@ -1,0 +1,421 @@
+{
+ "time": "20261031-131616",
+ "model": "claude-opus-5-5",
+ "condition": "B",
+ "question_id": "q6",
+ "run": 3,
+ "question": "What did the span grid find?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid",
+  "communities"
+ ],
+ "choice": {
+  "retrieval": "span_grid",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "findings": [
+   {
+    "key": "find-sg-c7",
+    "question": "Which encoder is better? (C7)",
+    "status": "no effect, as registered; the reverse reported, not called",
+    "statement": "C7 is computed as WavJEPA − wav2vec2-base, and §6's rule is one-sided, so it can call only a WavJEPA advantage: the registered call is no effect on all four spans. Reported, not called: wav2vec2-base is ahead by 0.062–0.075 on every span, every 95% interval below zero (§8, 2026-10-29). The encoders' order rests on C5, which calls wav2vec2-base ahead of MFCC on every span and WavJEPA on none.",
+    "evidenced_by": [
+     "amend-sg-c7",
+     "curve:sg:wav2vec2:vrv",
+     "curve:sg:wav2vec2:rv",
+     "curve:sg:wav2vec2:vr",
+     "curve:sg:wav2vec2:r",
+     "curve:sg:wavjepa:vrv",
+     "curve:sg:wavjepa:rv",
+     "curve:sg:wavjepa:vr",
+     "curve:sg:wavjepa:r",
+     "art-sg-comparisons",
+     "art-sg-summary"
+    ]
+   },
+   {
+    "key": "find-sg-checks",
+    "question": "Can the grid's numbers be trusted? (§5's checks)",
+    "status": "passed",
+    "statement": "The WavJEPA ɾ span reproduced the pilot's joint curve exactly on its 10,389 sites (largest difference 0.0). On the grid's 10,334, every control-task p-value is above 0.05 (smallest 0.095); the lemma-unseen and unclipped re-scores track the full scores within about 0.02; all 5,650 fits converged.",
+    "evidenced_by": [
+     "art-sg-results",
+     "art-sg-summary"
+    ]
+   },
+   {
+    "key": "find-sg-depth",
+    "question": "At what depth does the information peak? (C6)",
+    "status": "reported, no threshold",
+    "statement": "WavJEPA peaks early: layer 3 for ɾ, 4 for Vɾ and ɾV, 6 for VɾV, as the pilot's ɾ curve did (layer 3). wav2vec2-base peaks at layer 9 on every span, and each span's 95% range for the best layer lies within layers 6–10. The pilot's 2026-09-26 prediction, that WavJEPA's information sits higher than wav2vec2-base's, is reversed.",
+    "evidenced_by": [
+     "curve:sg:wav2vec2:vrv",
+     "curve:sg:wav2vec2:rv",
+     "curve:sg:wav2vec2:vr",
+     "curve:sg:wav2vec2:r",
+     "curve:sg:wavjepa:vrv",
+     "curve:sg:wavjepa:rv",
+     "curve:sg:wavjepa:vr",
+     "curve:sg:wavjepa:r",
+     "art-sg-summary"
+    ]
+   },
+   {
+    "key": "find-sg-duration",
+    "question": "How far does the stretch's duration alone separate /t/ from /d/? (§5's baselines)",
+    "status": "reported, not compared",
+    "statement": "The preceding stretch's duration alone is near chance: 0.527 clipped to the excerpt, 0.529 unclipped, 0.524 for the vowel alone, each 95% interval including 0.50. Clipping costs 0.0015. Under a linear probe, lengthening before an underlying /d/, the cue the study set out to locate, barely separates /t/ from /d/ on these sites.",
+    "evidenced_by": [
+     "curve:sg:duration:vowel",
+     "curve:sg:duration:full",
+     "curve:sg:duration:clipped",
+     "art-sg-summary"
+    ]
+   },
+   {
+    "key": "find-sg-encoders",
+    "question": "Does an encoder know more than the stretch's duration, and does it beat MFCC? (C4, C5)",
+    "status": "effect for wav2vec2-base; none for WavJEPA",
+    "statement": "wav2vec2-base scores 0.616–0.625 at its best layer on every span. It is called ahead of MFCC on all four spans (gaps +0.081 to +0.092), of MFCC with the clipped duration on Vɾ and VɾV (+0.070, +0.079), and of the clipped duration alone on Vɾ and VɾV (+0.089, +0.098). WavJEPA scores 0.543–0.555 and is called ahead of none of them; its largest gap to MFCC is +0.025 (Vɾ), half the threshold.",
+    "evidenced_by": [
+     "curve:sg:duration:clipped",
+     "curve:sg:mfcc_duration:vrv",
+     "curve:sg:mfcc_duration:vr",
+     "curve:sg:mfcc:vrv",
+     "curve:sg:mfcc:rv",
+     "curve:sg:mfcc:vr",
+     "curve:sg:mfcc:r",
+     "curve:sg:wav2vec2:vrv",
+     "curve:sg:wav2vec2:rv",
+     "curve:sg:wav2vec2:vr",
+     "curve:sg:wav2vec2:r",
+     "curve:sg:wavjepa:vrv",
+     "curve:sg:wavjepa:rv",
+     "curve:sg:wavjepa:vr",
+     "curve:sg:wavjepa:r",
+     "art-sg-comparisons",
+     "art-sg-summary"
+    ]
+   },
+   {
+    "key": "find-sg-span",
+    "question": "Does pooling over more of the neighbouring speech help, when the encoder heard the whole excerpt? (C1)",
+    "status": "no effect",
+    "statement": "Widening the pooled span helps no representation. Of the nine gaps (Vɾ, ɾV and VɾV minus ɾ, for WavJEPA, wav2vec2-base and MFCC), none reaches 0.05 and every paired 95% interval includes zero; the largest is +0.015 (MFCC, VɾV). The registered prediction, that Vɾ beats ɾ, is not supported.",
+    "evidenced_by": [
+     "curve:sg:mfcc:vrv",
+     "curve:sg:mfcc:rv",
+     "curve:sg:mfcc:vr",
+     "curve:sg:mfcc:r",
+     "curve:sg:wav2vec2:vrv",
+     "curve:sg:wav2vec2:rv",
+     "curve:sg:wav2vec2:vr",
+     "curve:sg:wav2vec2:r",
+     "curve:sg:wavjepa:vrv",
+     "curve:sg:wavjepa:rv",
+     "curve:sg:wavjepa:vr",
+     "curve:sg:wavjepa:r",
+     "art-sg-comparisons",
+     "art-sg-summary"
+    ]
+   }
+  ],
+  "curves": [
+   {
+    "key": "curve:sg:duration:clipped",
+    "representation": "duration",
+    "span": "clipped",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5274,
+    "ci_95": [
+     0.4715,
+     0.5839
+    ],
+    "control_p": 0.2709
+   },
+   {
+    "key": "curve:sg:duration:full",
+    "representation": "duration",
+    "span": "full",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5289,
+    "ci_95": [
+     0.4735,
+     0.5845
+    ],
+    "control_p": 0.2667
+   },
+   {
+    "key": "curve:sg:duration:vowel",
+    "representation": "duration",
+    "span": "vowel",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5243,
+    "ci_95": [
+     0.4708,
+     0.5767
+    ],
+    "control_p": 0.8219
+   },
+   {
+    "key": "curve:sg:mfcc:vrv",
+    "representation": "mfcc",
+    "span": "[VɾV]",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5443,
+    "ci_95": [
+     0.4959,
+     0.5921
+    ],
+    "control_p": 0.2167
+   },
+   {
+    "key": "curve:sg:mfcc:vr",
+    "representation": "mfcc",
+    "span": "[Vɾ]",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5296,
+    "ci_95": [
+     0.4803,
+     0.579
+    ],
+    "control_p": 0.2893
+   },
+   {
+    "key": "curve:sg:mfcc:rv",
+    "representation": "mfcc",
+    "span": "[ɾV]",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5299,
+    "ci_95": [
+     0.4805,
+     0.5793
+    ],
+    "control_p": 0.3165
+   },
+   {
+    "key": "curve:sg:mfcc:r",
+    "representation": "mfcc",
+    "span": "[ɾ]",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5291,
+    "ci_95": [
+     0.4769,
+     0.5818
+    ],
+    "control_p": 0.2034
+   },
+   {
+    "key": "curve:sg:mfcc_duration:vrv",
+    "representation": "mfcc_duration",
+    "span": "[VɾV]",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5468,
+    "ci_95": [
+     0.4926,
+     0.6019
+    ],
+    "control_p": 0.329
+   },
+   {
+    "key": "curve:sg:mfcc_duration:vr",
+    "representation": "mfcc_duration",
+    "span": "[Vɾ]",
+    "best_layer": 0,
+    "best_layer_range": [
+     0,
+     0
+    ],
+    "balanced_acc": 0.5473,
+    "ci_95": [
+     0.4944,
+     0.6022
+    ],
+    "control_p": 0.1999
+   },
+   {
+    "key": "curve:sg:wav2vec2:vrv",
+    "representation": "wav2vec2",
+    "span": "[VɾV]",
+    "best_layer": 9,
+    "best_layer_range": [
+     8,
+     9
+    ],
+    "balanced_acc": 0.6254,
+    "ci_95": [
+     0.5875,
+     0.6646
+    ],
+    "control_p": 0.1312
+   },
+   {
+    "key": "curve:sg:wav2vec2:vr",
+    "representation": "wav2vec2",
+    "span": "[Vɾ]",
+    "best_layer": 9,
+    "best_layer_range": [
+     6,
+     10
+    ],
+    "balanced_acc": 0.6168,
+    "ci_95": [
+     0.5773,
+     0.6572
+    ],
+    "control_p": 0.1589
+   },
+   {
+    "key": "curve:sg:wav2vec2:rv",
+    "representation": "wav2vec2",
+    "span": "[ɾV]",
+    "best_layer": 9,
+    "best_layer_range": [
+     9,
+     9
+    ],
+    "balanced_acc": 0.6218,
+    "ci_95": [
+     0.5897,
+     0.6557
+    ],
+    "control_p": 0.2809
+   },
+   {
+    "key": "curve:sg:wav2vec2:r",
+    "representation": "wav2vec2",
+    "span": "[ɾ]",
+    "best_layer": 9,
+    "best_layer_range": [
+     9,
+     10
+    ],
+    "balanced_acc": 0.6163,
+    "ci_95": [
+     0.582,
+     0.6483
+    ],
+    "control_p": 0.1758
+   },
+   {
+    "key": "curve:sg:wavjepa:vrv",
+    "representation": "wavjepa",
+    "span": "[VɾV]",
+    "best_layer": 6,
+    "best_layer_range": [
+     1,
+     12
+    ],
+    "balanced_acc": 0.5508,
+    "ci_95": [
+     0.5097,
+     0.5921
+    ],
+    "control_p": 0.1237
+   },
+   {
+    "key": "curve:sg:wavjepa:vr",
+    "representation": "wavjepa",
+    "span": "[Vɾ]",
+    "best_layer": 4,
+    "best_layer_range": [
+     2,
+     6
+    ],
+    "balanced_acc": 0.5549,
+    "ci_95": [
+     0.5174,
+     0.5924
+    ],
+    "control_p": 0.117
+   },
+   {
+    "key": "curve:sg:wavjepa:rv",
+    "representation": "wavjepa",
+    "span": "[ɾV]",
+    "best_layer": 4,
+    "best_layer_range": [
+     4,
+     9
+    ],
+    "balanced_acc": 0.5524,
+    "ci_95": [
+     0.519,
+     0.5882
+    ],
+    "control_p": 0.0954
+   },
+   {
+    "key": "curve:sg:wavjepa:r",
+    "representation": "wavjepa",
+    "span": "[ɾ]",
+    "best_layer": 3,
+    "best_layer_range": [
+     3,
+     8
+    ],
+    "balanced_acc": 0.5432,
+    "ci_95": [
+     0.5092,
+     0.5768
+    ],
+    "control_p": 0.1614
+   }
+  ]
+ },
+ "answer": "The grid's integrity checks **passed**. The WavJEPA ɾ span reproduced the pilot curve exactly, all control-task p-values exceed 0.05, re-scores track within about 0.02, and all 5,650 fits converged [find-sg-checks].\n\n- **Span width (C1): no effect.** Pooling over more neighbouring speech helped no representation. None of the nine gaps reaches 0.05, and every interval includes zero. The registered prediction that Vɾ beats ɾ is not supported [find-sg-span].\n- **Duration baselines: reported, not compared.** Duration alone is near chance (0.524–0.529), with every interval including 0.50. So pre-/d/ lengthening barely separates /t/ from /d/ under a linear probe [find-sg-duration].\n- **Encoders (C4, C5): effect for wav2vec2-base, none for WavJEPA.**\n  - wav2vec2-base (0.616–0.625) is called ahead of MFCC on all spans. It also beats MFCC-plus-duration and duration alone on Vɾ and VɾV.\n  - WavJEPA (0.543–0.555) beats none of them [find-sg-encoders].\n- **Encoder comparison (C7): no effect, as registered.** The one-sided rule can only call a WavJEPA advantage. The reverse is reported but not called: wav2vec2-base leads by 0.062–0.075, with intervals below zero [find-sg-c7].\n- **Depth (C6): reported, no threshold.**\n  - WavJEPA peaks early, at layers 3–6.\n  - wav2vec2-base peaks at layer 9 on every span.\n  - This reverses the pilot's prediction [find-sg-depth].\n  - However, WavJEPA's VɾV best-layer range spans layers 1–12, so its depth is poorly pinned there [curve:sg:wavjepa:vrv].",
+ "usage": [
+  {
+   "input_tokens": 1042,
+   "output_tokens": 25,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 4951,
+   "output_tokens": 728,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.03903
+}

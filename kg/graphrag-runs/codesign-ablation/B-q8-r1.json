@@ -1,0 +1,424 @@
+{
+ "time": "20261031-131723",
+ "model": "claude-opus-5-5",
+ "condition": "B",
+ "question_id": "q8",
+ "run": 1,
+ "question": "What do the encoders' representations group the flaps by?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid",
+  "communities"
+ ],
+ "choice": {
+  "retrieval": "communities",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "findings": [
+   {
+    "key": "find-rc-mfcc",
+    "question": "Which representation's communities follow the phonetic environment most?",
+    "status": "exploratory, not registered",
+    "statement": "MFCC's. Louvain communities over each representation's ɾ-span features (kNN graph, k = 15, cosine distance, z-scored; 10,334 sites; no probe trained) share more with the phonetic environment for MFCC than for either encoder. Adjusted mutual information (AMI) with the vowel–following pair is 0.160, against 0.089 for wav2vec2-base layer 9 and 0.043 for WavJEPA layer 3. With the preceding vowel it is 0.142 (0.080, 0.036), and with the following segment 0.104 (0.054, 0.027). Over seeds 1–20, MFCC's range for the pair (0.1355–0.1711) doesn't overlap wav2vec2-base's (0.0823–0.1068). None comes near the Site–Phone communities (built 10-28, re-run sorted 10-29), which come from the environment labels themselves (pair 0.671).",
+    "evidenced_by": [
+     "art-rc-summary"
+    ]
+   },
+   {
+    "key": "find-rc-site-phone",
+    "question": "Do the Site–Phone communities over the phonetic environments line up with underlying /t/ versus /d/?",
+    "status": "exploratory; corrected 2026-10-30",
+    "statement": "Weakly, and less than the environments they're built from. The 20 Site–Phone communities (built 10-28, re-run sorted 10-29; Louvain over the Site–Phone graph, modularity 0.4708) have Cramér's V 0.299 with /t/–/d/, below the vowel–following pair's own 0.536 and the preceding vowel's 0.335, so they coarsen the environments. Resampling by word, 5 of the 20 communities have a 95% interval for their /d/ share that excludes the base rate (24.3%). Wilson intervals, which treat every site as independent (as the 10-28 figure's did), put it at 16. Words recur across sites, so the word-resampled count is the one to use.",
+    "evidenced_by": [
+     "art-comm-summary",
+     "art-rc-summary"
+    ]
+   },
+   {
+    "key": "find-rc-speaker",
+    "question": "What do WavJEPA layer 3's communities group by?",
+    "status": "exploratory, not registered",
+    "statement": "Mostly speaker. AMI with speaker is 0.234 (seeds 1–20: 0.2091–0.2724), the largest value for any representation and any grouping, against 0.126 for MFCC and 0.030 for wav2vec2-base layer 9. Its AMI with every phonetic grouping is the lowest of the three (pair 0.043). Layer 3 is WavJEPA's best on ɾ in the span grid, but that best-layer interval is wide, so a later layer could group differently; none was run.",
+    "evidenced_by": [
+     "art-rc-summary"
+    ]
+   },
+   {
+    "key": "find-rc-stability",
+    "question": "How far can the encoders' communities be read?",
+    "status": "exploratory, not registered",
+    "statement": "As a comparison, not as objects. The partitions change with the seed: their adjusted Rand index against the seeded run, median over seeds 1–20, is 0.563 for wav2vec2-base, 0.471 for WavJEPA and 0.465 for MFCC, against 0.895 for the Site–Phone communities (built 10-28, re-run sorted 10-29). What they share with each grouping is stable: the three representations' seed ranges of AMI don't overlap for any grouping except /t/–/d/. Word and environment can't be told apart in this data. For every representation, AMI with word is close to AMI with the vowel–following pair (MFCC 0.142 and 0.160, wav2vec2-base 0.096 and 0.089, WavJEPA 0.045 and 0.043). Even the Site–Phone communities, built from the environments alone, have word AMI 0.307. So \"groups by word\" and \"groups by environment\" are one observation here.",
+    "evidenced_by": [
+     "art-comm-summary",
+     "art-rc-summary"
+    ]
+   },
+   {
+    "key": "find-rc-voicing",
+    "question": "Do the encoders' communities line up with underlying /t/ versus /d/?",
+    "status": "exploratory, not registered",
+    "statement": "Barely, for all three. AMI with /t/–/d/ is 0.0071 for wav2vec2-base layer 9, 0.0072 for MFCC and 0.0024 for WavJEPA layer 3 (bias-corrected Cramér's V 0.147, 0.138, 0.084). wav2vec2-base is above WavJEPA on every seed (0.0067–0.0118 against 0.0014–0.0029) but tied with MFCC (0.0037–0.0085). At k = 5 the gap to MFCC widens (0.0142 against 0.0053); at k = 30 it is 0.0063 against 0.0049, so it isn't settled. For scale, the Site–Phone communities (built 10-28, re-run sorted 10-29) reach 0.0303, and the vowel–following pair itself 0.050.",
+    "evidenced_by": [
+     "art-rc-summary"
+    ]
+   }
+  ],
+  "profile": [
+   {
+    "key": "rep-mfcc",
+    "representation": "MFCC",
+    "layer": 0,
+    "communities": 10,
+    "modularity": 0.5802,
+    "ari_across_seeds": 0.465,
+    "ami_t_d": 0.0072,
+    "ami_vowel": 0.1416,
+    "ami_following": 0.1038,
+    "ami_pair": 0.1595,
+    "ami_speaker": 0.1256,
+    "ami_word": 0.1425,
+    "ami_lemma": 0.1384,
+    "ami_site_phone": 0.0926,
+    "cramers_v_t_d_corrected": 0.138,
+    "site_phone_ami_t_d": 0.0303,
+    "site_phone_ami_pair": 0.6708
+   },
+   {
+    "key": "rep-wav2vec2",
+    "representation": "facebook/wav2vec2-base",
+    "layer": 9,
+    "communities": 14,
+    "modularity": 0.6985,
+    "ari_across_seeds": 0.563,
+    "ami_t_d": 0.0071,
+    "ami_vowel": 0.08,
+    "ami_following": 0.054,
+    "ami_pair": 0.0889,
+    "ami_speaker": 0.0302,
+    "ami_word": 0.0955,
+    "ami_lemma": 0.0953,
+    "ami_site_phone": 0.0601,
+    "cramers_v_t_d_corrected": 0.147,
+    "site_phone_ami_t_d": 0.0303,
+    "site_phone_ami_pair": 0.6708
+   },
+   {
+    "key": "rep-wavjepa",
+    "representation": "WavJEPA",
+    "layer": 3,
+    "communities": 12,
+    "modularity": 0.5996,
+    "ari_across_seeds": 0.471,
+    "ami_t_d": 0.0024,
+    "ami_vowel": 0.0362,
+    "ami_following": 0.027,
+    "ami_pair": 0.0427,
+    "ami_speaker": 0.2343,
+    "ami_word": 0.045,
+    "ami_lemma": 0.0448,
+    "ami_site_phone": 0.0277,
+    "cramers_v_t_d_corrected": 0.084,
+    "site_phone_ami_t_d": 0.0303,
+    "site_phone_ami_pair": 0.6708
+   }
+  ],
+  "site_phone": [
+   {
+    "key": "community:1",
+    "sites": 1804,
+    "t": 1249,
+    "d": 555,
+    "share_d": 0.3076,
+    "base_share_d": 0.2432,
+    "phones": [
+     "a",
+     "awn",
+     "b",
+     "ih",
+     "iy",
+     "iyn",
+     "oy"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:2",
+    "sites": 1630,
+    "t": 1532,
+    "d": 98,
+    "share_d": 0.0601,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aa",
+     "ah",
+     "aw+1",
+     "eng",
+     "id",
+     "own"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:3",
+    "sites": 986,
+    "t": 732,
+    "d": 254,
+    "share_d": 0.2576,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aen",
+     "dh",
+     "eh",
+     "ehn",
+     "eyn",
+     "ih+1"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:4",
+    "sites": 902,
+    "t": 685,
+    "d": 217,
+    "share_d": 0.2406,
+    "base_share_d": 0.2432,
+    "phones": [
+     "er",
+     "uw"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:5",
+    "sites": 810,
+    "t": 647,
+    "d": 163,
+    "share_d": 0.2012,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ay"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:6",
+    "sites": 741,
+    "t": 488,
+    "d": 253,
+    "share_d": 0.3414,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ae",
+     "m"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:7",
+    "sites": 594,
+    "t": 423,
+    "d": 171,
+    "share_d": 0.2879,
+    "base_share_d": 0.2432,
+    "phones": [
+     "ey"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:8",
+    "sites": 589,
+    "t": 516,
+    "d": 73,
+    "share_d": 0.1239,
+    "base_share_d": 0.2432,
+    "phones": [
+     "<EXCLUDE-name>",
+     "UNKNOWN",
+     "aan",
+     "ao"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:9",
+    "sites": 541,
+    "t": 236,
+    "d": 305,
+    "share_d": 0.5638,
+    "base_share_d": 0.2432,
+    "phones": [
+     "VOCNOISE",
+     "ahn",
+     "aon",
+     "g",
+     "k",
+     "n",
+     "s",
+     "uh",
+     "w",
+     "z"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:10",
+    "sites": 528,
+    "t": 474,
+    "d": 54,
+    "share_d": 0.1023,
+    "base_share_d": 0.2432,
+    "phones": [
+     "aw",
+     "t",
+     "v"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:11",
+    "sites": 520,
+    "t": 344,
+    "d": 176,
+    "share_d": 0.3385,
+    "base_share_d": 0.2432,
+    "phones": [
+     "f",
+     "ihn",
+     "ow"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:12",
+    "sites": 301,
+    "t": 256,
+    "d": 45,
+    "share_d": 0.1495,
+    "base_share_d": 0.2432,
+    "phones": [
+     "el"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:13",
+    "sites": 175,
+    "t": 119,
+    "d": 56,
+    "share_d": 0.32,
+    "base_share_d": 0.2432,
+    "phones": [
+     "hh"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:14",
+    "sites": 57,
+    "t": 21,
+    "d": 36,
+    "share_d": 0.6316,
+    "base_share_d": 0.2432,
+    "phones": [
+     "en"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:15",
+    "sites": 47,
+    "t": 27,
+    "d": 20,
+    "share_d": 0.4255,
+    "base_share_d": 0.2432,
+    "phones": [
+     "l"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:16",
+    "sites": 37,
+    "t": 18,
+    "d": 19,
+    "share_d": 0.5135,
+    "base_share_d": 0.2432,
+    "phones": [
+     "r"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:17",
+    "sites": 24,
+    "t": 15,
+    "d": 9,
+    "share_d": 0.375,
+    "base_share_d": 0.2432,
+    "phones": [
+     "y"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:18",
+    "sites": 18,
+    "t": 16,
+    "d": 2,
+    "share_d": 0.1111,
+    "base_share_d": 0.2432,
+    "phones": [
+     "dx"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:19",
+    "sites": 15,
+    "t": 8,
+    "d": 7,
+    "share_d": 0.4667,
+    "base_share_d": 0.2432,
+    "phones": [
+     "SIL"
+    ],
+    "modularity": 0.4708
+   },
+   {
+    "key": "community:20",
+    "sites": 15,
+    "t": 15,
+    "d": 0,
+    "share_d": 0.0,
+    "base_share_d": 0.2432,
+    "phones": [
+     "em"
+    ],
+    "modularity": 0.4708
+   }
+  ]
+ },
+ "answer": "**The two encoders group the flaps differently, and neither groups them strongly by anything.** All of these findings are exploratory and not registered.\n\n**WavJEPA layer 3 groups mostly by speaker.** Its adjusted mutual information (AMI) with speaker is 0.234 (seeds 1–20: 0.209–0.272). That is the largest value for any representation and any grouping. Its AMI with every phonetic grouping is the lowest of the three (vowel–following pair 0.043) [find-rc-speaker, rep-wavjepa]. Layer 3 was its best ɾ layer, but that interval is wide, so a later layer might group differently. None was run [find-rc-speaker].\n\n**wav2vec2-base layer 9 leans toward phonetic environment or word rather than speaker.** Its values are pair 0.089, word 0.096 and speaker 0.030 [rep-wav2vec2, find-rc-mfcc]. Even so, it follows the environment less than plain MFCC does (pair 0.160), and their seed ranges don't overlap [find-rc-mfcc]. \"Word\" and \"environment\" can't be separated in this data; their AMIs are nearly equal for every representation [find-rc-stability].\n\n**Neither encoder lines up with underlying /t/ versus /d/.** AMI is 0.0071 for wav2vec2-base and 0.0024 for WavJEPA [find-rc-voicing].\n\n**For scale, every value is small.** Communities built directly from the environment labels reach pair AMI 0.671 [find-rc-mfcc].\n\n**The partitions themselves shift with the seed.** Adjusted Rand index against the seeded run is 0.563 for wav2vec2-base and 0.471 for WavJEPA. The communities should therefore be read as a comparison between representations, not as stable objects [find-rc-stability].",
+ "usage": [
+  {
+   "input_tokens": 1050,
+   "output_tokens": 23,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 5020,
+   "output_tokens": 833,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.0414
+}

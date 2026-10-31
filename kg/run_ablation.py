@@ -341,6 +341,7 @@ def cell_summary(ss: list[dict], final: dict[str, str]) -> dict:
     n = len(ss)
     routed = [s for s in ss if s["routing"] != ""]
     oc = Counter(final.get(s["run_id"], s["outcome"]) for s in ss)
+    auto = Counter(s["outcome"] for s in ss)
     rc = Counter(s["retrieval"] for s in ss)
     return {
         "runs": n,
@@ -350,6 +351,8 @@ def cell_summary(ss: list[dict], final: dict[str, str]) -> dict:
         "numbers": pct(sum(s["numbers_grounded"] for s in ss), sum(s["numbers"] for s in ss)),
         "outcome": ", ".join(f"{v} {k}" for k, v in sorted(oc.items(),
                                                           key=lambda kv: OUTCOMES.index(kv[0]))),
+        "outcome_auto": ", ".join(f"{v} {k}" for k, v in sorted(
+            auto.items(), key=lambda kv: OUTCOMES.index(kv[0]))),
         "same_retrieval": pct(rc.most_common(1)[0][1], n),
         "same_outcome": pct(oc.most_common(1)[0][1], n),
     }
@@ -443,13 +446,15 @@ def cmd_score(args) -> None:
         w.writeheader()
         w.writerows(table)
 
-    cols = ["routing", "keys", "numbers", "outcome", "same_retrieval", "same_outcome"]
+    cols = ["routing", "keys", "numbers", "outcome_auto", "outcome", "same_retrieval",
+            "same_outcome"]
     md = ["# GraphRAG ablation: without and with `communities`", "",
           f"{len(runs)} runs, {RUNS_PER_CELL} per question × condition, "
           f"{graphrag.MODEL}; total ${sum(r['cost_usd'] for r in runs.values()):.2f}. "
           "A = the six reviewed retrievals; B = seven, `communities` included. "
-          "Outcome labels are the automatic ones, overridden by the hand check where "
-          "one exists (see the agreement line below).", "",
+          "`outcome auto` is the scoring rule alone; `outcome` takes the hand check's "
+          "label where a run was hand-checked (Daniel's, else Claude's), and the "
+          "automatic one elsewhere. `same outcome` is over `outcome`.", "",
           "| question | " + " | ".join(f"{c} {k.replace('_', ' ')}" for c in CONDITIONS
                                         for k in cols) + " |",
           "|---|" + "---|" * (len(cols) * len(CONDITIONS))]

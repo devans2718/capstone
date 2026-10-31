@@ -1,0 +1,86 @@
+{
+ "time": "20261031-131454",
+ "model": "claude-opus-5-5",
+ "condition": "B",
+ "question_id": "q4",
+ "run": 2,
+ "question": "How does WavJEPA's best layer compare with MFCC under each split condition?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid",
+  "communities"
+ ],
+ "choice": {
+  "retrieval": "word_axis",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "curves": [
+   {
+    "condition_key": "cond-random",
+    "condition": "random",
+    "held_out": "nothing",
+    "wavjepa_curve": "curve:wavjepa:mean:random:full",
+    "best_layer": 6,
+    "wavjepa": 0.652,
+    "mfcc": 0.582,
+    "gap": 0.07,
+    "word_lookup": 0.941336
+   },
+   {
+    "condition_key": "cond-speaker",
+    "condition": "speaker_disjoint",
+    "held_out": "speakers",
+    "wavjepa_curve": "curve:wavjepa:mean:speaker_disjoint:full",
+    "best_layer": 7,
+    "wavjepa": 0.627,
+    "mfcc": 0.574,
+    "gap": 0.053,
+    "word_lookup": 0.930364
+   },
+   {
+    "condition_key": "cond-word",
+    "condition": "word_disjoint",
+    "held_out": "word types (type keys)",
+    "wavjepa_curve": "curve:wavjepa:mean:word_disjoint:full",
+    "best_layer": 3,
+    "wavjepa": 0.559,
+    "mfcc": 0.534,
+    "gap": 0.025,
+    "word_lookup": 0.5
+   },
+   {
+    "condition_key": "cond-joint",
+    "condition": "joint",
+    "held_out": "speakers and word types",
+    "wavjepa_curve": "curve:wavjepa:mean:joint:full",
+    "best_layer": 3,
+    "wavjepa": 0.544,
+    "mfcc": 0.527,
+    "gap": 0.016,
+    "word_lookup": 0.5
+   }
+  ]
+ },
+ "answer": "WavJEPA's best layer beats MFCC under all four split conditions, but the margin shrinks as more is held out.\n\n- **Random split** (nothing held out): layer 6 scores 0.652 against MFCC's 0.582, a gap of 0.07 [cond-random] [curve:wavjepa:mean:random:full].\n- **Speaker-disjoint** (speakers held out): layer 7 scores 0.627 against 0.574, a gap of 0.053 [cond-speaker] [curve:wavjepa:mean:speaker_disjoint:full].\n- **Word-disjoint** (word types held out): layer 3 scores 0.559 against 0.534, a gap of 0.025 [cond-word] [curve:wavjepa:mean:word_disjoint:full].\n- **Joint** (speakers and word types held out): layer 3 scores 0.544 against 0.527, the smallest gap at 0.016 [cond-joint] [curve:wavjepa:mean:joint:full].\n\nThe best layer also moves earlier, from layer 6–7 to layer 3, once word types are held out.\n\nA word-lookup baseline gives useful context. It reaches 0.941 on the random split and 0.930 on the speaker-disjoint split, but drops to 0.5 on the word-disjoint and joint splits [cond-random] [cond-speaker] [cond-word] [cond-joint]. The higher absolute scores on the first two splits may therefore partly reflect word identity overlapping between training and test. That is a reading of the numbers, not a conclusion stated in the rows.\n\nThe rows don't name the evaluation metric. They also give no confidence intervals or significance tests, so it's unclear whether the small gaps in the word-disjoint and joint conditions are reliable.",
+ "usage": [
+  {
+   "input_tokens": 1059,
+   "output_tokens": 25,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 775,
+   "output_tokens": 695,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.02174
+}

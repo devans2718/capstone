@@ -1,0 +1,245 @@
+{
+ "time": "20261031-131510",
+ "model": "claude-opus-5-5",
+ "condition": "A",
+ "question_id": "q5",
+ "run": 1,
+ "question": "What does registration revision 3 specify that the pilot never used?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid"
+ ],
+ "choice": {
+  "retrieval": "registered_not_run",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "specified": [
+   {
+    "key": "cond-joint",
+    "kind": "Condition",
+    "item": "joint",
+    "role": "gated",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "cond-random",
+    "kind": "Condition",
+    "item": "random",
+    "role": "reported",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "cond-speaker",
+    "kind": "Condition",
+    "item": "speaker_disjoint",
+    "role": "reported",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "cond-word",
+    "kind": "Condition",
+    "item": "word_disjoint",
+    "role": "reported",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "ctrl-lookup",
+    "kind": "Control",
+    "item": "Word lookup",
+    "role": "baseline",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "env-flap",
+    "kind": "Environment",
+    "item": "[ɾ]",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-rep-communities",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": null
+   },
+   {
+    "key": "pool-max",
+    "kind": "Pooling",
+    "item": "max",
+    "role": "secondary",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "pool-mean",
+    "kind": "Pooling",
+    "item": "mean",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "pool-midpoint",
+    "kind": "Pooling",
+    "item": "midpoint",
+    "role": "secondary",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "probe-linear",
+    "kind": "Probe",
+    "item": "Linear probe",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": null
+   },
+   {
+    "key": "rep-mfcc",
+    "kind": "Representation",
+    "item": "MFCC",
+    "role": "baseline",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-rep-communities",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": "13 coefficients incl. c0 + deltas + delta-deltas, librosa, 25 ms window / 10 ms hop. Features with no learned structure."
+   },
+   {
+    "key": "rep-wav2vec2",
+    "kind": "Representation",
+    "item": "facebook/wav2vec2-base",
+    "role": "exploratory",
+    "used": true,
+    "used_by": [
+     "run-rep-communities",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": "Run in the span grid's pooled design (2026-10-29), on the 10,334 sites under joint: best layer 9 on every span, balanced accuracy 0.616–0.625. Ahead of MFCC on every span (C5). Index 0 is not the CNN output but LayerNorm(projection + positional conv), so it carries position (span grid §8)."
+   },
+   {
+    "key": "rep-wavjepa",
+    "kind": "Representation",
+    "item": "WavJEPA",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-rep-communities",
+     "run-span-grid"
+    ],
+    "status": "used",
+    "note": "Index 0 is the input to the first layer; 1–12 are layer outputs. Pretraining data not yet checked against the paper."
+   },
+   {
+    "key": "task-control",
+    "kind": "Control",
+    "item": "Control task",
+    "role": "leak detector",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "task-speaker",
+    "kind": "Task",
+    "item": "Speaker ID",
+    "role": "diagnostic",
+    "used": true,
+    "used_by": [
+     "run-pilot"
+    ],
+    "status": null,
+    "note": null
+   },
+   {
+    "key": "task-voicing",
+    "kind": "Task",
+    "item": "Voicing task",
+    "role": "primary",
+    "used": true,
+    "used_by": [
+     "run-pilot",
+     "run-span-grid"
+    ],
+    "status": null,
+    "note": null
+   }
+  ]
+ },
+ "answer": "**Only one item specified in revision 3 was never used by the pilot: the facebook/wav2vec2-base representation, registered with an exploratory role** [rep-wav2vec2].\n\nIt was used in other runs, run-rep-communities and run-span-grid [rep-wav2vec2]. In the span grid's pooled design (2026-10-29), on the 10,334 sites under the joint condition, it reached its best layer at 9 on every span. Balanced accuracy was 0.616–0.625, ahead of MFCC on every span (C5). Its index 0 is LayerNorm(projection + positional conv), not the CNN output, so it carries position information [rep-wav2vec2].\n\nEvery other specified item lists run-pilot among its users:\n- the four conditions [cond-joint] [cond-random] [cond-speaker] [cond-word]\n- the word-lookup baseline [ctrl-lookup] and the control task [task-control]\n- the [ɾ] environment [env-flap]\n- the three pooling methods [pool-max] [pool-mean] [pool-midpoint]\n- the linear probe [probe-linear]\n- the MFCC and WavJEPA representations [rep-mfcc] [rep-wavjepa]\n- the speaker-ID and voicing tasks [task-speaker] [task-voicing]\n\nOne caveat: the rows don't say whether wav2vec2 was registered before or after the pilot ran. So they don't show whether its absence from the pilot was a deviation from the plan.",
+ "usage": [
+  {
+   "input_tokens": 868,
+   "output_tokens": 27,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 2014,
+   "output_tokens": 596,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.02399
+}

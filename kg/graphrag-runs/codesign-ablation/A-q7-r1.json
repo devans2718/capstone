@@ -1,0 +1,40 @@
+{
+ "time": "20261031-131627",
+ "model": "claude-opus-5-5",
+ "condition": "A",
+ "question_id": "q7",
+ "run": 1,
+ "question": "Do the flaps' phonetic environments group into communities, and do those communities line up with underlying /t/ versus /d/?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid"
+ ],
+ "choice": {
+  "retrieval": "concept",
+  "term": "phonetic environment",
+  "criterion": 0
+ },
+ "rows": {
+  "concept": []
+ },
+ "answer": "I can't answer this from what was retrieved. The query returned no rows (the \"concept\" list is empty), so the graph gave me nothing on flap environments, community structure, or how such communities relate to underlying /t/ versus /d/.\n\nTo answer, I would need rows covering:\n\n- **Grouping:** whether the flaps' phonetic environments were clustered or community-detected, and what groups came out.\n- **Alignment with /t/ vs /d/:** whether any communities were compared against the underlying stop, and how well they matched.\n- **Status:** whether each finding is established, still open, ruled out, or limited by data or method.\n\nA retry with nearby search terms might find the relevant nodes. Possible terms include \"flapping,\" \"tapping,\" \"neutralization,\" \"clustering,\" \"context network,\" \"underlying voicing,\" and \"/t/–/d/ contrast.\" Until such rows turn up, I can't say whether these communities exist or whether they track the /t/–/d/ distinction.",
+ "usage": [
+  {
+   "input_tokens": 888,
+   "output_tokens": 235,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 219,
+   "output_tokens": 338,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.01589
+}

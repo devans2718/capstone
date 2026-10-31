@@ -1,0 +1,22 @@
+{
+ "A-q1-r2": {"verdict": "correct", "note": "Definition and links from con-flap; says the rows hold no results for the experiment."},
+ "B-q1-r1": {"verdict": "correct", "note": "Same content as A."},
+ "A-q2-r3": {"verdict": "correct", "note": "All three revisions, the never-registered draft and its reason, from the rows."},
+ "B-q2-r2": {"verdict": "correct", "note": "Same as A."},
+ "A-q3-r1": {"verdict": "correct", "note": "Three failed criteria with the rows' figures; every status kept; the cropped design as the one planned test."},
+ "B-q3-r3": {"verdict": "correct", "note": "Same as A."},
+ "A-q4-r1": {"verdict": "correct", "note": "Four gaps match the rows; the word-lookup reading is flagged as a reading, not a finding."},
+ "B-q4-r1": {"verdict": "correct", "note": "Same as A, with the curve keys cited."},
+ "A-q5-r1": {"verdict": "correct", "note": "Names run-span-grid and run-rep-communities, but in prose, not in brackets, so the answer key's cited-key item misses (automatic: partial)."},
+ "B-q5-r2": {"verdict": "correct", "note": "Names the span grid and the representation-communities run in prose without citing run-span-grid (automatic: partial)."},
+ "A-q6-r1": {"verdict": "correct", "note": "Every Finding with its status; the VɾV best-layer range 1–12 checked against the curve row."},
+ "B-q6-r3": {"verdict": "correct", "note": "Same as A."},
+ "A-q7-r1": {"verdict": "correct refusal", "note": "Routed to concept ('phonetic environment'), got no rows, said so."},
+ "A-q7-r2": {"verdict": "correct refusal", "note": "Same as r1."},
+ "A-q7-r3": {"verdict": "correct refusal", "note": "Routed to why_failed; says the rows don't answer, then gives related context, each item framed as not a clustering result and grounded (env-v-flap-v's description is in find-width's evidence). Automatic: wrong, because it cites Findings."},
+ "A-q8-r1": {"verdict": "correct refusal", "note": "Routed to why_failed; opens by saying the rows don't answer, then gives the probing results as indirect evidence with statuses kept. Automatic: wrong (cites Findings)."},
+ "A-q8-r2": {"verdict": "correct refusal", "note": "As r1. One bullet, 'Not speaker', infers from find-words that the probe's cue isn't speaker-specific; that's about the probe, not grouping, and is fair from the rows, but read beside find-rc-speaker it could mislead. Automatic: wrong (cites Findings)."},
+ "A-q8-r3": {"verdict": "correct refusal", "note": "As r1. Automatic: wrong (cites Findings)."},
+ "B-q7-r1": {"verdict": "correct", "note": "Routed to communities. 20 communities, V 0.299 vs 0.536 / 0.335, 5 of 20 by word vs 16 Wilson, statuses exploratory; community 9 (56.4%, 541 sites) and 2 (6.0%, 1,630) checked against the rows."},
+ "B-q8-r1": {"verdict": "correct", "note": "Routed to communities. WavJEPA by speaker, wav2vec2-base toward environment/word, none on /t/–/d/, partitions unstable; all from the Findings and profile. 'Neither groups them strongly by anything' is a fair summary of AMI ≤ 0.234."}
+}

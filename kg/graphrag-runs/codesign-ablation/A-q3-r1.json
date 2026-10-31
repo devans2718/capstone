@@ -1,0 +1,158 @@
+{
+ "time": "20261031-131318",
+ "model": "claude-opus-5-5",
+ "condition": "A",
+ "question_id": "q3",
+ "run": 1,
+ "question": "Why did the pilot fail, and what's planned to test it?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid"
+ ],
+ "choice": {
+  "retrieval": "why_failed",
+  "term": "",
+  "criterion": 0
+ },
+ "rows": {
+  "failed_criteria": [
+   {
+    "key": "crit-rev3-1",
+    "criterion": 1,
+    "statement": "Best WavJEPA layer beats the MFCC baseline",
+    "threshold": "gap >= 0.05 balanced accuracy, and paired word-type bootstrap 95% lower bound > 0",
+    "result": "best layer 3: 0.5438; MFCC 0.5274; gap +0.0163 (needs >= 0.05); paired word-type bootstrap 95% CI [-0.0154, +0.0561] (lower bound needs > 0)"
+   },
+   {
+    "key": "crit-rev3-3",
+    "criterion": 3,
+    "statement": "Layer-wise curve is not flat",
+    "threshold": "best - worst >= 0.05",
+    "result": "best 0.5438 (layer 3) - worst 0.5185 (layer 2) = 0.0253 (needs >= 0.05)"
+   },
+   {
+    "key": "crit-rev3-4",
+    "criterion": 4,
+    "statement": "Minority-class F1 (/d/) at the best layer",
+    "threshold": ">= 0.45",
+    "result": "/d/ F1 at layer 3 0.3563 (needs >= 0.45; trivial floors 0.391 always-/d/, 0.327 coin, 0.243 base rate)"
+   }
+  ],
+  "findings": [
+   {
+    "key": "find-lemma",
+    "cause": "Lemma overlap",
+    "status": "limitation, registered before the run",
+    "statement": "25.1% of joint test sites (2,612) have their lemma in training with the same label; the split is disjoint by word form, not lemma. On the 7,586 lemma-unseen sites the gap to MFCC is +0.030, CI [-0.004, +0.073], still short of criterion 1.",
+    "explains_failed_criteria": [
+     1
+    ],
+    "evidenced_by": [
+     "Registration rev3 §1a",
+     "Artifact art-lemma-sites",
+     "Artifact art-criteria"
+    ]
+   },
+   {
+    "key": "find-power",
+    "cause": "Too little statistical power",
+    "status": "limitation",
+    "statement": "The gap to MFCC's paired word-type bootstrap interval is [-0.015, +0.056]: no evidence of an advantage over MFCC, which is not evidence of none.",
+    "explains_failed_criteria": [
+     1
+    ],
+    "evidenced_by": [
+     "Artifact art-criteria"
+    ]
+   },
+   {
+    "key": "find-sites",
+    "cause": "Sites aren't what the inventory says",
+    "status": "ruled out for the sites, not the labels",
+    "statement": "A blind listening audit of 80 sites heard a flap in 72 of 74 decidable cases (6 /d/ can't-tells), and the right word and a well-placed clip in all 80. The labels come from the dictionary form and can't be heard under a flap, so the audit clears the sites, not the labels.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Amendment amend-audit",
+     "Artifact art-audit-sample",
+     "Artifact art-audit-report"
+    ]
+   },
+   {
+    "key": "find-training",
+    "cause": "Too little training data",
+    "status": "ruled out",
+    "statement": "Retraining the single-axis conditions at joint's training size (about 64% of sites) costs 0.006–0.013 at the best layer, against a 0.108 drop from random to joint.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Curve curve:wavjepa:mean:word_disjoint:subsampled",
+     "Curve curve:wavjepa:mean:speaker_disjoint:subsampled",
+     "Curve curve:wavjepa:mean:random:subsampled"
+    ]
+   },
+   {
+    "key": "find-width",
+    "cause": "Site too narrow (2–4 frames)",
+    "status": "ruled out for MFCC; open for the encoders until the cropped design runs",
+    "statement": "Sites are 2–4 encoder frames wide (median 3, 27.4 ms). MFCC's 25 ms frames see only local audio (deltas reach ±40 ms), so for MFCC a cue outside the site's frames is invisible. WavJEPA and wav2vec2-base encode the flap ± 200 ms as one excerpt, so at depth their flap frames can carry that context; for WavJEPA the pilot shows only that the cue wasn't linearly recoverable from those frames. The span grid's pooled design (2026-10-29) widened the pooled frames to the preceding stretch, the following segment, or both, and no representation gained (largest +0.015, none called). For MFCC, whose frames are local, that rules width out, and the stretch's duration alone is near chance (about 0.53). For the encoders the pooled design cannot rule it out: every span's frames had heard the whole excerpt, so pooling more of them changes which frames are read, not what was heard. That test is the cropped design, deferred (span grid §8, 2026-10-29). Narrow frames don't explain WavJEPA's score on their own: from the same ɾ span, wav2vec2-base reaches 0.616 under joint, against WavJEPA's 0.543.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Amendment amend-sg-deferred",
+     "Finding find-sg-duration (status: reported, not compared)",
+     "Finding find-sg-span (status: no effect)",
+     "Environment env-v-flap-v (status: used) - The preceding stretch through the following segment.",
+     "Registration rev3 §2"
+    ]
+   },
+   {
+    "key": "find-words",
+    "cause": "The cue doesn't generalize to unseen words",
+    "status": "consistent with the result",
+    "statement": "The drop from random to joint is mostly the word axis: holding out speakers costs little, holding out word types costs most of the gap above chance.",
+    "explains_failed_criteria": [
+     1,
+     3,
+     4
+    ],
+    "evidenced_by": [
+     "Artifact art-fig-drop",
+     "Curve curve:wavjepa:mean:joint:full",
+     "Curve curve:wavjepa:mean:word_disjoint:full",
+     "Curve curve:wavjepa:mean:speaker_disjoint:full",
+     "Curve curve:wavjepa:mean:random:full"
+    ]
+   }
+  ]
+ },
+ "answer": "The pilot failed three criteria. The best WavJEPA layer (3, 0.5438) beat MFCC (0.5274) by only +0.0163, short of the 0.05 gap, with a bootstrap CI of [-0.0154, +0.0561] [crit-rev3-1]. The layer curve was nearly flat (spread 0.0253 against a 0.05 threshold) [crit-rev3-3]. /d/ F1 was 0.3563 against a 0.45 threshold, below the always-/d/ floor of 0.391 [crit-rev3-4].\n\nCandidate explanations, with their recorded status:\n\n- **Unseen words:** The cue may not generalize to unseen words. Most of the drop from random to joint comes from holding out word types, not speakers. This is *consistent with the result*, not established [find-words].\n- **Power and lemma overlap:** Both are limitations. The CI shows no evidence of an advantage, which is not evidence of none [find-power]. On lemma-unseen sites the gap is +0.030, still short [find-lemma].\n- **Training size:** *Ruled out* [find-training].\n- **Site validity:** *Ruled out for the sites, not the labels* [find-sites].\n- **Site width:** *Ruled out for MFCC, open for the encoders.* Pooling wider spans can't test the encoders, because every frame already heard the whole excerpt. Width also doesn't fully explain WavJEPA's score, since wav2vec2-base reaches 0.616 from the same span [find-width].\n\n**Planned test:** The only one in the rows is the cropped design, which would test the width explanation for the encoders. It is currently deferred (span grid §8) [find-width]. The rows list no planned tests for the word-generalization, power or label explanations.",
+ "usage": [
+  {
+   "input_tokens": 868,
+   "output_tokens": 25,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 2446,
+   "output_tokens": 660,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.02696
+}

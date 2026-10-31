@@ -1,0 +1,52 @@
+{
+ "time": "20261031-131154",
+ "model": "claude-opus-5-5",
+ "condition": "A",
+ "question_id": "q1",
+ "run": 1,
+ "question": "What's a flap?",
+ "menu": [
+  "concept",
+  "criterion_provenance",
+  "why_failed",
+  "word_axis",
+  "registered_not_run",
+  "span_grid"
+ ],
+ "choice": {
+  "retrieval": "concept",
+  "term": "flap",
+  "criterion": 0
+ },
+ "rows": {
+  "concept": [
+   {
+    "key": "con-flap",
+    "term": "flap",
+    "definition": "A very quick tap of the tongue tip against the ridge behind the upper teeth, written [ɾ]. In American English /t/ and /d/ are usually pronounced this way between vowels when the second is unstressed: 'water', 'ladder'.",
+    "related": [
+     "con-phone: phone"
+    ],
+    "experiments": [
+     "English flapping"
+    ]
+   }
+  ]
+ },
+ "answer": "A flap is a very quick tap of the tongue tip against the ridge just behind the upper teeth, written in phonetic notation as [ɾ] [con-flap].\n\nIn American English, /t/ and /d/ are usually pronounced as a flap when they fall between two vowels and the second vowel is unstressed. That's why the middle consonant in \"water\" and \"ladder\" sounds like a quick tap rather than a full \"t\" or \"d\" [con-flap].\n\nThe concept is linked to the more general notion of a \"phone\" [con-flap]. It's also tied to an experiment labelled \"English flapping\" [con-flap]. However, the rows don't define \"phone\" or describe what that experiment did or found.",
+ "usage": [
+  {
+   "input_tokens": 855,
+   "output_tokens": 25,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  },
+  {
+   "input_tokens": 345,
+   "output_tokens": 234,
+   "cache_read_input_tokens": 0,
+   "cache_creation_input_tokens": 0
+  }
+ ],
+ "cost_usd": 0.00998
+}
