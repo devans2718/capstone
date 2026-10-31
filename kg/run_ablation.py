@@ -337,11 +337,18 @@ def pct(a: int, b: int) -> str:
     return f"{a}/{b}" if b else "–"
 
 
-def cell_summary(ss: list[dict], final: dict[str, str]) -> dict:
+def counts(c: Counter) -> str:
+    return ", ".join(f"{v} {k}" for k, v in sorted(c.items(),
+                                                   key=lambda kv: OUTCOMES.index(kv[0])))
+
+
+def cell_summary(ss: list[dict], daniel: dict[str, str]) -> dict:
+    """One cell's aggregates. Outcomes are the rule's; Daniel's verdicts are
+    reported beside them, over the runs he checked, never blended in."""
     n = len(ss)
     routed = [s for s in ss if s["routing"] != ""]
-    oc = Counter(final.get(s["run_id"], s["outcome"]) for s in ss)
     auto = Counter(s["outcome"] for s in ss)
+    checked = [daniel[s["run_id"]] for s in ss if s["run_id"] in daniel]
     rc = Counter(s["retrieval"] for s in ss)
     return {
         "runs": n,
@@ -349,12 +356,11 @@ def cell_summary(ss: list[dict], final: dict[str, str]) -> dict:
                    else "n/a (" + ", ".join(f"{k} {v}" for k, v in rc.most_common()) + ")",
         "keys": pct(sum(s["keys_grounded"] for s in ss), sum(s["keys_cited"] for s in ss)),
         "numbers": pct(sum(s["numbers_grounded"] for s in ss), sum(s["numbers"] for s in ss)),
-        "outcome": ", ".join(f"{v} {k}" for k, v in sorted(oc.items(),
-                                                          key=lambda kv: OUTCOMES.index(kv[0]))),
-        "outcome_auto": ", ".join(f"{v} {k}" for k, v in sorted(
-            auto.items(), key=lambda kv: OUTCOMES.index(kv[0]))),
+        "outcome": counts(auto),
+        "daniel": (counts(Counter(checked)) + f" (of {len(checked)} checked)"
+                   if checked else ""),
         "same_retrieval": pct(rc.most_common(1)[0][1], n),
-        "same_outcome": pct(oc.most_common(1)[0][1], n),
+        "same_outcome": pct(auto.most_common(1)[0][1], n),
     }
 
 
@@ -428,16 +434,13 @@ def cmd_score(args) -> None:
     if args.rewrite_sheet or not HAND_CHECK_SHEET.exists():
         write_sheet(runs, scores, sample, daniel)
 
-    # Final label: Daniel's verdict, else Claude's check, else automatic.
-    final = {rid: daniel.get(rid) or mine.get(rid, {}).get("verdict") or s["outcome"]
-             for rid, s in scores.items()}
     table = []
     for q in QUESTIONS:
         row = {"question": q}
         for c in CONDITIONS:
             ss = [s for s in scores.values() if s["condition"] == c and s["question_id"] == q]
             if ss:
-                for k, v in cell_summary(ss, final).items():
+                for k, v in cell_summary(ss, daniel).items():
                     row[f"{c}_{k}"] = v
         table.append(row)
     with (OUT / "ablation-table.csv").open("w", newline="", encoding="utf-8") as fh:
@@ -446,15 +449,16 @@ def cmd_score(args) -> None:
         w.writeheader()
         w.writerows(table)
 
-    cols = ["routing", "keys", "numbers", "outcome_auto", "outcome", "same_retrieval",
+    cols = ["routing", "keys", "numbers", "outcome", "daniel", "same_retrieval",
             "same_outcome"]
     md = ["# GraphRAG ablation: without and with `communities`", "",
           f"{len(runs)} runs, {RUNS_PER_CELL} per question × condition, "
           f"{graphrag.MODEL}; total ${sum(r['cost_usd'] for r in runs.values()):.2f}. "
           "A = the six reviewed retrievals; B = seven, `communities` included. "
-          "`outcome auto` is the scoring rule alone; `outcome` takes the hand check's "
-          "label where a run was hand-checked (Daniel's, else Claude's), and the "
-          "automatic one elsewhere. `same outcome` is over `outcome`.", "",
+          "`outcome` and `same outcome` are the scoring rule's labels only. `daniel` is "
+          "Daniel's hand-check verdicts, over the runs he checked (empty until he has); "
+          "Claude's check is in the hand-check sheet and the agreement line, not in "
+          "the counts.", "",
           "| question | " + " | ".join(f"{c} {k.replace('_', ' ')}" for c in CONDITIONS
                                         for k in cols) + " |",
           "|---|" + "---|" * (len(cols) * len(CONDITIONS))]
