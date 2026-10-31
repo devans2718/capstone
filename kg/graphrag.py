@@ -9,8 +9,8 @@ HOW TO RUN (from the repo root, in WSL, with neo4j-capstone up)
     root (gitignored). Neo4j connection as in kg/build_corpus.py.
 
 WHAT IT DOES
-    1. Route. The LLM picks one retrieval from RETRIEVALS below, plus its
-       parameter. It chooses; it never writes Cypher. Every query that can
+    1. Route. The LLM picks one of the seven retrievals in RETRIEVALS below,
+       plus its parameter. It chooses; it never writes Cypher. Every query that can
        run is one a human has read.
     2. Retrieve. The chosen Cypher runs against the graph.
     3. Answer. The LLM gets the question and the returned rows, and is told
@@ -24,8 +24,9 @@ SWAPPING THE MODEL
 THE COMMUNITY SUMMARY (--community)
     Adds COMMUNITY_STATEMENTS' rows to whatever the router retrieved: the
     Louvain communities that kg/build_communities.py writes over the flaps'
-    phonetic environments. Kept out of RETRIEVALS on purpose, so the router's
-    menu, and the five evaluated questions the app caches, stay as they were.
+    phonetic environments. Not a retrieval: it adds those rows to every
+    question, where the `communities` retrieval (since 2026-10-31) adds them
+    only when the router picks it. Not used in the 2026-10-31 ablation.
 
 THE BUCKEYE RULE
     The retrievals read the design layer (aggregates, no words, speaker

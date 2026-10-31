@@ -64,7 +64,7 @@ See the docstring in `build_corpus.py`.
 .venv-app/bin/python kg/graphrag.py --save kg/graphrag-runs "What's a flap?"
 ```
 
-1. **Route.** The LLM picks one of six retrievals and fills its parameter. It
+1. **Route.** The LLM picks one of seven retrievals and fills its parameter. It
    chooses; it never writes Cypher, so every query that runs is one a human has
    read.
 2. **Retrieve.** The chosen Cypher runs against the graph.
