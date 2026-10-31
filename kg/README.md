@@ -25,6 +25,8 @@ Co-Design).
 | `representation_communities.py` | Exploratory, not registered: Louvain communities over each representation's kNN graph (ɾ span; wav2vec2-base L9, WavJEPA L3, MFCC), compared by AMI with the environments, speaker, word, lemma and the Site–Phone partition. No Neo4j |
 | `communities/representation/summary.json` | Generated. That run's aggregates: stability, AMI, and per community the word concentration with Wilson and word-resampled intervals |
 | `plot_representation_communities.py` | The comparison heatmap and the per-community /t/–/d/ chart, as PNGs into `communities/representation/` |
+| `run_ablation.py` | The Challenge 4 Co-Design ablation: GraphRAG without (A) and with (B) the `communities` retrieval, 8 questions × 3 runs each, scored for routing, grounding and outcome against answer keys fixed before the runs |
+| `graphrag-runs/codesign-ablation/` | That ablation's saved runs, per-run scores and the summary table |
 
 ## Setup
 

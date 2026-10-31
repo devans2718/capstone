@@ -272,6 +272,10 @@ def load_dotenv() -> None:
 
 _client: anthropic.Anthropic | None = None
 
+# Every call's token usage, appended by complete(), so a caller can record
+# what a run cost (kg/run_ablation.py does).
+USAGE: list[dict] = []
+
 
 def complete(system: str, user: str, schema: dict | None = None,
              effort: str = "medium") -> str:
@@ -292,6 +296,10 @@ def complete(system: str, user: str, schema: dict | None = None,
         messages=[{"role": "user", "content": user}],
         output_config=output_config,
     )
+    u = response.usage
+    USAGE.append({"input_tokens": u.input_tokens, "output_tokens": u.output_tokens,
+                  "cache_read_input_tokens": u.cache_read_input_tokens or 0,
+                  "cache_creation_input_tokens": u.cache_creation_input_tokens or 0})
     if response.stop_reason == "refusal":
         raise SystemExit(f"model declined: {response.stop_details}")
     return "".join(b.text for b in response.content if b.type == "text")
@@ -320,13 +328,15 @@ limitation, ...); don't upgrade a candidate explanation to a conclusion.
 - Plain prose, at most about 200 words."""
 
 
-def route(question: str) -> dict:
-    menu = "\n".join(f"- {name}: {r['description']}"
-                     for name, r in RETRIEVALS.items())
+def route(question: str, names: list[str] | None = None) -> dict:
+    """Pick one retrieval. `names` limits the menu (an ablation's condition)."""
+    names = list(RETRIEVALS) if names is None else names
+    menu = "\n".join(f"- {name}: {RETRIEVALS[name]['description']}"
+                     for name in names)
     schema = {
         "type": "object",
         "properties": {
-            "retrieval": {"type": "string", "enum": list(RETRIEVALS)},
+            "retrieval": {"type": "string", "enum": names},
             "term": {"type": "string"},
             "criterion": {"type": "integer"},
         },
