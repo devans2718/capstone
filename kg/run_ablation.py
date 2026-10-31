@@ -319,17 +319,36 @@ def hand_sample(scores: list[dict]) -> list[str]:
     return out
 
 
+def _label(text: str) -> str | None:
+    """An outcome label, with any leading emoji or marks stripped."""
+    v = re.sub(r"^[^a-z]+", "", text.strip().lower()).strip()
+    return v if v in OUTCOMES else None
+
+
 def read_daniel_verdicts() -> dict[str, str]:
+    """Daniel's verdicts from the vault sheet, in either form he may use:
+        ==verdict: correct==                              (the sheet's form)
+        verdict: ==🟢correct== / partial / wrong / ...    (one option highlighted)
+    A verdict line with no highlight, or more than one, or an unknown label,
+    is reported and left out rather than guessed. Note lines aren't read."""
     if not HAND_CHECK_SHEET.exists():
         return {}
-    out, cur = {}, None
+    out, cur, problems = {}, None, []
     for line in HAND_CHECK_SHEET.read_text(encoding="utf-8").splitlines():
         if (m := re.match(r"^## ([AB]-q\d-r\d)\b", line)):
             cur = m[1]
         elif cur and (m := re.search(r"==verdict:\s*([^=]*?)\s*==", line)):
-            v = m[1].strip().lower()
-            if v in OUTCOMES:
+            if (v := _label(m[1])):
                 out[cur] = v
+        elif cur and re.match(r"^\W*verdict\W*:", line, re.I):
+            marked = re.findall(r"==([^=]+)==", line)
+            v = _label(marked[0]) if len(marked) == 1 else None
+            if v:
+                out[cur] = v
+            elif marked:
+                problems.append(f"{cur}: {line.strip()}")
+    for p in problems:
+        print(f"hand-check sheet: unreadable verdict, left out: {p}", file=sys.stderr)
     return out
 
 
@@ -478,6 +497,9 @@ def cmd_score(args) -> None:
         agree.append("Claude vs Daniel: "
                      f"{sum(daniel[r] == mine[r]['verdict'] for r in both)}/{len(both)}")
     md.append("Agreement on the hand-checked runs: " + ("; ".join(agree) or "none yet") + ".")
+    if daniel:
+        md.append("Daniel's notes on individual runs are in the hand-check sheet "
+                  f"(`{HAND_CHECK_SHEET.name}`, in the vault), not in this table.")
     (OUT / "ablation-table.md").write_text("\n".join(md) + "\n", encoding="utf-8",
                                            newline="\n")
     print("\n".join(md))

@@ -73,3 +73,19 @@ def test_scoring_key_labels_and_number_precision():
     assert s["keys_ungrounded"] == "curve:sg"
     assert ab.key_number(0.0163, "0.016") and not ab.key_number(0.017, "0.016")
     assert ab.key_number(0.070, "0.07") and not ab.key_number(0.076, "0.07")
+
+
+def test_daniel_verdict_forms(tmp_path, monkeypatch):
+    sheet = tmp_path / "sheet.md"
+    sheet.write_text("\n".join([
+        "## A-q1-r1", "verdict: ==🟢correct== / partial / wrong / correct refusal",
+        "Note: fine, ==not a verdict==",
+        "## A-q7-r1", "verdict: correct / partial / wrong / ==🟣correct refusal==",
+        "## B-q1-r1", "==verdict: partial==",
+        "## B-q2-r1", "verdict: ==correct== / ==partial== / wrong / correct refusal",
+        "## B-q3-r1", "verdict: correct / partial / wrong / correct refusal",
+    ]), encoding="utf-8")
+    monkeypatch.setattr(ab, "HAND_CHECK_SHEET", sheet)
+    assert ab.read_daniel_verdicts() == {"A-q1-r1": "correct",
+                                         "A-q7-r1": "correct refusal",
+                                         "B-q1-r1": "partial"}
