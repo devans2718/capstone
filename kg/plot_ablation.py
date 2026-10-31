@@ -119,10 +119,10 @@ def main() -> None:
     ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(0, 1.01),
               ncol=len(handles), frameon=False, fontsize=12)
     fig.text(0.02, 0.025,
-             f"Hatched, A-q7/A-q8: no retrieval in A can answer, and all 6 answers say so. "
+             f"Hatched bars, A-q7/A-q8: no retrieval in A can answer, and all 6 answers say so. "
              f"The rule marks {rule_wrong} of the 6 wrong because they also cite\n"
              f"related findings; both hand checks call all 6 correct refusals.   "
-             f"Hatched, q5: \"partial\" because the answer key wants the span grid's run\n"
+             f"Hatched bars, q5: \"partial\" because the answer key wants the span grid's run\n"
              f"cited by its key, and the answers name it in prose; both hand checks call "
              f"the {len(q5_checked)} checked q5 runs correct.",
              fontsize=10.5, color=INK2, va="bottom")
