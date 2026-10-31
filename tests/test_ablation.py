@@ -63,3 +63,13 @@ def test_scoring_refusal_and_parameter():
     s = ab.score_run(rec("A", "q2", "It changed [crit-rev3-2].",
                          "criterion_provenance", {"revisions": []}, criterion=3))
     assert s["routing"] == 0 and s["outcome"] == "partial"
+
+
+def test_scoring_key_labels_and_number_precision():
+    rows = {"concept": [{"key": "con-flap", "related": ["con-phone: phone"]}],
+            "x": [{"key": "curve:sg:mfcc:r"}]}
+    s = ab.score_run(rec("A", "q1", "A tap [con-flap, con-phone, curve:sg].",
+                         "concept", rows, term="flap"))
+    assert s["keys_ungrounded"] == "curve:sg"
+    assert ab.key_number(0.0163, "0.016") and not ab.key_number(0.017, "0.016")
+    assert ab.key_number(0.070, "0.07") and not ab.key_number(0.076, "0.07")

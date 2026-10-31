@@ -31,7 +31,7 @@ SCORING, PER RUN
               question) that some number in the rows rounds to at the
               answer's precision (a percentage also as a fraction), over all.
     outcome   ANSWER_KEYS items hit (a key that must be cited, a number that
-              must appear): all = correct, some = partial, none = wrong.
+              must appear, at the key's precision or finer): all = correct, some = partial, none = wrong.
               Where the expected outcome is a refusal (A-q7, A-q8): correct
               refusal if the answer says the rows don't answer and cites no
               Finding; otherwise wrong. The hand check can override a label
@@ -255,6 +255,13 @@ def grounded_number(v: float, dec: int, pct: bool, pool: list[float]) -> bool:
     return any(abs(round(r, d) - t) < 10 ** -(d + 3) for t, d in targets for r in pool)
 
 
+def key_number(v: float, x: str) -> bool:
+    """An answer number matches an answer-key number if it rounds to it at the
+    key's precision: +0.0163 (the rows' own figure) is the key's 0.016."""
+    dec = len(x.split(".")[1]) if "." in x else 0
+    return abs(round(v, dec) - float(x)) < 10 ** -(dec + 3)
+
+
 def score_run(rec: dict) -> dict:
     c, q, ans = rec["condition"], rec["question_id"], rec["answer"]
     rows_json = json.dumps(rec["rows"], ensure_ascii=False, default=str)
@@ -266,7 +273,10 @@ def score_run(rec: dict) -> dict:
         routing = int(ch["retrieval"] == exp and PARAMS.get(q, lambda _: True)(ch))
 
     keys = cited_keys(ans)
-    k_ok = [k for k in keys if re.search(r"(?<![\w:-])" + re.escape(k) + r"(?![\w:-])",
+    # A key followed by ":" and a word character is a longer key
+    # (curve:sg vs curve:sg:mfcc:r); followed by ": " it is a label
+    # ("con-phone: phone" in concept's related list).
+    k_ok = [k for k in keys if re.search(r"(?<![\w:-])" + re.escape(k) + r"(?![\w-]|:\w)",
                                          rows_json)]
     q_nums = {v for v, _, _, _ in numbers_in(rec["question"])}
     nums = [n for n in numbers_in(ans) if n[0] not in q_nums]
@@ -283,7 +293,7 @@ def score_run(rec: dict) -> dict:
         items = ANSWER_KEYS[q]
         hit = [x for kind, x in items
                if (kind == "key" and x in keys)
-               or (kind == "num" and any(abs(v - float(x)) < 1e-9 for v in ans_vals))]
+               or (kind == "num" and any(key_number(v, x) for v in ans_vals))]
         hits = f"{len(hit)}/{len(items)}"
         outcome = ("correct" if len(hit) == len(items)
                    else "partial" if hit else "wrong")
