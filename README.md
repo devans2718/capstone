@@ -2,8 +2,7 @@
 
 Layer-wise probing of frozen audio-JEPA representations. Primary encoder:
 WavJEPA. Baselines: wav2vec 2.0, HuBERT, WavLM behind one extraction
-interface. Research questions, scope, and design live in the Obsidian vault
-(`Projects/Capstone/`) — this repo is the executable side only.
+interface.
 
 ## Layout
 
@@ -18,7 +17,7 @@ interface. Research questions, scope, and design live in the Obsidian vault
 | `stimuli/` | Self-recorded audio stimuli (код/кот). Deliberately committed — irreplaceable, GitHub is their offsite backup. | yes |
 | `results/` | Promoted metrics and figures | yes |
 | `notebooks/` | Exploration | yes |
-| `ops/` | Backup script (runs nightly inside WSL) | yes |
+| `ops/` | Git pre-commit hook | yes |
 | `/data` (mount) | `corpora/`, `embeddings/`, `checkpoints/` — never inside the repo | no |
 
 ## Dev workflow
@@ -262,13 +261,6 @@ populate `/data` (`scripts/download_common_voice.sh`; Buckeye by registration,
 then `scripts/setup_buckeye.sh`), run with `--gpus all` and
 `configs/cloud.yaml`. The image is the portability artifact — if it needs a
 rebuild to run remotely, that is a bug.
-
-## Backups
-
-Nightly restic from WSL: tier 1 (this repo) + tier 2 (`/data/embeddings`,
-`/data/checkpoints`) to D: and Backblaze B2. `/data/corpora` is deliberately
-not backed up — re-downloadable. Full design: vault note
-`Reference/Desktop/Capstone Dev Environment (Docker + WSL).md`.
 
 ## This repository and its history
 

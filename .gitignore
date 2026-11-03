@@ -9,9 +9,12 @@ __pycache__/
 outputs/
 wandb/
 
-# Secrets stay out of the repo; recovery chain is documented in the vault
+# Secrets stay out of the repo
 .env
 *.env
+
+# The ablation's hand-check sheet: a reviewer's working notes (see kg/run_ablation.py)
+kg/graphrag-runs/codesign-ablation/ablation-hand-check.md
 
 # Data never lives in the repo — it mounts at /data (see README).
 # Audio is blanket-ignored, then stimuli/ is re-included: self-recorded

@@ -16,4 +16,4 @@
 Questions: q1 What's a flap?; q2 How did criterion 2 get its final form?; q3 Why did the pilot fail, and what's planned to test it?; q4 How does WavJEPA's best layer compare with MFCC under each split condition?; q5 What does registration revision 3 specify that the pilot never used?; q6 What did the span grid find?; q7 Do the flaps' phonetic environments group into communities, and do those communities line up with underlying /t/ versus /d/?; q8 What do the encoders' representations group the flaps by?
 
 Agreement on the hand-checked runs: automatic vs Claude's check: 14/20; automatic vs Daniel's check: 14/20; Claude vs Daniel: 20/20.
-Daniel's notes on individual runs are in the hand-check sheet (`ablation-hand-check.md`, in the vault), not in this table.
+Daniel's notes on individual runs are in the hand-check sheet (`ablation-hand-check.md`), which isn't committed.

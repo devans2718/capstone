@@ -7,8 +7,6 @@ WHAT THIS FILE IS
     recorded (curves from the results CSV, outcomes from the criteria report,
     the run from its manifest, artifact commits from git) and writes the Cypher.
 
-    Schema and reasoning: ai-design-plan.md in the vault (Challenge 3).
-
 THE BUCKEYE RULE
     Nothing here may carry Buckeye-derived data: no words, speaker codes or
     timestamps. Aggregate figures (site counts, balanced accuracies) are fine.

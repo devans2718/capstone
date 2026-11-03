@@ -43,7 +43,8 @@ OUTPUT
     kg/graphrag-runs/codesign-ablation/: one JSON per run (A-q6-r1.json ...),
     with the rows, answer and token usage; scores.csv (per run);
     ablation-table.md and .csv (aggregates). The hand-check sheet for Daniel
-    goes to the vault (HAND_CHECK_SHEET), written once and not overwritten;
+    goes to HAND_CHECK_SHEET (ABLATION_HAND_CHECK_SHEET in the environment or
+    .env; by default beside the runs), written once and not overwritten;
     his verdicts are read back from it. Claude's own check is
     hand-check-claude.json beside the runs.
 
@@ -57,6 +58,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import random
 import re
 import sys
@@ -69,9 +71,10 @@ sys.path.insert(0, str(REPO / "kg"))
 import graphrag  # noqa: E402
 
 OUT = REPO / "kg" / "graphrag-runs" / "codesign-ablation"
-VAULT = Path("/mnt/c/Users/danie/Documents/Obsidian/general/Projects/Capstone/"
-             "Challenges/challenge-4")
-HAND_CHECK_SHEET = VAULT / "ablation-hand-check.md"
+# Loaded here as well as in cmd_run, because `score` reads this setting too.
+graphrag.load_dotenv()
+HAND_CHECK_SHEET = Path(os.environ.get("ABLATION_HAND_CHECK_SHEET")
+                        or OUT / "ablation-hand-check.md")
 CLAUDE_CHECK = OUT / "hand-check-claude.json"
 RUNS_PER_CELL = 3
 SAMPLE_SEED = 20261031
@@ -326,7 +329,7 @@ def _label(text: str) -> str | None:
 
 
 def read_daniel_verdicts() -> dict[str, str]:
-    """Daniel's verdicts from the vault sheet, in either form he may use:
+    """Daniel's verdicts from the hand-check sheet, in either form he may use:
         ==verdict: correct==                              (the sheet's form)
         verdict: ==🟢correct== / partial / wrong / ...    (one option highlighted)
     A verdict line with no highlight, or more than one, or an unknown label,
@@ -499,7 +502,7 @@ def cmd_score(args) -> None:
     md.append("Agreement on the hand-checked runs: " + ("; ".join(agree) or "none yet") + ".")
     if daniel:
         md.append("Daniel's notes on individual runs are in the hand-check sheet "
-                  f"(`{HAND_CHECK_SHEET.name}`, in the vault), not in this table.")
+                  f"(`{HAND_CHECK_SHEET.name}`), which isn't committed.")
     (OUT / "ablation-table.md").write_text("\n".join(md) + "\n", encoding="utf-8",
                                            newline="\n")
     print("\n".join(md))
@@ -513,7 +516,7 @@ def main() -> None:
     r.add_argument("--runs", type=int, default=RUNS_PER_CELL)
     s = sub.add_parser("score")
     s.add_argument("--rewrite-sheet", action="store_true",
-                   help="rewrite the vault's hand-check sheet even if it exists "
+                   help="rewrite the hand-check sheet even if it exists "
                         "(verdicts are kept, notes are not)")
     args = ap.parse_args()
     {"run": cmd_run, "score": cmd_score}[args.cmd](args)

@@ -3,7 +3,7 @@
 # verify_common_voice.sh — measure what the Common Voice tarball actually contains
 #
 # WHY THIS EXISTS
-#   The corpus figures recorded in the vault (1,138,688 clips / 1,643 validated
+#   The corpus figures first recorded for this project (1,138,688 clips / 1,643 validated
 #   hours / 67.4 GB) came from Mozilla's per-release JSON. The 67.4 GB figure was
 #   disproven on 2026-08-05 — the real archive is 7,060,217,902 bytes, ~10x
 #   smaller — which removes the corroboration the hours figure was resting on.
@@ -16,7 +16,7 @@
 #   it instead of assuming it.
 #
 #   Output is written to a dated report so the numbers land in the record rather
-#   than scrolling past. Correct the vault TODO from that report, not from memory.
+#   than scrolling past. Correct the project's notes from that report, not from memory.
 #
 # USAGE
 #   ./scripts/verify_common_voice.sh [corpus_root]
@@ -61,7 +61,7 @@ echo
 echo "=== clips ==="
 MP3_COUNT=$(find "$ROOT" -name '*.mp3' | wc -l)
 echo "  mp3 files on disk : $MP3_COUNT"
-echo "  vault claim       : 1138688"
+echo "  earlier figure    : 1138688"
 if [[ "$MP3_COUNT" -gt 0 ]]; then
     echo "  ratio to claim    : $(awk -v a="$MP3_COUNT" 'BEGIN { printf "%.3f", a/1138688 }')"
 fi
@@ -86,7 +86,7 @@ if [[ -n "$DUR_TSV" ]]; then
     awk -F'\t' 'NR > 1 { ms += $2 } END {
         printf "  clips: %d\n  total: %.1f hours\n", NR-1, ms/1000/3600
     }' "$DUR_TSV"
-    echo "  vault claim: 1643 validated hours / 1845 total"
+    echo "  earlier figure: 1643 validated hours / 1845 total"
     echo
 fi
 
@@ -128,7 +128,7 @@ else
         { n++; d += $4; b += $3 }
         END {
             if (n) {
-                printf "  mean clip duration : %.3f s   (vault claim: 5.203 s)\n", d/n
+                printf "  mean clip duration : %.3f s   (earlier figure: 5.203 s)\n", d/n
                 printf "  mean bitrate       : %.1f kbps\n", b/n/1000
             }
         }' "$TMP"
@@ -150,7 +150,7 @@ echo "=== speakers ==="
 VAL_TSV=$(find "$ROOT" -name 'validated.tsv' | head -1)
 if [[ -n "$VAL_TSV" ]]; then
     echo "  distinct client_id in validated.tsv: $(awk -F'\t' 'NR>1 { print $1 }' "$VAL_TSV" | sort -u | wc -l)"
-    echo "  vault claim: 36393 speakers"
+    echo "  earlier figure: 36393 speakers"
 else
     echo "  validated.tsv not found; skipping"
 fi

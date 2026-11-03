@@ -15,7 +15,7 @@ Common Voice verification
 
 === clips ===
   mp3 files on disk : 202634
-  vault claim       : 1138688
+  earlier figure    : 1138688
   ratio to claim    : 0.178
 
 === TSV manifests ===
@@ -33,7 +33,7 @@ Common Voice verification
 === total duration (from clip_durations.tsv, exact) ===
   clips: 202634
   total: 291.6 hours
-  vault claim: 1643 validated hours / 1845 total
+  earlier figure: 1643 validated hours / 1845 total
 
 === audio properties (sample of 50) ===
   sample rates:
@@ -45,7 +45,7 @@ Common Voice verification
      25     64 kbps
      25     48 kbps
 
-  mean clip duration : 4.907 s   (vault claim: 5.203 s)
+  mean clip duration : 4.907 s   (earlier figure: 5.203 s)
   mean bitrate       : 56.0 kbps
 
   INTERPRETATION:
@@ -58,6 +58,6 @@ Common Voice verification
 
 === speakers ===
   distinct client_id in validated.tsv: 3286
-  vault claim: 36393 speakers
+  earlier figure: 36393 speakers
 
 report written to: /home/daniel/code/capstone/results/corpus-verification/common-voice-ru-20260805.txt

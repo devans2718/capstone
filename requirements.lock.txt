@@ -10,7 +10,7 @@
 # Use it to answer "what exactly was installed when this worked?" and to diff
 # against a future build that misbehaves.
 # Python in the image: 3.11.12 (base image ships it; upstream pins 3.12.9 for
-# their training scripts, which we do not run — see vault Task 1).
+# their training scripts, which we do not run).
 
 archspec @ file:///home/conda/feedstock_root/build_artifacts/archspec_1737352602016/work
 asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1733250440834/work
