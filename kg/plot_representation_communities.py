@@ -12,7 +12,7 @@ HOW TO RUN (from the repo root, in WSL)
 
 WHAT THEY SHOW
     representation-comparison  left: AMI of each representation's communities
-                               (and the 10-28 Site-Phone partition, for
+                               (and the Site-Phone partition, for
                                reference) with the environments, speaker, word,
                                lemma and the Site-Phone partition; the seeded
                                value, with its range over seeds 1-20 beneath.
@@ -70,7 +70,7 @@ def comparison_figure(s: dict, out: Path) -> None:
     ref = s["site_phone_reference"]
     rows = [(row_label(k, v), v["comparison"], v["stability"]["ami_range"])
             for k, v in reps.items()]
-    rows.append(("Site–Phone (10-28)\n20 communities", ref["comparison"], None))
+    rows.append(("Site–Phone (built 10-28,\nre-run 10-29)\n20 communities", ref["comparison"], None))
 
     fig, (ax, bx) = plt.subplots(1, 2, figsize=(13, 4.8), facecolor=SURFACE,
                                  gridspec_kw={"width_ratios": [3.2, 1], "wspace": 0.08})

@@ -106,7 +106,7 @@ def main() -> None:
         ax.spines[side].set_visible(False)
     ax.spines["bottom"].set_color("#c3c2b7")
 
-    fig.suptitle("Adding the communities retrieval: same answers on q1–q6, "
+    fig.suptitle("Adding the communities retrieval: same outcomes on q1–q6, "
                  "correct answers on q7–q8", x=0.02, ha="left", fontsize=17,
                  color=INK, fontweight="bold")
     fig.text(0.02, 0.885, "A = the original six retrievals · B = seven, with "
