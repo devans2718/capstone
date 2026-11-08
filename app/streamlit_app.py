@@ -410,7 +410,10 @@ def verdict_form(site_id: str, *, audit: bool, view: dict, prefix: str,
 
 # --------------------------------------------------------------------- layout
 
-st.set_page_config(page_title="PhonoProbe", layout="wide")
+# The logo: a lens over the flap, drawn by make_logo.py in the vault's
+# Posters/phonoprobe-logo/ (original, no third-party art).
+LOGO = ASSETS / "phonoprobe-logo.png"
+st.set_page_config(page_title="PhonoProbe", page_icon=str(LOGO), layout="wide")
 # Wide, for the tables, but capped: on a large monitor every box and line of
 # text otherwise stretches edge to edge.
 # Prose and alert boxes are capped at a readable line length on top of that;
@@ -441,7 +444,9 @@ results = load_probe_results(STAMP)
 BEST = best_layers(results)
 
 head, intro = st.columns([2, 3], vertical_alignment="center")
-head.title("PhonoProbe")
+mark, name = head.columns([1, 4], vertical_alignment="center")
+mark.image(str(LOGO), width="stretch")
+name.title("PhonoProbe")
 head.subheader("Was that flap a /t/ or a /d/?")
 intro.write(
     "In American English the *t* in **water** and the *d* in **ladder** both come "
@@ -682,12 +687,15 @@ with tab_question:
         "little, and not reliably."
     )
     words.info(
-        "Listeners still know which word they heard: the difference is gone "
-        "from the sound but kept in the language. **The question: does a "
-        "self-supervised speech model keep it too — the dictionary /t/ or /d/ "
-        "— or only the sound it actually heard?** The next tab has the "
-        "pre-registered answer, measured on 10,389 real flaps from recorded "
-        "conversation."
+        "In *Say ___ again*, nothing tells the American pair apart: only a "
+        "sentence that makes sense of one word would, like *The rider flew "
+        "down the hill*. The difference is kept in the words — speakers know "
+        "*writer* has a /t/ — but not in the sound. **The question: does a "
+        "self-supervised speech model still carry a trace of the dictionary "
+        "/t/ or /d/, in the flap or the sounds right around it, or only the "
+        "sound it actually heard?** A probe on the model's layers tests that "
+        "on 10,389 real flaps from recorded conversation; the next tab has "
+        "the pre-registered answer."
     )
 
 # ---------------------------------------------------------------- how built
