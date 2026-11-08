@@ -1,6 +1,7 @@
 # Read by Streamlit when the app is started from the repo root, as the README does.
 
 [client]
-# Hides Streamlit's developer controls (the Deploy button and the developer
-# options in the menu): the app's readers aren't its developers.
-toolbarMode = "minimal"
+# Viewer mode: the menu keeps Rerun, Settings (the light or dark theme),
+# Print and Record a screencast, and drops the developer controls, the Deploy
+# button among them: the app's readers aren't its developers.
+toolbarMode = "viewer"
