@@ -740,6 +740,13 @@ with tab_result:
         verdict = verdict.split(" — see ")[0]
         box, scope = st.columns([1, 3], vertical_alignment="center")
         box.error(f"**{verdict}**  \n{n_pass} of {len(crit)} criteria pass.")
+        # The question tab's question, answered in a line, before the table.
+        st.markdown(
+            "**In short: no detectable trace.** With speakers and words held "
+            "out, WavJEPA's best layer guesses /t/ or /d/ barely above chance "
+            "(0.544 balanced accuracy, chance 0.50), and can't be told apart "
+            "from MFCC, a plain acoustic summary (0.527)."
+        )
         # The report's second line states what was scored, on what, over
         # how many sites. Quoted, not paraphrased.
         scope.caption(lines[1] if len(lines) > 1 else "")
@@ -774,7 +781,8 @@ with tab_evidence:
     st.write(
         "Every flap the probe scored, filtered here: the split, the layer, "
         "/t/ or /d/, and whether the probe got it right. Pick one below to "
-        "hear it."
+        "hear it, and try telling /t/ from /d/ by ear without looking at the "
+        "word: it's the probe's task."
     )
     condition, layer, pooling = slice_controls("hear")
     a, b = st.columns(2)
@@ -878,10 +886,12 @@ with tab_evidence:
 
 with tab_compare:
     st.write(
-        "A model that has memorised *water → /t/* will look good until you test "
-        "it on words it never saw in training. That is what `word_disjoint` "
-        "does. If accuracy drops when you switch to it, memorising is part of "
-        "what was going on — and the sites that flipped are the evidence."
+        "Almost every flap's /t/ or /d/ follows from its word (99.5% of "
+        "sites): knowing the word is enough to know the label. So a model that recognizes *water* can "
+        "\"guess\" its /t/ without hearing anything in the flap. Testing on "
+        "words never seen in training is what `word_disjoint` does. If "
+        "accuracy drops when you switch to it, recognizing the word was part "
+        "of what was going on — and the sites that flipped are the evidence."
     )
     fig, reading = st.columns([3, 2])
     fig.image(str(FIGURES / "condition-drop.png"),
@@ -892,6 +902,16 @@ with tab_compare:
             "(−0.093, `random` → `word_disjoint`); holding out speakers "
             "costs −0.025. That pattern is consistent with a probe partly "
             "recognizing the words rather than hearing the flaps."
+        )
+        # The leak-or-shortcut reading (vault: Research/leak-vs-shortcut).
+        st.caption(
+            "Even the score left under `joint` may not be a trace of the "
+            "flap. Holding out word forms doesn't stop a model from "
+            "recognizing a suffix, a related word, or the words around the "
+            "flap, which it hears in the same excerpt. The split rules out "
+            "leaks; it can't rule out that shortcut. Telling them apart needs "
+            "tests not yet run: cropping the context away, or probing the "
+            "context alone."
         )
     st.markdown("#### The sites that flipped")
     a, b, d = st.columns(3)
@@ -960,8 +980,9 @@ with tab_compare:
             "of grouping the flaps, by adjusted mutual information (0 = "
             "unrelated). WavJEPA's clusters follow the speaker most (0.234, "
             "the largest for any representation and grouping); MFCC's follow "
-            "the surrounding sounds most. None follows /t/ vs /d/ (at most "
-            "0.007)."
+            "the surrounding sounds most; wav2vec2-base's, the model that "
+            "scores highest, follow the word most. None follows /t/ vs /d/ "
+            "(at most 0.007)."
         )
 
 # ----------------------------------------------------------------- site lookup
