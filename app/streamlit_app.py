@@ -15,8 +15,10 @@ WHY THE BANNER IS CHOSEN BY THE MANIFEST
     right while no real run existed. Now one does, and the guard is replaced by
     render_banner(): it reads the manifest's own `synthetic` field, which has
     no default and is written by the run itself, and draws the synthetic
-    warning or the real-run provenance before anything else on the page. There
-    is no second flag in this file to forget. Point the app back at the
+    warning before anything else on the page. A real run gets no banner (the
+    Result tab states the verdict); its provenance is in Run details, at the
+    foot of How it was built, out of the way of readers who aren't checking it. There is no
+    second flag in this file to forget. Point the app back at the
     synthetic run and the synthetic banner and wording return with it.
 
 WHY THERE ARE TWO UNCERTAINTY SECTIONS AND NOT ONE NUMBER
@@ -27,8 +29,14 @@ WHY THERE ARE TWO UNCERTAINTY SECTIONS AND NOT ONE NUMBER
     which half had moved, and the two have different remedies — better
     alignment versus a different probe or split.
 
-    So they are rendered in separate sections, labelled by provenance, and the
-    code has no function that combines them.
+    So they are rendered in separate places, labelled by provenance: what was
+    left out under "Can the data be trusted?", the intervals under the Result
+    tab's per-layer table. The code has no function that combines them.
+
+THE TABS FOLLOW THE STUDY'S ARGUMENT
+    The result; why (the word split); the flaps themselves; whether the data
+    holds; then questions to the graph. Looking up one site's state comes
+    last: it is for checking the run, not for following the argument.
 """
 
 from __future__ import annotations
@@ -72,6 +80,32 @@ CLIPS = Path("/data/clips")
 # well as all of them — the true count is always shown beside the cap, so the
 # list cannot be read as the total.
 LOOKUP_LIMIT = 200
+
+# The poster's and video's figures, rendered for each theme by
+# app_figures.py in the vault's video folder (they are drawn there, from the
+# poster's and the frames' sources). The four intro clips are Kokoro-82M
+# syntheses of "Say ___ again."
+ASSETS = ROOT / "app" / "assets"
+INTRO_CLIPS = [  # (file stem, word, dictionary sound, accent, IPA)
+    # As heard, not as sent: Kokoro's British voice r-colours the ending
+    # too (F3 measured 2026-11-08), though its phonemes asked for a plain ə.
+    ("us-writer-flap", "writer", "t", "American", "[ˈɹaɪɾɚ]"),
+    ("us-rider-flap", "rider", "d", "American", "[ˈɹaɪɾɚ]"),
+    ("gb-writer-text", "writer", "t", "British", "[ˈɹaɪtɚ]"),
+    ("gb-rider-text", "rider", "d", "British", "[ˈɹaɪdɚ]"),
+]
+
+# The Hear the flaps table, as a listener reads it. The store's other columns
+# (samples, frame counts, the slice) stay under "All columns".
+LISTENER_COLUMNS = ["transcript", "word", "underlying", "pred", "correct", "p_t",
+                    "speaker", "duration_ms"]
+LISTENER_LABELS = {
+    "underlying": "dictionary sound",
+    "pred": "model guessed",
+    "correct": st.column_config.CheckboxColumn("right?"),
+    "p_t": st.column_config.NumberColumn("probability of /t/", format="%.3f"),
+    "duration_ms": st.column_config.NumberColumn("flap (ms)", format="%.0f"),
+}
 
 # The listening audit's sample (pre-registration §7, 2026-09-26). Drawn once
 # by scripts/draw_audit_sample.py; the questions are capstone.audit's.
@@ -133,13 +167,8 @@ def render_banner(manifest: Manifest, criteria_text: str | None) -> None:
             "number means anything. **Nothing on this page is a finding about /t/ or /d/.**"
         )
         return
-    verdict = next((line for line in (criteria_text or "").splitlines()
-                    if line.startswith("PILOT:")), "criteria report not found")
-    st.info(
-        f"**REAL RUN — `{manifest.run_id}`.** Predictions from code "
-        f"`{manifest.code_commit[:7]}` (run manifest); criteria report committed "
-        f"in `{criteria_commit()}`.  \n**{verdict}**"
-    )
+    # A real run needs no warning at the top: the Result tab states the
+    # verdict, and the run's provenance is in Run details (How it was built).
 
 
 def parse_criteria(text: str) -> list[dict]:
@@ -177,7 +206,7 @@ def best_layers(results) -> dict:
     Mean pooling, headline run, read from the committed results CSV. This is
     a default for the view, not a finding: it is where this run happened to
     peak, chosen after the fact, and on joint the layers are close together.
-    The sidebar says so next to it.
+    Each tab's layer picker says so next to it (slice_controls).
     """
     head = results[(results.encoder == "wavjepa") & (results.pooling == "mean")
                    & (~results.subsampled)]
@@ -381,7 +410,17 @@ def verdict_form(site_id: str, *, audit: bool, view: dict, prefix: str,
 
 # --------------------------------------------------------------------- layout
 
-st.set_page_config(page_title="Flapping slice", layout="wide")
+st.set_page_config(page_title="PhonoProbe", layout="wide")
+# Wide, for the tables, but capped: on a large monitor every box and line of
+# text otherwise stretches edge to edge.
+# Prose and alert boxes are capped at a readable line length on top of that;
+# tables and figures keep the full width. Columns stack on a phone by
+# themselves, so the side-by-side layouts below need no mobile case.
+st.markdown(
+    "<style>.block-container { max-width: 1600px; }"
+    " .stMarkdown p, .stMarkdown li { max-width: 85ch; }"
+    " [data-testid='stAlert'] { max-width: 85ch; }</style>",
+    unsafe_allow_html=True)
 
 missing = [p for p in (INVENTORY, PREDICTIONS, MANIFEST) if not p.exists()]
 if missing:
@@ -401,27 +440,65 @@ stats = load_stats(STAMP)
 results = load_probe_results(STAMP)
 BEST = best_layers(results)
 
-st.title("Was that flap a /t/ or a /d/?")
-st.write(
+head, intro = st.columns([2, 3], vertical_alignment="center")
+head.title("PhonoProbe")
+head.subheader("Was that flap a /t/ or a /d/?")
+intro.write(
     "In American English the *t* in **water** and the *d* in **ladder** both come "
-    "out as the same quick tap — a flap. This page is for looking at individual "
-    "flaps in recorded speech, hearing them, and checking what the model said "
-    "about each one. Every site is 10–130 ms of audio inside a real conversation."
+    "out as the same quick tap of the tongue — a *flap* — so by ear you usually "
+    "can't tell which it was. PhonoProbe asks whether a speech model, WavJEPA, "
+    "still keeps track: a small classifier trained on the model's internal "
+    "layers guesses /t/ or /d/ for flaps in recorded conversation. This page "
+    "shows the result, plays the flaps behind it, and answers questions about "
+    "the study from its knowledge graph."
 )
-st.caption(
-    f"run `{manifest.run_id}` · code `{manifest.code_commit[:12]}` · "
-    f"inventory `{manifest.inventory_hash[:12]}` · checkpoint "
-    f"`{manifest.checkpoint_revision}` · context {manifest.context_ms:.0f} ms · "
-    "seeds " + ", ".join(f"{k} {v}" for k, v in sorted(manifest.seeds.items()))
-)
-
-# The condition and layer live in session_state under fixed keys, so every
-# view reads the same slice. Changing the condition moves the layer to that
-# condition's default; the layer can then be moved by hand.
-st.session_state.setdefault("condition", "joint")
-st.session_state.setdefault("layer", BEST["joint"]["layer"])
-st.session_state.setdefault("pooling", "mean")
-
+# The page's readers know data science, not phonetics: the terms they will
+# meet below, in one place, instead of a gloss on every line.
+with intro.expander("Terms used on this page"):
+    st.markdown(
+        "- **/t/, /d/** — the sound the word has in its dictionary form: "
+        "*water* has a /t/, even when it's pronounced with a flap.\n"
+        "- **Flap** — the quick tap that both become between vowels, as in "
+        "*water* and *ladder*.\n"
+        "- **/ / and [ ]** — slashes hold the sound in the word's dictionary "
+        "form; square brackets hold what was actually said, in the "
+        "International Phonetic Alphabet.\n"
+        "- **ɹ, ɾ, ɚ** — **ɹ** is the ordinary English r, **ɾ** the flap, "
+        "and **ɚ** the r-colored vowel at the end of *writer*. In the "
+        "follow-up chart, **V** stands for a vowel.\n"
+        "- **Underlying** — linguists' word for the dictionary sound: an "
+        "underlying /t/ is the /t/ in *water*.\n"
+        "- **Lemma** — a word's dictionary headword: *write*, *writes* and "
+        "*writing* share one.\n"
+        "- **Site** — one flap in the recordings: one word, said once, by "
+        "one speaker.\n"
+        "- **WavJEPA** — a self-supervised speech model: it learned from audio "
+        "alone, with no transcripts. It has 13 layers (0–12). "
+        "**wav2vec2-base**, a widely used model of the same kind, is the "
+        "comparison in the follow-ups.\n"
+        "- **Frames, pooling** — a model reads audio as a sequence of short "
+        "slices, frames, and a flap spans a few. Pooling turns those few into "
+        "one vector: their mean, their max, or the middle one.\n"
+        "- **Probe** — a simple classifier trained on one layer's output, to "
+        "test whether the information is in there.\n"
+        "- **Control task** — the same probe trained on made-up labels: each "
+        "word assigned /t/ or /d/ at random. With no word in both training "
+        "and test, it should score at chance; if it doesn't, word identity "
+        "is leaking from one to the other (criterion 2).\n"
+        "- **MFCC** — a standard, hand-designed summary of a sound's spectrum, "
+        "long used in speech recognition. The baseline: if the model's layers "
+        "can't beat it, they add nothing a plain acoustic feature doesn't.\n"
+        "- **Splits** — how flaps were divided into training and test: "
+        "`random`; `speaker_disjoint` (no speaker in both); `word_disjoint` "
+        "(no word in both); `joint` (no speaker and no word in both), the "
+        "design registered in advance.\n"
+        "- **Balanced accuracy** — the average of the accuracy on /t/ and on "
+        "/d/, so guessing the commoner one scores 0.50: chance.\n"
+        "- **Pre-registered** — the pass/fail criteria were written down "
+        "before the run. **Amendments** are later, dated changes to that "
+        "registration, each saying whether it came before or after the "
+        "results."
+    )
 
 @st.cache_resource
 def load_graphrag():
@@ -440,66 +517,205 @@ def load_graphrag():
     return module
 
 
-def to_default_layer() -> None:
-    st.session_state.layer = BEST[st.session_state.condition]["layer"]
-    st.session_state.result_condition = st.session_state.condition
+# No sidebar: each tab carries the controls it uses, where they apply, and
+# starts at the registered design (joint, mean pooling). The run has one
+# encoder in its predictions, and the page shows the headline run; the
+# subsampled secondary run stays in the results CSV and the knowledge graph
+# (find-training).
+ENCODER = "wavjepa"
+SUBSAMPLED = False
+POOLINGS = ["mean", "max", "midpoint"]
+LAYERS = list(range(13))
 
 
-def from_result_view() -> None:
-    """The Result tab's selector drives the site view: same condition, its layer."""
-    st.session_state.condition = st.session_state.result_condition
-    st.session_state.layer = BEST[st.session_state.condition]["layer"]
+def slice_controls(prefix: str, *, split: bool = True,
+                   default: str = "joint") -> tuple[str, int, str]:
+    """A tab's own split, layer and pooling pickers, keyed by `prefix`.
 
+    The layer starts at the split's best layer and moves with the split; it
+    can then be moved by hand. Without `split`, the
+    tab chooses its splits itself and the layer starts at `default`'s best.
+    """
+    ck, lk, pk = f"{prefix}_condition", f"{prefix}_layer", f"{prefix}_pooling"
+    st.session_state.setdefault(ck, default)
+    st.session_state.setdefault(lk, BEST[st.session_state[ck]]["layer"])
+    st.session_state.setdefault(pk, "mean")
 
-st.session_state.setdefault("result_condition", st.session_state.condition)
+    def follow_split() -> None:
+        st.session_state[lk] = BEST[st.session_state[ck]]["layer"]
 
-
-with st.sidebar:
-    st.header("Query")
-    condition = st.selectbox("How train/test was split", CONDITIONS,
-                             key="condition", on_change=to_default_layer)
-    st.caption(
-        "`random` — words and speakers can appear in both train and test.  \n"
-        "`speaker_disjoint` — a speaker is in one or the other, never both.  \n"
-        "`word_disjoint` — a word type is in one or the other, never both.  \n"
-        "`joint` — word-split *and* speaker-split: the pre-registered design."
-    )
-    encoder = st.selectbox("Encoder", ["wavjepa"])
-    layer = st.selectbox("Encoder layer", list(range(13)), key="layer")
-    best = BEST[condition]
-    st.caption(
-        f"Starts at layer {best['layer']}: the layer that happened to score "
-        f"highest under `{condition}` on this run (mean pooling, "
-        f"{best['ba']:.3f}). Picked after the fact, not in advance, and not a "
-        f"finding — the 13 layers span only {best['spread']:.3f} here."
-    )
-    pooling = st.selectbox("Pooling over the flap", ["mean", "max", "midpoint"],
-                           key="pooling")
-    if condition == "joint":
-        subsampled = False
-        st.caption("`joint` has no subsampled run; showing the headline run.")
+    if split:
+        a, b, c = st.columns(3)
+        cond = a.selectbox("Split", CONDITIONS, key=ck, on_change=follow_split)
     else:
-        subsampled = st.toggle("Subsampled training (secondary run)", value=False)
-    underlying = st.selectbox("Underlying sound", ["either", "t", "d"],
-                              format_func=lambda v: {"either": "either",
-                                                     "t": "/t/ (water, city)",
-                                                     "d": "/d/ (ladder, ready)"}[v])
-    correctness = st.selectbox("Model got it", ["either", "correct", "misclassified"],
-                               format_func=lambda v: {"either": "either",
-                                                      "correct": "right",
-                                                      "misclassified": "wrong"}[v])
-    st.divider()
-    st.caption(f"Split scheme recorded in the manifest:\n\n`{manifest.split_scheme}`")
+        b, c = st.columns(2)
+        cond = st.session_state[ck]
+    layer = b.selectbox("WavJEPA layer", LAYERS, key=lk)
+    pooling = c.selectbox("Pooling over the flap", POOLINGS, key=pk)
+    best = BEST[cond]
+    st.caption(
+        f"The layer starts at {best['layer']}, the one that happened to score "
+        f"highest under `{cond}` on this run (mean pooling, {best['ba']:.3f}): "
+        f"picked after the fact, not a finding. The 13 layers span only "
+        f"{best['spread']:.3f} there."
+    )
+    return cond, layer, pooling
 
-u = None if underlying == "either" else underlying
-c = None if correctness == "either" else (correctness == "correct")
 
-(tab_result, tab_evidence, tab_compare, tab_uncertainty, tab_state, tab_audit,
- tab_graph) = st.tabs(
-    ["Result", "Browse and listen", "Compare two splits",
-     "What this can and can't tell you", "Look up one site", "Audit (blind)",
-     "Ask the graph"]
+def render_run_details() -> None:
+    """Provenance for anyone checking the run, out of everyone else's way."""
+    if SYNTHETIC:
+        return
+    with st.expander("Run details"):
+        st.caption(
+            f"run `{manifest.run_id}` · predictions from code "
+            f"`{manifest.code_commit[:12]}` · criteria report committed in "
+            f"`{criteria_commit()}` · inventory "
+            f"`{manifest.inventory_hash[:12]}` · checkpoint "
+            f"`{manifest.checkpoint_revision}` · context "
+            f"{manifest.context_ms:.0f} ms · seeds "
+            + ", ".join(f"{k} {v}" for k, v in sorted(manifest.seeds.items()))
+        )
+        st.caption(f"Split scheme:\n\n`{manifest.split_scheme}`")
+
+
+def themed(name: str) -> str:
+    """The figure's variant for the theme the viewer sees; dark if unknown."""
+    theme = getattr(st.context.theme, "type", None) or "dark"
+    return str(ASSETS / "figures" / theme / name)
+
+
+def render_layer_table() -> None:
+    """The probe's own uncertainty: per-layer intervals, for a chosen split.
+
+    Kept apart from what the inventory left out (the data tab); see the
+    module docstring for why the two are never combined.
+    """
+    if SYNTHETIC:
+        st.error(
+            "Every `p_t` on this page is a random number. It is labeled wherever it "
+            "appears. It is not weak evidence about /t/ and /d/ — it is no evidence, "
+            "and averaging a lot of it together does not turn it into any."
+        )
+        return
+    # Every layer is in the table, so only the split and the pooling are picked.
+    a, b = st.columns(2)
+    condition = a.selectbox("Split", CONDITIONS, index=CONDITIONS.index("joint"),
+                            key="table_condition")
+    pooling = b.selectbox("Pooling over the flap", POOLINGS, key="table_pooling")
+    st.caption(
+        "Balanced accuracy over all scored sites, with the 95% interval from "
+        "a bootstrap over word types. Chance is 0.50. The control column is "
+        "the same probe on the control task."
+    )
+    sel = results[(results.condition == condition) & (results.pooling == pooling)
+                  & (results.subsampled == SUBSAMPLED)]
+    wj = sel[sel.encoder == "wavjepa"]
+    table = wj[["layer", "balanced_acc", "ci_lo", "ci_hi",
+                "control_balanced_acc", "f1_d", "n"]].rename(columns={
+        "balanced_acc": "balanced accuracy", "ci_lo": "95% low",
+        "ci_hi": "95% high", "control_balanced_acc": "control",
+        "f1_d": "/d/ F1", "n": "sites"})
+    st.dataframe(table, hide_index=True, width="stretch",
+                 column_config={col: st.column_config.NumberColumn(format="%.3f")
+                                for col in ["balanced accuracy", "95% low",
+                                            "95% high", "control", "/d/ F1"]})
+    mf = sel[sel.encoder == "mfcc"]
+    if not mf.empty:
+        m0 = mf.iloc[0]
+        st.caption(f"MFCC baseline, same slice: {m0.balanced_acc:.3f} "
+                   f"[{m0.ci_lo:.3f}, {m0.ci_hi:.3f}].")
+
+
+# The listening audit's committed report, one line per question and class:
+#   flap  /t/  reviewed 40/40  yes 38  no  2  can't tell  0  rate 0.950 [0.835, 0.986]
+AUDIT_LINE = re.compile(
+    r"^\s*(\w+)\s+/(\w)/\s+reviewed (\d+)/(\d+)\s+yes\s+(\d+)\s+no\s+(\d+)\s+"
+    r"can't tell\s+(\d+)\s+rate ([\d.]+) \[([\d.]+), ([\d.]+)\]")
+
+
+def parse_audit(text: str) -> list[dict]:
+    """The audit report's per-question rows, read from the report, not retyped."""
+    rows = []
+    for line in text.splitlines():
+        m = AUDIT_LINE.match(line)
+        if m:
+            q, cls, _, _, yes, no, cant, rate, lo, hi = m.groups()
+            rows.append({"question": AUDIT_TARGETS.get(q, q), "key": q,
+                         "class": f"/{cls}/", "yes": int(yes), "no": int(no),
+                         "can't tell": int(cant), "rate": float(rate),
+                         "95% interval": f"[{lo}, {hi}]"})
+    return rows
+
+(tab_question, tab_result, tab_compare, tab_evidence, tab_data, tab_graph,
+ tab_built, tab_state) = st.tabs(
+    ["The question", "The result", "Listening, or recognizing the word?",
+     "Hear the flaps", "Can the data be trusted?", "Ask the graph",
+     "How it was built", "Look up one site"]
 )
+
+# ------------------------------------------------------------------- question
+
+with tab_question:
+    grid, words = st.columns([3, 2], gap="large")
+    # Two by two, as in the video's frame: accents down, words across.
+    with grid:
+        for accent in ("American", "British"):
+            st.markdown(f"**{accent}**")
+            cells = st.columns(2)
+            for cell, (stem, word, sound, _, ipa) in zip(
+                    cells, [c for c in INTRO_CLIPS if c[3] == accent]):
+                with cell:
+                    st.markdown(f"*{word}* · /{sound}/ · heard as {ipa}")
+                    st.image(themed(f"wave-{stem}.png"), width="stretch")
+                    st.audio(str(ASSETS / "audio" / f"{stem}.wav"))
+    words.write(
+        "Two words, two accents. In American English *writer* and *rider* can "
+        "sound alike: the /t/ and the /d/ both become the same quick tap. "
+        "British English keeps them apart. Listen, and compare the shaded "
+        "stretch of each waveform."
+    )
+    words.caption(
+        "Synthesized with Kokoro-82M, “Say ___ again.” The American pair was "
+        "made from the same sounds with the tap forced, so it is identical by "
+        "construction: the extreme case. Real speakers differ at most a "
+        "little, and not reliably."
+    )
+    words.info(
+        "Listeners still know which word they heard: the difference is gone "
+        "from the sound but kept in the language. **The question: does a "
+        "self-supervised speech model keep it too — the dictionary /t/ or /d/ "
+        "— or only the sound it actually heard?** The next tab has the "
+        "pre-registered answer, measured on 10,389 real flaps from recorded "
+        "conversation."
+    )
+
+# ---------------------------------------------------------------- how built
+
+with tab_built:
+    # Half width: the diagram is tall, and wider would push its lower bands
+    # off the first screen.
+    fig, words = st.columns(2, gap="large")
+    fig.image(themed("architecture.png"), width="stretch")
+    with words:
+        st.markdown(
+            "**Data.** Flaps from the Buckeye corpus: recorded conversations "
+            "of 40 speakers of American English, each flap labeled /t/ or "
+            "/d/ from its word's dictionary form.\n\n"
+            "**Probing.** Around each flap, a short excerpt goes through "
+            "frozen speech models — WavJEPA and wav2vec2-base — and through "
+            "MFCCs, the baseline. A linear probe at every layer guesses /t/ "
+            "or /d/, scored on speakers and words it never trained on. The "
+            "pass/fail criteria were registered before any probe ran.\n\n"
+            "**Knowledge graph.** The study itself — registrations, runs, "
+            "results, findings, code — in Neo4j, linked to the flaps they "
+            "describe.\n\n"
+            "**App.** This page. Ask the graph lets Claude pick one of seven "
+            "reviewed queries and answer only from the rows it returns."
+        )
+        st.caption("The diagram's 10,334 is the follow-up span study's count: "
+                   "the pilot's 10,389 less 55 registered exclusions.")
+        render_run_details()
 
 # --------------------------------------------------------------------- result
 
@@ -512,78 +728,76 @@ with tab_result:
         crit = parse_criteria(criteria_text)
         n_pass = sum(r["result"] == "PASS" for r in crit)
         st.subheader("The pre-registered result")
-        st.error(f"**{verdict}**  \n{n_pass} of {len(crit)} criteria pass.")
+        # The report's pointer to its own §5 means nothing on this page.
+        verdict = verdict.split(" — see ")[0]
+        box, scope = st.columns([1, 3], vertical_alignment="center")
+        box.error(f"**{verdict}**  \n{n_pass} of {len(crit)} criteria pass.")
         # The report's second line states what was scored, on what, over
         # how many sites. Quoted, not paraphrased.
-        st.caption(lines[1] if len(lines) > 1 else "")
+        scope.caption(lines[1] if len(lines) > 1 else "")
+        # PASS/FAIL beside the criterion, so a narrow screen that scrolls
+        # the long statistic column never hides it.
         st.dataframe(crit, hide_index=True, width="stretch",
+                     column_order=("#", "criterion", "result", "statistic",
+                                   "threshold"),
                      column_config={"#": st.column_config.NumberColumn(width="small"),
                                     "result": st.column_config.TextColumn(width="small")})
 
-        st.image(str(FIGURES / "layer-curves-mean.png"),
-                 caption="Balanced accuracy by layer, mean pooling, each "
-                         "condition (figures/layer-curves-mean.png)")
-        fig, reading = st.columns([3, 2])
-        fig.image(str(FIGURES / "condition-drop.png"),
-                  caption="Best layer per condition (figures/condition-drop.png)")
-        with reading:
-            st.markdown(
-                "**Reading, from Amendment 3 (A3.2):** closing word identity "
-                "costs most of the score (−0.093, `random` → `word_disjoint`); "
-                "closing speakers costs −0.025."
-            )
-            st.caption("Interpretation beyond that line is in the report, "
-                       "not on this page.")
-        with st.expander("Controls and pooling"):
-            st.image(str(FIGURES / "controls.png"),
-                     caption="Probe vs control task (figures/controls.png)")
-            st.image(str(FIGURES / "pooling.png"),
-                     caption="Mean, max and midpoint pooling (figures/pooling.png)")
-        with st.expander("The full criteria report, verbatim"):
-            st.code(criteria_text, language=None)
-
-    # The audit checks the sites behind this result, by ear (§7). Its report
-    # is written by scripts/summarize_audit.py from the Audit tab's verdicts.
-    reports = sorted(p for p in FIGURES.parent.glob("audit-*.txt"))
-    st.markdown("#### Are the sites what the inventory says?")
-    if reports:
-        with st.expander(f"Listening audit, blind to the probe ({reports[-1].name})"):
-            st.code(reports[-1].read_text(), language=None)
-    else:
-        st.caption("A blind listening audit of 80 sampled sites is registered "
-                   "(pre-registration §7) and not yet reported. It checks the "
-                   "data, not the model: see the Audit tab.")
-
-    st.divider()
-    st.markdown("#### From the result to the sites behind it")
-    st.selectbox("Look at the sites under this split", CONDITIONS,
-                 key="result_condition", on_change=from_result_view)
-    st.caption(
-        f"The other tabs now show `{condition}` at layer {layer}, "
-        f"{pooling} pooling — the same slice as the sidebar. Choosing a split "
-        "here moves both to it, at the layer where that split scored highest "
-        "on this run."
-    )
+        fig, more = st.columns([3, 2])
+        fig.image(str(FIGURES / "layer-curves-mean.png"),
+                  caption="Balanced accuracy by layer, mean pooling, each "
+                          "condition")
+        with more:
+            st.caption("Why the pilot failed: the next tab, and the Ask the "
+                       "graph tab for the causes and what's planned.")
+            with st.expander("Every layer, with 95% intervals"):
+                render_layer_table()
+            with st.expander("Controls and pooling"):
+                st.image(str(FIGURES / "controls.png"),
+                         caption="Probe vs control task")
+                st.image(str(FIGURES / "pooling.png"),
+                         caption="Mean, max and midpoint pooling")
+            with st.expander("The full criteria report, verbatim"):
+                st.code(criteria_text, language=None)
 
 # ------------------------------------------------------------------- evidence
 
 with tab_evidence:
-    result = store.query_sites(condition=condition, encoder=encoder, layer=layer,
-                               pooling=pooling, subsampled=subsampled,
-                               underlying=u, correct=c)
-    st.info(coverage_sentence(result.coverage))
-    st.caption(
-        f"{coverage_line(result.coverage)} — shown on every answer, even when "
-        "it tells you nothing new. It is the only thing stopping a partial table "
-        "from reading like the whole corpus."
+    st.write(
+        "Every flap the probe scored, filtered here: the split, the layer, "
+        "/t/ or /d/, and whether the probe got it right. Pick one below to "
+        "hear it."
     )
+    condition, layer, pooling = slice_controls("hear")
+    a, b = st.columns(2)
+    underlying = a.selectbox("Dictionary sound", ["either", "t", "d"],
+                             format_func=lambda v: {"either": "either",
+                                                    "t": "/t/ (water, city)",
+                                                    "d": "/d/ (ladder, ready)"}[v])
+    correctness = b.selectbox("Probe got it", ["either", "correct", "misclassified"],
+                              format_func=lambda v: {"either": "either",
+                                                     "correct": "right",
+                                                     "misclassified": "wrong"}[v])
+    result = store.query_sites(
+        condition=condition, encoder=ENCODER, layer=layer, pooling=pooling,
+        subsampled=SUBSAMPLED,
+        underlying=None if underlying == "either" else underlying,
+        correct=None if correctness == "either" else correctness == "correct")
+    st.info(coverage_sentence(result.coverage))
+    st.caption(coverage_line(result.coverage))
     if result.n == 0:
         st.warning("**Nothing matches these filters.** That is an answer, not an "
                    "error — the counts above still hold. Try widening one filter.")
     else:
         shown = result.rows.copy()
         shown.insert(1, "transcript", [transcript(r) for r in shown.itertuples()])
-        st.dataframe(shown, width="stretch", hide_index=True)
+        # What a listener needs; every column the store returns is one click away.
+        st.dataframe(shown, width="stretch", hide_index=True,
+                     column_order=[col for col in LISTENER_COLUMNS
+                                   if col in shown.columns],
+                     column_config=LISTENER_LABELS)
+        with st.expander("All columns"):
+            st.dataframe(shown, width="stretch", hide_index=True)
 
         st.divider()
         st.subheader("Listen to one")
@@ -598,7 +812,7 @@ with tab_evidence:
                    for r in result.rows.head(LOOKUP_LIMIT).itertuples()}
         if result.n > LOOKUP_LIMIT:
             st.caption(f"Listing the first {LOOKUP_LIMIT} of {result.n:,} rows "
-                       "above. Narrow the filters in the sidebar to reach others.")
+                       "above. Narrow the filters above to reach others.")
         picked_label = st.selectbox("Site", list(options))
         pick = options[picked_label]
         if pick:
@@ -609,9 +823,10 @@ with tab_evidence:
                 st.markdown(f"### “{transcript(row)}”")
                 st.caption(f"`{row.site_id}` · speaker `{row.speaker}`")
                 st.write(
-                    f"The flap is in **{row.word}**. It is really a "
-                    f"**/{row.underlying}/** underneath; the model guessed "
-                    f"**/{row.pred}/** — {'right' if row.correct else 'wrong'}."
+                    f"The flap is in **{row.word}**, which has a "
+                    f"**/{row.underlying}/** in its dictionary form. The probe "
+                    f"guessed **/{row.pred}/** — "
+                    f"{'right' if row.correct else 'wrong'}."
                 )
                 if SYNTHETIC:
                     st.metric("Model's score for /t/ (made up)", f"{row.p_t:.3f}")
@@ -619,70 +834,71 @@ with tab_evidence:
                     st.metric(f"Probe's probability of /t/ (layer {layer}, "
                               f"{pooling}; site held out in fold {row.fold})",
                               f"{row.p_t:.3f}")
-                st.caption(
-                    f"Sounds either side: `{row.prev_phone}` … `{row.next_phone}`. "
-                    f"The flap itself is {row.duration_ms:.0f} ms long."
-                )
+                # The neighbouring phone codes (prev_phone, next_phone) are
+                # under "All columns"; here they would need a phonetics key.
+                st.caption(f"The flap itself is {row.duration_ms:.0f} ms long.")
             with b:
-                st.write(f"**Clip:** {plan['n_samples']/16:.0f} ms "
-                         f"(samples `{plan['start_sample']:,}`–`{plan['end_sample']:,}`)")
-                st.caption(
-                    "These are the exact samples the encoder would read, not a "
-                    "close approximation — the window comes from `plan_excerpt` "
-                    "and `excerpt_samples`, the same two calls `encode_excerpt` "
-                    "makes. A clip off by one frame would make anything you "
-                    "concluded by ear unfounded."
-                )
+                # The clip is planned by plan_excerpt and excerpt_samples, the
+                # same two calls encode_excerpt makes: a clip off by one frame
+                # would make anything concluded by ear unfounded.
+                st.write(f"**Clip:** {plan['n_samples']/16:.0f} ms")
+                st.caption("Exactly the audio the model heard: the flap, with "
+                           "200 ms either side.")
                 try:
                     clip = store.export_clip(pick, out_dir=CLIPS)
                     st.audio(str(clip))
                 except FileNotFoundError as exc:
                     st.warning(f"No corpus audio mounted: {exc}")
 
-            st.markdown("#### Your verdict: kept, not counted")
             # Three questions about what can be heard. The /t/ or /d/ under a
             # flap cannot be (that is the project's premise); it follows from
             # the word, so `word` is the question.
-            st.caption(
-                "About the site, not the model: whether the model was right is "
-                "judged across all 10,389 sites by the criteria report. "
-                "Verdicts here are logged but never counted, because this site "
-                "was chosen by a filter with the model's guess on screen. The "
-                "counted review is the **Audit** tab: a random sample, blind "
-                "to the model."
-            )
-            view = {"encoder": encoder, "condition": condition, "layer": layer,
-                    "pooling": pooling, "subsampled": subsampled}
-            verdict_form(pick, audit=False, view=view, prefix="browse")
+            with st.expander("Judge this site yourself (logged, not counted)"):
+                st.caption(
+                    "About the site, not the model. Verdicts here are logged "
+                    "but never counted, because this site was chosen with the "
+                    "model's guess on screen. The counted review is the audit "
+                    "under **Can the data be trusted?**: a random sample, "
+                    "blind to the model."
+                )
+                view = {"encoder": ENCODER, "condition": condition,
+                        "layer": layer, "pooling": pooling,
+                        "subsampled": SUBSAMPLED}
+                verdict_form(pick, audit=False, view=view, prefix="browse")
 
 # ---------------------------------------------------------------- differential
 
 with tab_compare:
-    st.markdown("#### Is the model listening, or just recognising the word?")
     st.write(
         "A model that has memorised *water → /t/* will look good until you test "
         "it on words it never saw in training. That is what `word_disjoint` "
         "does. If accuracy drops when you switch to it, memorising is part of "
         "what was going on — and the sites that flipped are the evidence."
     )
-    a, b = st.columns(2)
+    fig, reading = st.columns([3, 2])
+    fig.image(str(FIGURES / "condition-drop.png"),
+              caption="Best layer per condition")
+    with reading:
+        st.markdown(
+            "**Reading:** holding out words costs most of the score "
+            "(−0.093, `random` → `word_disjoint`); holding out speakers "
+            "costs −0.025. That pattern is consistent with a probe partly "
+            "recognizing the words rather than hearing the flaps."
+        )
+    st.markdown("#### The sites that flipped")
+    a, b, d = st.columns(3)
     cond_a = a.selectbox("Compare this split…", CONDITIONS,
                          index=CONDITIONS.index("random"))
     cond_b = b.selectbox("…against this one", CONDITIONS,
                          index=CONDITIONS.index("word_disjoint"))
-    cmp_u = st.selectbox("Underlying sound ", ["either", "t", "d"], key="cmp_u",
-                         format_func=lambda v: {"either": "either",
-                                                "t": "/t/ (water, city)",
-                                                "d": "/d/ (ladder, ready)"}[v])
-
-    # joint has no subsampled run, so a comparison involving it uses the
-    # headline run on both sides rather than coming back empty.
-    cmp_sub = subsampled and "joint" not in (cond_a, cond_b)
-    st.caption(f"Both sides at layer {layer}, {pooling} pooling, "
-               f"{'subsampled' if cmp_sub else 'headline'} run — the sidebar's "
-               "slice.")
-    comp = store.compare_conditions(cond_a, cond_b, encoder=encoder, layer=layer,
-                                    pooling=pooling, subsampled=cmp_sub,
+    cmp_u = d.selectbox("Dictionary sound", ["either", "t", "d"], key="cmp_u",
+                        format_func=lambda v: {"either": "either",
+                                               "t": "/t/ (water, city)",
+                                               "d": "/d/ (ladder, ready)"}[v])
+    # Both sides at one layer and pooling, chosen here.
+    _, cmp_layer, cmp_pooling = slice_controls("cmp", split=False)
+    comp = store.compare_conditions(cond_a, cond_b, encoder=ENCODER, layer=cmp_layer,
+                                    pooling=cmp_pooling, subsampled=SUBSAMPLED,
                                     underlying=None if cmp_u == "either" else cmp_u)
     st.info(compare_sentence(comp))
     st.caption(comp.note)
@@ -701,125 +917,55 @@ with tab_compare:
             "significance test, and not a claim about why. "
             + ("Saying why would need a trained probe, which does not exist yet."
                if SYNTHETIC else
-               "The aggregate comparison, with intervals, is in the criteria "
-               "report and the results CSV.")
+               "The comparison across all sites, with intervals, is the "
+               "figure above and the result tab's per-layer table.")
         )
         shown = comp.rows.copy()
         shown.insert(1, "transcript", [transcript(r) for r in shown.itertuples()])
         st.dataframe(shown, width="stretch", hide_index=True)
 
-# ----------------------------------------------------------------- uncertainty
-
-with tab_uncertainty:
-    st.write(
-        "Two different things here are uncertain, and they are kept apart on "
-        "purpose. "
-        + ("One is real and can be quoted today. The other is noise."
-           if SYNTHETIC else
-           "One comes from what was left out of the data; the other from the "
-           "probe run itself.")
-    )
-
-    st.subheader("1 · What got left out of the data — real, and quotable now")
-    st.caption("Counted by `scripts/count_flap_sites.py` and read from "
-               "`sites-20260924.stats.json`, not typed into this page.")
-    m = st.columns(4)
-    excl = stats["excluded_length_mismatch"]
-    m[0].metric("words thrown out",
-                f"{excl:,}", f"{excl / stats['flap_bearing_words']:.1%} of all flap words",
-                delta_color="off")
-    m[1].metric("flaps the annotator wasn't sure about",
-                f"{stats['excluded_annotator_mark']:,}")
-    m[2].metric("flaps from neither /t/ nor /d/", f"{stats['excluded_not_t_or_d']:,}")
-    m[3].metric("too near the start or end to centre", f"{stats['n_excerpt_clamped']:,}")
-
-    st.warning(
-        f"**What's left is the tidy half.** Those {excl:,} thrown-out words "
-        f"({excl / stats['flap_bearing_words']:.1%}) were dropped because the "
-        "written-down pronunciation and the actual one had different numbers of "
-        "sounds — which happens when a speaker slurs. So the excluded words are "
-        "the *most* casually pronounced ones, and casual pronunciation is "
-        f"exactly where flapping gets interesting. Whatever the remaining "
-        f"{stats['n_sites']:,} sites end up showing, it cannot speak for those. "
-        "That limit is knowable right now, before any result exists."
-    )
-
-    st.markdown("**Flaps too short for the model to see**")
-    st.metric("flaps the model takes no sample inside",
-              f"{stats['n_zero_onset_excerpt_local']:,}")
-    st.caption(
-        "The model samples audio every 10 ms, and some flaps are shorter than "
-        "that. None is missed, because every flap is cut out so that it starts "
-        "exactly on a sample. Measured against the raw recording instead, "
-        f"{stats['n_zero_onset_absolute']:,} flaps would contain no sample, but "
-        "that is not how the model reads them. Until 2026-09-24 an off-by-one "
-        "bug dropped the sample at each flap's start and left 39 flaps empty "
-        "(D1 in `docs/challenges/challenge-2-slice-decisions.md`)."
-    )
-
+    # Wording from the knowledge graph's findings (kg/facts.py: the span
+    # grid's and the representation communities'), approved 2026-10-31.
     st.divider()
-    if SYNTHETIC:
-        st.subheader("2 · How confident the model is — meaningless here")
-        st.error(
-            "Every `p_t` on this page is a random number. It is labelled wherever it "
-            "appears. It is not weak evidence about /t/ and /d/ — it is no evidence, "
-            "and averaging a lot of it together does not turn it into any."
-        )
-        fix = "the second needs a real probe"
-    else:
-        st.subheader("2 · How sure the probe's score is — per layer, from this run")
-        sub_label = "subsampled" if subsampled else "headline"
+    st.markdown("#### Two follow-ups")
+    span, comm = st.columns(2, gap="large")
+    with span:
+        st.markdown("**Was the window too narrow?**")
+        st.image(themed("span-grid-results.png"), width="stretch")
         st.caption(
-            f"`{condition}`, {pooling} pooling, {sub_label} run. Read from "
-            "`results/flapping/probe-results-20260926.csv`, not recomputed here. "
-            "Balanced accuracy over all scored sites, with the 95% interval "
-            "from the word-type bootstrap in `scripts/run_probes.py`. Chance "
-            "is 0.50. The control column is the same probe on the control "
-            "task."
+            "A separately registered follow-up widened the stretch of audio "
+            "the probe pools over, from the flap alone (ɾ) to the flap with "
+            "the vowel before, after, or both (V = vowel). Widening helps no "
+            "representation: no gain reaches 0.05, and every paired 95% "
+            "interval includes zero. wav2vec2-base, a second speech model, "
+            "scores 0.616–0.625 at its best layer on every span, ahead of "
+            "MFCC on all four; WavJEPA scores 0.543–0.555, ahead of none. "
+            "10,334 flaps; whiskers are 95% intervals."
         )
-        sel = results[(results.condition == condition) & (results.pooling == pooling)
-                      & (results.subsampled == subsampled)]
-        wj = sel[sel.encoder == "wavjepa"]
-        table = wj[["layer", "balanced_acc", "ci_lo", "ci_hi",
-                    "control_balanced_acc", "f1_d", "n"]].rename(columns={
-            "balanced_acc": "balanced accuracy", "ci_lo": "95% low",
-            "ci_hi": "95% high", "control_balanced_acc": "control",
-            "f1_d": "/d/ F1", "n": "sites"})
-        st.dataframe(table, hide_index=True, width="stretch",
-                     column_config={c: st.column_config.NumberColumn(format="%.3f")
-                                    for c in ["balanced accuracy", "95% low",
-                                              "95% high", "control", "/d/ F1"]})
-        mf = sel[sel.encoder == "mfcc"]
-        if not mf.empty:
-            m0 = mf.iloc[0]
-            st.caption(f"MFCC baseline, same slice: {m0.balanced_acc:.3f} "
-                       f"[{m0.ci_lo:.3f}, {m0.ci_hi:.3f}].")
-        fix = "the second is a matter of the probe and the split"
-    st.caption(
-        "These two are never added together into one confidence score. They come "
-        "from different places and have different fixes — the first needs better "
-        f"alignment or recovering those thrown-out words, {fix} — and a combined "
-        "number would hide which of the two had moved, leaving you unable to fix "
-        "either."
-    )
+    with comm:
+        st.markdown("**What do the models group flaps by?**")
+        st.image(themed("community-ami.png"), width="stretch")
+        st.caption(
+            "Exploratory, not registered, and no probe: each "
+            "representation's flaps are clustered (Louvain communities over "
+            "a nearest-neighbor graph), and the clusters compared with ways "
+            "of grouping the flaps, by adjusted mutual information (0 = "
+            "unrelated). WavJEPA's clusters follow the speaker most (0.234, "
+            "the largest for any representation and grouping); MFCC's follow "
+            "the surrounding sounds most. None follows /t/ vs /d/ (at most "
+            "0.007)."
+        )
 
 # ----------------------------------------------------------------- site lookup
 
 with tab_state:
     st.write(
-        "There are three reasons a site might have no score, and they mean "
-        "different things. This page keeps them apart. Showing all three as a "
-        "blank cell — or worse, as a zero — is the specific mistake this view "
-        "exists to make impossible."
+        "For checking the run: any one site's state. A site with no score can "
+        "mean three different things, and they are kept apart here, never "
+        "shown as a blank or a zero."
     )
-    cond = st.selectbox("Under which split", CONDITIONS,
-                        index=CONDITIONS.index("joint"), key="state_cond")
-
-    # joint has no subsampled run; the lookup falls back to the headline run.
-    state_sub = subsampled and cond != "joint"
-    st.caption(f"At layer {layer}, {pooling} pooling, "
-               f"{'subsampled' if state_sub else 'headline'} run — the sidebar's slice.")
-    groups = load_states(STAMP, cond, layer, pooling, state_sub)
+    cond, st_layer, st_pooling = slice_controls("state")
+    groups = load_states(STAMP, cond, st_layer, st_pooling, SUBSAMPLED)
     kinds = {
         "scored": f"Scored in this run ({len(groups['scored']):,})",
         "excluded": f"Excluded before scoring ({len(groups['excluded']):,})",
@@ -853,21 +999,21 @@ with tab_state:
 
     if site_id:
         try:
-            state = store.site_state(site_id.strip(), cond, layer=layer,
-                                     pooling=pooling, subsampled=state_sub)
+            state = store.site_state(site_id.strip(), cond, layer=st_layer,
+                                     pooling=st_pooling, subsampled=SUBSAMPLED)
         except UnknownSite as exc:
             st.error(str(exc))
         else:
             left = state["prev_word"] or "…"
             right = state["next_word"] or "…"
             st.markdown(f"### “{left} {state['word']} {right}”")
-            st.caption(f"`{state['site_id']}` · really a /{state['underlying']}/")
+            st.caption(f"`{state['site_id']}` · dictionary sound /{state['underlying']}/")
 
             if state["status"] == NOT_SCORED:
                 st.warning(
                     "**Excluded before scoring.** The site exists, but the flap "
                     "sits too near the start or end of its recording for the "
-                    "fixed 200 ms window to centre on it, so it was set aside "
+                    "fixed 200 ms window to center on it, so it was set aside "
                     "before any split, and no prediction was ever made. Not a "
                     "zero, not a low score — nothing."
                 )
@@ -887,15 +1033,83 @@ with tab_state:
             with st.expander("Raw record"):
                 st.json(state)
 
-# ---------------------------------------------------------------------- audit
+# ------------------------------------------------------------------------ data
 
-with tab_audit:
+with tab_data:
     st.write(
-        "Does the inventory hold what it says it does? A random sample of "
-        "sites — 40 /t/, 40 /d/, drawn before anyone listened (pre-registration "
-        "§7) — checked by ear. This tests the data, not the model, so nothing "
-        "from the probe is shown here."
+        "Two questions about the data, separate from the model: what the "
+        "inventory left out, and whether the sites it kept are what it says."
     )
+
+    st.subheader("What got left out")
+    m = st.columns(4)
+    excl = stats["excluded_length_mismatch"]
+    m[0].metric("words that couldn't be aligned",
+                f"{excl:,}", f"{excl / stats['flap_bearing_words']:.1%} of all flap words",
+                delta_color="off")
+    m[1].metric("flaps the annotator wasn't sure about",
+                f"{stats['excluded_annotator_mark']:,}")
+    m[2].metric("flaps from neither /t/ nor /d/", f"{stats['excluded_not_t_or_d']:,}")
+    m[3].metric("too near the start or end to center", f"{stats['n_excerpt_clamped']:,}")
+
+    # A scope statement, not an apology: what the result covers, why the rest
+    # was set aside, and what including it would take.
+    st.info(
+        "**What the result covers.** Each site's /t/ or /d/ comes from lining "
+        "up the word's dictionary pronunciation with the one the transcriber "
+        "heard, sound by sound. That only works when the two are the same "
+        f"length. In {excl:,} flap words "
+        f"({excl / stats['flap_bearing_words']:.1%}) they weren't — a sound "
+        "dropped, added or merged, as happens in fast speech — so those were "
+        "set aside rather than guessed at. The result speaks for flaps in "
+        "words that kept their dictionary shape; flaps in more reduced words "
+        "would need a different alignment to include."
+    )
+    st.caption(
+        "Every flap that was kept is long enough for the model to see: each "
+        "is cut so that it starts on one of the model's 10 ms frames "
+        f"({stats['n_zero_onset_excerpt_local']:,} flaps with no frame inside)."
+    )
+
+    st.divider()
+    st.subheader("Are the sites what the inventory says?")
+    # The audit checks the sites behind the result, by ear (pre-registration
+    # §7). Its report is written by scripts/summarize_audit.py from the
+    # verdicts entered below; the summary here is parsed from that report.
+    reports = sorted(p for p in FIGURES.parent.glob("audit-*.txt"))
+    audit_rows = parse_audit(reports[-1].read_text()) if reports else []
+    if audit_rows:
+        flaps = [r for r in audit_rows if r["key"] == "flap"]
+        heard = sum(r["yes"] for r in flaps)
+        decided = sum(r["yes"] + r["no"] for r in flaps)
+        undecided = sum(r["can't tell"] for r in flaps)
+        st.success(
+            f"**A flap was heard in {heard} of the {decided} sites that could "
+            f"be decided** ({undecided} couldn't be). Every word matched its "
+            "transcript, and every clip was centered on its flap."
+            if all(r["no"] == 0 and r["can't tell"] == 0
+                   for r in audit_rows if r["key"] != "flap") else
+            f"**A flap was heard in {heard} of the {decided} sites that could "
+            f"be decided** ({undecided} couldn't be)."
+        )
+        st.write(
+            "80 sites, 40 /t/ and 40 /d/, drawn at random before anyone "
+            "listened, and judged by one listener (the author) with nothing "
+            "from the model on screen. This clears the sites, not the labels: "
+            "whether a flap was /t/ or /d/ underneath can't be heard, which is "
+            "the study's premise."
+        )
+        st.dataframe([{k: v for k, v in r.items() if k != "key"}
+                      for r in audit_rows], hide_index=True, width="stretch",
+                     column_config={"rate": st.column_config.NumberColumn(format="%.3f")})
+        with st.expander("The audit report, verbatim"):
+            st.code(reports[-1].read_text(), language=None)
+    else:
+        st.caption("A blind listening audit of 80 sampled sites is registered "
+                   "(pre-registration §7) and not yet reported. It checks the "
+                   "data, not the model.")
+
+    st.markdown("#### The audit, site by site")
     if not AUDIT_SAMPLE.exists():
         st.warning(f"No audit sample at `{AUDIT_SAMPLE}`. Draw it with "
                    "`scripts/draw_audit_sample.py`.")
@@ -936,7 +1150,8 @@ with tab_audit:
         nav[3].button("Next unreviewed", on_click=next_unreviewed, key="audit_skip")
 
         site = st.session_state.audit_site
-        info = store.site_state(site, "joint", layer=layer)
+        # For the words around the site only; nothing from the probe is shown.
+        info = store.site_state(site, "joint", layer=BEST["joint"]["layer"])
         left, right = info["prev_word"] or "…", info["next_word"] or "…"
         a, b = st.columns([2, 3])
         with a:
@@ -1040,7 +1255,8 @@ with tab_graph:
         "from its knowledge graph (`kg/`). The model picks one of seven "
         "reviewed retrievals and fills its parameter; it never writes Cypher. "
         "It then answers from the returned rows only, citing their node keys. "
-        "The rows are shown first, so every claim can be checked against them."
+        "The rows are shown beside the answer, so every claim can be checked "
+        "against them."
     )
     try:
         graphrag = load_graphrag()
@@ -1052,16 +1268,19 @@ with tab_graph:
         # filling the text box from the pick, picking sent a real Chrome back
         # to the first tab (2026-10-24; not reproducible headless). Without
         # it, confirmed in real Chrome, the tab stays put.
-        picked = st.selectbox("Evaluated questions", GRAPHRAG_QUESTIONS,
-                              index=None, placeholder="Pick one",
-                              key="graph_example")
-        typed = st.text_input("Or type your own question", key="graph_question")
+        pick_col, type_col = st.columns(2)
+        picked = pick_col.selectbox("Evaluated questions", GRAPHRAG_QUESTIONS,
+                                    index=None, placeholder="Pick one",
+                                    key="graph_example")
+        typed = type_col.text_input("Or type your own question",
+                                    key="graph_question")
         question = typed.strip() or picked or ""
+        ask_col, will_col = st.columns([1, 11], vertical_alignment="center")
         if question:
-            st.markdown(f"**Will ask:** {question}")
+            will_col.markdown(f"**Will ask:** {question}")
         # Kept in session state: any widget on the page reruns the script, and
         # that must neither drop the answer nor pay for it again.
-        if st.button("Ask", disabled=not question, key="graph_ask"):
+        if ask_col.button("Ask", disabled=not question, key="graph_ask"):
             with st.spinner(f"Routing, retrieving and answering ({graphrag.MODEL})"):
                 st.session_state.graph_run = ask_graph(graphrag, question)
 
@@ -1070,27 +1289,39 @@ with tab_graph:
             st.error(run["error"])
         elif run:
             choice = run["choice"]
-            st.markdown(f"**Question:** {run['question']}")
-            st.markdown(f"**Retrieval:** `{choice['retrieval']}` "
-                        f"(term = `{choice['term']!r}`, "
-                        f"criterion = `{choice['criterion']}`)")
-            statements = graphrag.RETRIEVALS[choice["retrieval"]]["statements"]
-            for name, cypher in statements.items():
-                rows = run["rows"][name]
-                st.markdown(f"##### `{name}`: {len(rows)} rows")
-                with st.expander("Cypher"):
-                    st.code(textwrap.dedent(cypher).strip(), language="cypher")
-                if rows:
-                    st.dataframe(rows, hide_index=True, width="stretch")
-            at = f"{run['answered_at']:%H:%M:%S}"
-            st.markdown(f"#### Answer ({graphrag.MODEL})")
-            # Shown above the answer, so a screenshot says whether it was live.
-            if run["cached"]:
-                st.warning(f"**Cached:** answered at {at} and reused, with no "
-                           "new model calls. The cache clears when the server "
-                           "restarts.")
-            else:
-                st.success(f"**Live:** answered at {at} by two model calls "
-                           "(route, then answer).")
-            st.markdown(run["answer"])
-            st.caption("Keys in [brackets] are node keys from the rows above.")
+            # Repeated only when the inputs have moved on since the click.
+            if run["question"] != question:
+                st.markdown(f"**Question:** {run['question']}")
+            # Rows on the left, answer on the right: the rows still read
+            # first, and the claims sit beside the rows they cite. On a phone
+            # the columns stack, rows first.
+            rows_col, answer_col = st.columns(2, gap="large")
+            with rows_col:
+                # The parameters the model filled, leaving out the unused ones.
+                params = ", ".join(f"{k} = `{choice[k]!r}`"
+                                   for k in ("term", "criterion") if choice.get(k))
+                st.markdown(f"**Retrieval the model picked:** "
+                            f"`{choice['retrieval']}`"
+                            + (f" ({params})" if params else ""))
+                statements = graphrag.RETRIEVALS[choice["retrieval"]]["statements"]
+                for name, cypher in statements.items():
+                    rows = run["rows"][name]
+                    st.markdown(f"##### `{name}`: {len(rows)} rows")
+                    with st.expander("Cypher"):
+                        st.code(textwrap.dedent(cypher).strip(), language="cypher")
+                    if rows:
+                        st.dataframe(rows, hide_index=True, width="stretch")
+            with answer_col:
+                at = f"{run['answered_at']:%H:%M:%S}"
+                st.markdown(f"#### Answer ({graphrag.MODEL})")
+                # Shown above the answer, so a screenshot says whether it was live.
+                if run["cached"]:
+                    st.warning(f"**Cached:** answered at {at} and reused, with no "
+                               "new model calls. The cache clears when the server "
+                               "restarts.")
+                else:
+                    st.success(f"**Live:** answered at {at} by two model calls "
+                               "(route, then answer).")
+                st.markdown(run["answer"])
+                st.caption("Keys in [brackets] are node keys from the rows "
+                           "beside the answer.")

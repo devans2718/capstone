@@ -143,25 +143,39 @@ A Streamlit app (`app/streamlit_app.py`) over the pilot run. It takes a reader
 from the pre-registered result to the individual sites behind it, the audio of
 each one, and a human judgement of that audio. Every answer carries its
 provenance: the run, the code commit, and the denominator it has to be read
-against. **The span grid and the communities have no tab of their own.** They
-are reachable only through **Ask the graph**.
+against. **The span grid and the communities have no tab of their own:** each
+shows as one summary figure, and their detail is reachable through **Ask the
+graph**.
 
 | Tab | What it shows |
 |---|---|
-| **Result** | The four pre-registered criteria parsed from `results/flapping/criteria-20260926.txt`, the committed figures, and a split selector that moves every other tab to that split |
-| **Browse and listen** | The sites matching a filter (split, layer, pooling, /t/ or /d/, right or wrong), each playable as the exact audio samples the encoder read |
-| **Compare two splits** | Sites whose prediction changed between two splits, e.g. right under `random`, wrong under `joint` |
-| **What this can and can't tell you** | What the inventory left out, and per-layer 95% intervals from the run |
-| **Look up one site** | One site's state: scored, excluded before scoring, or not reached, never shown as a zero |
-| **Audit (blind)** | The human review: a pre-registered random sample of sites, judged by ear with nothing from the model on screen |
+The tabs follow the study's argument: the question, the result, why, the flaps
+themselves, whether the data holds, questions to the graph, then how it was
+built. Figures come in light and dark versions (`app/assets/figures/`), chosen
+to match the viewer's theme. There is no sidebar: each tab has the controls it
+uses (split, layer, pooling), starting at the registered design (`joint`, mean
+pooling, that split's best layer), and the page shows the headline run. The
+run's provenance (commits, inventory hash, seeds, split scheme) is in **Run
+details**, at the foot of How it was built.
+
+| Tab | What it shows |
+|---|---|
+| **The question** | *writer* and *rider* in American and British English (Kokoro-82M syntheses), each with its waveform and audio: why the /t/–/d/ difference is gone from the sound but kept in the word |
+| **The result** | The four pre-registered criteria parsed from `results/flapping/criteria-20260926.txt`, the layer curves, and per-layer 95% intervals for a chosen split and pooling |
+| **Listening, or recognizing the word?** | The drop from `random` to `word_disjoint` (the study's main reading), the sites whose prediction changed between two splits, and two follow-ups: the span grid and the representation communities |
+| **Hear the flaps** | The sites matching a filter (split, layer, pooling, /t/ or /d/, right or wrong), each playable as the exact audio samples the encoder read |
+| **Can the data be trusted?** | What the inventory left out, and the blind listening audit: its result, and the review form (a pre-registered random sample, judged by ear with nothing from the model on screen) |
 | **Ask the graph** | A question about the study answered from its knowledge graph by `kg/graphrag.py` (route → retrieve → answer): the chosen retrieval, its Cypher and rows, then the answer citing node keys. Needs Neo4j and `ANTHROPIC_API_KEY`; without them only this tab says so |
+| **How it was built** | The architecture diagram (data, probing, knowledge graph, app), with a paragraph per band |
+| **Look up one site** | For checking the run: one site's state (scored, excluded before scoring, or not reached), never shown as a zero |
 
 ### The Human–AI workflow
 
 **Human input → tools → result + evidence → human review.**
 
-1. The human picks a split, a layer and filters. They are shown the
-   pre-registered result first: *PILOT: FAILED, 1 of 4 criteria pass*.
+1. The human sees the pre-registered result first: *PILOT: FAILED, 1 of 4
+   criteria pass*. Then they pick a split, a layer and filters in the tab
+   that uses them.
 2. Typed, tested tools (`capstone.retrieval.SliceStore`, DuckDB over parquet)
    return the matching sites. These tabs use no language model and have no
    free-form query path. Only **Ask the graph** calls a language model.
@@ -176,7 +190,7 @@ are reachable only through **Ask the graph**.
 
 Under the tabs, the app enforces provenance. Every response carries a coverage
 block, and three eligibility states stay distinct. The run's own manifest decides
-the banner (real or synthetic), and a query that fails to pin one prediction per
+whether the synthetic-run warning shows, and a query that fails to pin one prediction per
 site raises an error instead of double-counting.
 
 ### The knowledge graph behind Ask the graph
@@ -328,9 +342,11 @@ Build and push the image, pull it on the instance (Lambda / Vast / RunPod), popu
 - **Limited power.** MFCC's own interval under `joint` is about **±0.05** balanced
   accuracy, as wide as the effect the rule asks for. A real but small advantage
   would not be distinguishable.
-- **The inventory is the tidy half.** 21% of flap-bearing words were excluded because
-  their transcribed and canonical pronunciations differ in length. These are the
-  most reduced tokens. In the span grid, 677 sites (6.55%) run past the excerpt and
+- **The result covers words that kept their dictionary shape.** Each site's /t/ or
+  /d/ comes from aligning the canonical and transcribed pronunciations sound by
+  sound, which needs them to be the same length. 21% of flap-bearing words weren't
+  (a sound dropped, added or merged) and were set aside rather than guessed at;
+  flaps in those more reduced words would need a different alignment. In the span grid, 677 sites (6.55%) run past the excerpt and
   are clipped; they are kept, and also reported separately.
 - **The audit clears the sites, not the labels, and it has one untrained listener.**
   It found no sign that the failure comes from badly cut or mislocated sites: the

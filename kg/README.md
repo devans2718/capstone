@@ -98,7 +98,7 @@ its parameters, each statement's Cypher and rows, then the answer. The five
 evaluated questions are offered as examples. It loads `graphrag.py` by path
 with `importlib`, since `kg/` is a folder of scripts rather than a package.
 Neo4j and the API key are checked before the first model call; if either is
-missing, that tab says which and the other six are unaffected.
+missing, that tab says which and the other tabs are unaffected.
 `tests/test_graphrag.py` stubs `complete()` and the driver to check the
 hand-over between the three steps without either.
 
