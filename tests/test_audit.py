@@ -17,7 +17,8 @@ import pyarrow.parquet as pq  # noqa: E402
 
 from capstone import seeds  # noqa: E402
 from capstone.audit import (  # noqa: E402
-    AUDIT_TARGETS, draw_sample, summarize, wilson,
+    AUDIT_TARGETS, counted_verdicts, draw_sample, is_late, late_verdicts,
+    summarize, wilson,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -65,9 +66,12 @@ def test_wilson_matches_known_values():
     assert all(v != v for v in wilson(0, 0))  # nan
 
 
-def _line(site, target, verdict, *, run="pilot-20260926", audit=True):
-    return {"site_id": site, "target": target, "verdict": verdict,
+def _line(site, target, verdict, *, run="pilot-20260926", audit=True, at=None):
+    line = {"site_id": site, "target": target, "verdict": verdict,
             "run_id": run, "audit": audit}
+    if at is not None:
+        line["at"] = at
+    return line
 
 
 def test_summary_counts_only_this_runs_audit_lines_and_last_wins():
@@ -91,3 +95,23 @@ def test_summary_counts_only_this_runs_audit_lines_and_last_wins():
     assert (d.reviewed, d.yes, d.no) == (1, 0, 1)
     assert set(out.index.get_level_values(0)) == set(AUDIT_TARGETS)
     assert out.loc[("word", "/t/")].reviewed == 0
+
+
+def test_lines_after_the_audit_closed_are_kept_apart_not_counted():
+    """A late line can't replace the audited verdict, even under last-wins."""
+    sample = pd.DataFrame({"order": [1, 2], "site_id": ["a", "b"],
+                           "underlying": ["t", "d"]})
+    during = "2026-09-29T03:28:00+00:00"  # the pilot audit's last verdict
+    after = "2026-11-08T07:00:00+00:00"
+    lines = [
+        _line("a", "flap", "yes", at=during),
+        _line("b", "flap", "no"),                    # no `at`: predates the close
+        _line("a", "flap", "no", at=after),          # late: would have won
+        _line("b", "word", "yes", at=after),         # late, on a new question
+    ]
+    got = counted_verdicts(lines, sample, "pilot-20260926")
+    assert got == {("a", "flap"): "yes", ("b", "flap"): "no"}
+    late = late_verdicts(lines, sample, "pilot-20260926")
+    assert [(x["site_id"], x["target"]) for x in late] == [("a", "flap"), ("b", "word")]
+    # A run with no closing time is still open: nothing is late.
+    assert not is_late(_line("a", "flap", "no", run="other", at=after), "other")

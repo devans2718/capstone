@@ -27,11 +27,20 @@ HOW VERDICTS ARE COUNTED
     the browser shows the model's guess, and the sites were chosen by a
     filter. Rates are yes / (yes + no), per class, with a Wilson 95%
     interval. "Can't tell" is reported beside the rate, never folded into it.
+
+WHY AN AUDIT CLOSES
+    The audit is one listener's blind pass, finished and reported. A verdict
+    entered after that, on the same form, is a different measurement: made
+    later, possibly by someone else, possibly after seeing the result. Under
+    "last line wins" it would silently replace the audited verdict. So each
+    run's audit has a closing time, the commit that recorded its report;
+    lines after it are kept (late_verdicts) but never counted.
 """
 
 from __future__ import annotations
 
 import math
+from datetime import datetime
 
 AUDIT_TARGETS = {
     "flap": "Is there a flap here: a quick tap, not a full stop, a deletion or "
@@ -41,6 +50,30 @@ AUDIT_TARGETS = {
 }
 VERDICTS = ("yes", "no", "cant_tell")
 N_PER_CLASS = 40
+
+# When each run's audit closed: the commit that recorded its report. The
+# pilot's last counted verdict is 2026-09-29T03:28:00Z; its report,
+# results/flapping/audit-20260928.txt, was committed in 89fc6b2 at
+# 2026-09-28 23:07:28 -0500.
+AUDIT_CLOSED = {"pilot-20260926": datetime.fromisoformat("2026-09-29T04:07:28+00:00")}
+
+
+def is_late(line: dict, run_id: str) -> bool:
+    """True if the line was recorded after run_id's audit closed.
+
+    A line with no `at` predates the field, so it predates any close. A run
+    with no closing time has an audit still open.
+    """
+    closed = AUDIT_CLOSED.get(run_id)
+    at = line.get("at")
+    return closed is not None and at is not None and datetime.fromisoformat(at) > closed
+
+
+def _is_audit_line(line: dict, in_sample: set, run_id: str) -> bool:
+    return (line.get("run_id") == run_id and line.get("audit") is True
+            and line.get("site_id") in in_sample
+            and line.get("target") in AUDIT_TARGETS
+            and line.get("verdict") in VERDICTS)
 
 
 def draw_sample(inventory, n_per_class: int = N_PER_CLASS, seed: int | None = None):
@@ -81,16 +114,23 @@ def wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float]:
 
 
 def counted_verdicts(lines, sample, run_id: str) -> dict:
-    """{(site_id, target): verdict}, last line wins, audit lines only."""
+    """{(site_id, target): verdict}, last line wins, audit lines only.
+
+    Lines recorded after the audit closed are left out (is_late).
+    """
     in_sample = set(sample.site_id)
     out = {}
     for line in lines:
-        if (line.get("run_id") == run_id and line.get("audit") is True
-                and line.get("site_id") in in_sample
-                and line.get("target") in AUDIT_TARGETS
-                and line.get("verdict") in VERDICTS):
+        if _is_audit_line(line, in_sample, run_id) and not is_late(line, run_id):
             out[(line["site_id"], line["target"])] = line["verdict"]
     return out
+
+
+def late_verdicts(lines, sample, run_id: str) -> list[dict]:
+    """Audit-form lines recorded after the audit closed: kept, never counted."""
+    in_sample = set(sample.site_id)
+    return [line for line in lines
+            if _is_audit_line(line, in_sample, run_id) and is_late(line, run_id)]
 
 
 def summarize(lines, sample, run_id: str):

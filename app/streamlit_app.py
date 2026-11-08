@@ -55,7 +55,9 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from capstone.audit import AUDIT_TARGETS, summarize  # noqa: E402
+from capstone.audit import (  # noqa: E402
+    AUDIT_CLOSED, AUDIT_TARGETS, is_late, late_verdicts, summarize,
+)
 from capstone.predictions import CONDITIONS, Manifest  # noqa: E402
 from capstone.retrieval import NOT_REACHED, NOT_SCORED, SliceStore, UnknownSite  # noqa: E402
 
@@ -373,6 +375,10 @@ def record_verdict(site_id: str, target: str, verdict: str, note_key: str,
         **view,
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    # Said in the line itself, not only worked out from `at`: a reader of
+    # reviewed.jsonl sees which audit verdicts came after the audit closed
+    # (capstone.audit.is_late, which is what the counting uses).
+    line["after_audit_closed"] = is_late(line, manifest.run_id)
     with REVIEWS.open("a") as fh:
         fh.write(json.dumps(line) + "\n")
     st.toast(f"{target}: {VERDICT_LABELS[verdict]}"
@@ -1150,10 +1156,24 @@ with tab_data:
         from capstone.audit import counted_verdicts
 
         got = counted_verdicts(reviews, sample, manifest.run_id)
+        late = late_verdicts(reviews, sample, manifest.run_id)
         done = {s for s in sample.site_id
                 if all((s, t) in got for t in AUDIT_TARGETS)}
         st.progress(len(done) / len(sample),
                     text=f"{len(done)} of {len(sample)} sites fully reviewed")
+        closed = AUDIT_CLOSED.get(manifest.run_id)
+        if closed is not None:
+            # Central time, where the audit was done; the stored value is UTC.
+            from zoneinfo import ZoneInfo
+            local = closed.astimezone(ZoneInfo("America/Chicago"))
+            st.caption(
+                f"**The audit closed {local:%Y-%m-%d}**, "
+                "when its report was committed. The verdicts shown on the form "
+                "are the audit's. Anything entered here now is kept, labeled "
+                "as entered after the audit, and never counted with it — so "
+                "the result above can't change. "
+                f"Entered since: {len(late)}."
+            )
 
         ids = sample.site_id.tolist()
         if "audit_site" not in st.session_state:
@@ -1193,8 +1213,13 @@ with tab_data:
                 st.warning(f"No corpus audio mounted: {exc}")
         verdict_form(site, audit=True, view={}, prefix="audit",
                      current={t: v for (s, t), v in got.items() if s == site})
+        here = [x for x in late if x["site_id"] == site]
+        if here:
+            st.caption("Entered after the audit, for this site (not counted): "
+                       + "; ".join(f"{x['target']} {x['verdict']} ({x['at'][:10]})"
+                                   for x in here))
 
-        with st.expander("Running tally (counted verdicts only)"):
+        with st.expander("The audit's tally (counted verdicts only)"):
             tally = summarize(reviews, sample, manifest.run_id)
             st.dataframe(tally, hide_index=True, width="stretch",
                          column_config={c: st.column_config.NumberColumn(format="%.3f")
