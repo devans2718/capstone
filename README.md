@@ -10,6 +10,8 @@ English.
 Daniel Evans · M.S. Data Science, University of Missouri–Kansas City ·
 CS 5588 Data Science Capstone, instructor Yugyung Lee
 
+**[Demo video](https://youtu.be/m_TSUjhitwM)** · **[Poster (PDF)](docs/phonoprobe-poster.pdf)**
+
 ## The question
 
 Neutralization is where the sound on the surface erases a contrast the language
@@ -147,8 +149,6 @@ against. **The span grid and the communities have no tab of their own:** each
 shows as one summary figure, and their detail is reachable through **Ask the
 graph**.
 
-| Tab | What it shows |
-|---|---|
 The tabs follow the study's argument: the question, the result, why, the flaps
 themselves, whether the data holds, questions to the graph, then how it was
 built. Figures come in light and dark versions (`app/assets/figures/`), chosen
@@ -157,6 +157,8 @@ uses (split, layer, pooling), starting at the registered design (`joint`, mean
 pooling, that split's best layer), and the page shows the headline run. The
 run's provenance (commits, inventory hash, seeds, split scheme) is in **Run
 details**, at the foot of How it was built.
+
+![Ask the graph answering "Why did the pilot fail, and what's planned to test it?": the rows from the knowledge graph on the left, and the answer citing them on the right](docs/app-ask-the-graph.png)
 
 | Tab | What it shows |
 |---|---|
