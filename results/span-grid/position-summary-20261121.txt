@@ -1,0 +1,93 @@
+Span grid, position re-score (§8, 2026-11-21) — word-medial vs word-final
+Run 20261121, registered at b9c6d59; run on top of b9c6d59, this script committed with these results.
+`joint` out-of-fold predictions from the span grid's run 20261029; nothing refit.
+Bootstrap: 10,000 resamples of the pilot's 991-type index, seed 20260928.
+
+Groups (sites, /d/, word types, types with a /d/ site)
+    word-medial    2,987    867   610   226
+    word-final     6,428  1,462   387   218
+    word-initial     919    184    31    26
+
+At the registered layer: balanced accuracy [95% CI]; recall /t/, /d/; type-weighted BA [95% CI]
+  wav2vec2_r (layer 9)
+    word-medial   0.6070 [0.5728, 0.6379]  t 0.621 d 0.593  tw 0.5720 [0.5371, 0.6058]
+    word-final    0.6410 [0.6084, 0.6770]  t 0.707 d 0.575  tw 0.6096 [0.5713, 0.6475]
+    word-initial  0.4622 [0.4099, 0.7530]  t 0.414 d 0.511  tw 0.5339 [0.3174, 0.7385]
+  wav2vec2_vr (layer 9)
+    word-medial   0.6507 [0.6126, 0.6851]  t 0.667 d 0.634  tw 0.6120 [0.5782, 0.6455]
+    word-final    0.6204 [0.5758, 0.6709]  t 0.698 d 0.542  tw 0.5984 [0.5579, 0.6373]
+    word-initial  0.4514 [0.4071, 0.7347]  t 0.424 d 0.478  tw 0.5289 [0.3118, 0.7311]
+  wav2vec2_rv (layer 9)
+    word-medial   0.6148 [0.5808, 0.6489]  t 0.629 d 0.601  tw 0.5751 [0.5405, 0.6097]
+    word-final    0.6423 [0.6041, 0.6839]  t 0.698 d 0.586  tw 0.6158 [0.5774, 0.6539]
+    word-initial  0.4901 [0.4711, 0.6706]  t 0.464 d 0.516  tw 0.6067 [0.4927, 0.7471]
+  wav2vec2_vrv (layer 9)
+    word-medial   0.6604 [0.6238, 0.6919]  t 0.673 d 0.648  tw 0.6350 [0.6009, 0.6685]
+    word-final    0.6257 [0.5818, 0.6744]  t 0.693 d 0.559  tw 0.5530 [0.5118, 0.5927]
+    word-initial  0.4853 [0.4461, 0.7675]  t 0.427 d 0.543  tw 0.6121 [0.3946, 0.8150]
+  wavjepa_r (layer 3)
+    word-medial   0.5163 [0.4794, 0.5523]  t 0.555 d 0.478  tw 0.4758 [0.4415, 0.5102]
+    word-final    0.5736 [0.5361, 0.6139]  t 0.657 d 0.490  tw 0.5490 [0.5101, 0.5890]
+    word-initial  0.4140 [0.3242, 0.5473]  t 0.393 d 0.435  tw 0.4318 [0.2967, 0.5488]
+  wavjepa_vr (layer 4)
+    word-medial   0.5356 [0.4953, 0.5769]  t 0.576 d 0.495  tw 0.5168 [0.4816, 0.5508]
+    word-final    0.5849 [0.5453, 0.6283]  t 0.662 d 0.508  tw 0.5353 [0.4952, 0.5766]
+    word-initial  0.4038 [0.3693, 0.7869]  t 0.384 d 0.424  tw 0.7044 [0.5488, 0.8383]
+  wavjepa_rv (layer 4)
+    word-medial   0.5669 [0.5336, 0.6002]  t 0.619 d 0.514  tw 0.5364 [0.5012, 0.5709]
+    word-final    0.5641 [0.5244, 0.6096]  t 0.649 d 0.479  tw 0.5255 [0.4845, 0.5661]
+    word-initial  0.4113 [0.3881, 0.6201]  t 0.404 d 0.418  tw 0.5360 [0.4156, 0.6813]
+  wavjepa_vrv (layer 6)
+    word-medial   0.5524 [0.5167, 0.5882]  t 0.600 d 0.505  tw 0.5420 [0.5070, 0.5765]
+    word-final    0.5735 [0.5287, 0.6232]  t 0.674 d 0.473  tw 0.5545 [0.5141, 0.5954]
+    word-initial  0.3718 [0.3113, 0.5070]  t 0.347 d 0.397  tw 0.4500 [0.3091, 0.5675]
+  mfcc_r (layer 0)
+    word-medial   0.4725 [0.4142, 0.5339]  t 0.434 d 0.511  tw 0.4682 [0.4316, 0.5044]
+    word-final    0.5648 [0.4954, 0.6412]  t 0.604 d 0.525  tw 0.5518 [0.5121, 0.5930]
+    word-initial  0.4615 [0.3013, 0.5894]  t 0.352 d 0.571  tw 0.4763 [0.3478, 0.6014]
+  mfcc_vr (layer 0)
+    word-medial   0.4866 [0.4290, 0.5446]  t 0.444 d 0.529  tw 0.4415 [0.4054, 0.4765]
+    word-final    0.5651 [0.5090, 0.6291]  t 0.632 d 0.498  tw 0.5119 [0.4707, 0.5543]
+    word-initial  0.3997 [0.2151, 0.5576]  t 0.310 d 0.489  tw 0.3902 [0.2695, 0.5147]
+  mfcc_rv (layer 0)
+    word-medial   0.4878 [0.4392, 0.5389]  t 0.402 d 0.573  tw 0.4799 [0.4435, 0.5152]
+    word-final    0.5515 [0.4871, 0.6254]  t 0.597 d 0.506  tw 0.5513 [0.5104, 0.5924]
+    word-initial  0.4853 [0.3046, 0.6541]  t 0.405 d 0.565  tw 0.5464 [0.3669, 0.7691]
+  mfcc_vrv (layer 0)
+    word-medial   0.5071 [0.4550, 0.5568]  t 0.420 d 0.594  tw 0.4742 [0.4396, 0.5086]
+    word-final    0.5715 [0.5174, 0.6323]  t 0.653 d 0.490  tw 0.5383 [0.4965, 0.5811]
+    word-initial  0.4262 [0.3825, 0.6939]  t 0.363 d 0.489  tw 0.5485 [0.4154, 0.7187]
+
+Comparisons (word-medial minus word-final; P2 less MFCC's gap). Called: P1 and P2 for wav2vec2_r, site-weighted, only
+  P1  wav2vec2_r    site  -0.0340  [-0.0838, +0.0104]  no effect
+  P2  wav2vec2_r    site  +0.0584  [-0.0229, +0.1386]  no effect
+  P1  wav2vec2_r    type  -0.0376  [-0.0891, +0.0147]  reported, not called
+  P2  wav2vec2_r    type  +0.0460  [-0.0212, +0.1132]  reported, not called
+  P1  wav2vec2_vr   site  +0.0303  [-0.0318, +0.0846]  reported, not called
+  P2  wav2vec2_vr   site  +0.1088  [+0.0478, +0.1667]  reported, not called
+  P1  wav2vec2_vr   type  +0.0136  [-0.0388, +0.0671]  reported, not called
+  P2  wav2vec2_vr   type  +0.0840  [+0.0179, +0.1515]  reported, not called
+  P1  wav2vec2_rv   site  -0.0274  [-0.0815, +0.0228]  reported, not called
+  P2  wav2vec2_rv   site  +0.0363  [-0.0299, +0.1083]  reported, not called
+  P1  wav2vec2_rv   type  -0.0406  [-0.0916, +0.0123]  reported, not called
+  P2  wav2vec2_rv   type  +0.0307  [-0.0360, +0.0983]  reported, not called
+  P1  wav2vec2_vrv  site  +0.0348  [-0.0254, +0.0875]  reported, not called
+  P2  wav2vec2_vrv  site  +0.0991  [+0.0371, +0.1609]  reported, not called
+  P1  wav2vec2_vrv  type  +0.0820  [+0.0296, +0.1362]  reported, not called
+  P2  wav2vec2_vrv  type  +0.1460  [+0.0824, +0.2116]  reported, not called
+  P1  wavjepa_r     site  -0.0573  [-0.1109, -0.0072]  reported, not called
+  P2  wavjepa_r     site  +0.0351  [-0.0381, +0.1099]  reported, not called
+  P1  wavjepa_r     type  -0.0732  [-0.1247, -0.0213]  reported, not called
+  P2  wavjepa_r     type  +0.0104  [-0.0524, +0.0746]  reported, not called
+  P1  wavjepa_vr    site  -0.0493  [-0.1075, +0.0052]  reported, not called
+  P2  wavjepa_vr    site  +0.0292  [-0.0273, +0.0921]  reported, not called
+  P1  wavjepa_vr    type  -0.0185  [-0.0715, +0.0332]  reported, not called
+  P2  wavjepa_vr    type  +0.0519  [-0.0130, +0.1161]  reported, not called
+  P1  wavjepa_rv    site  +0.0027  [-0.0526, +0.0528]  reported, not called
+  P2  wavjepa_rv    site  +0.0664  [-0.0019, +0.1381]  reported, not called
+  P1  wavjepa_rv    type  +0.0109  [-0.0433, +0.0643]  reported, not called
+  P2  wavjepa_rv    type  +0.0823  [+0.0135, +0.1517]  reported, not called
+  P1  wavjepa_vrv   site  -0.0212  [-0.0788, +0.0336]  reported, not called
+  P2  wavjepa_vrv   site  +0.0432  [-0.0157, +0.1082]  reported, not called
+  P1  wavjepa_vrv   type  -0.0125  [-0.0669, +0.0397]  reported, not called
+  P2  wavjepa_vrv   type  +0.0515  [-0.0136, +0.1177]  reported, not called
