@@ -1,0 +1,18 @@
+Span grid, /d/ F1 and layer spread — after the fact, not registered
+Run 20261121, from the span grid's run 20261029; 10,334 sites (2,513 /d/, 24.3%).
+Reference only (pilot criterion 4, not a span-grid criterion): F1 >= 0.45; always /d/ gives 0.391 on the pilot's set.
+Always /d/ on these sites: F1 0.391.
+
+block          best      BA  F1 /d/  max F1 (layer)  BA spread
+wavjepa_r         3  0.5432  0.3553  0.3553 ( 3)       0.0266
+wavjepa_vr        4  0.5549  0.3679  0.3690 ( 3)       0.0321
+wavjepa_rv        4  0.5524  0.3640  0.3640 ( 4)       0.0480
+wavjepa_vrv       6  0.5508  0.3609  0.3609 ( 6)       0.0197
+wav2vec2_r        9  0.6163  0.4357  0.4357 ( 9)       0.0817
+wav2vec2_vr       9  0.6168  0.4356  0.4356 ( 9)       0.0767
+wav2vec2_rv       9  0.6218  0.4420  0.4420 ( 9)       0.0852
+wav2vec2_vrv      9  0.6254  0.4459  0.4459 ( 9)       0.0898
+mfcc_r            0  0.5291  0.3523  0.3523 ( 0)            —
+mfcc_vr           0  0.5296  0.3498  0.3498 ( 0)            —
+mfcc_rv           0  0.5299  0.3548  0.3548 ( 0)            —
+mfcc_vrv          0  0.5443  0.3643  0.3643 ( 0)            —
