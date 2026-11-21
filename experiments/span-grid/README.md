@@ -400,5 +400,83 @@ not re-read in reverse here because the reading would be chosen after the
 result. The encoders' order is supported by registered comparisons: C5 calls
 wav2vec2-base ahead of MFCC on every span and WavJEPA on none.
 
+**2026-11-21 — A re-score by the flap's position in its word, registered
+before any position split is read (§6, §7).** A new analysis of the pooled
+design's existing out-of-fold predictions (`grid/predictions.parquet`, from
+`004ea19`): no probe is fit and nothing is re-extracted. It asks where
+wav2vec2-base's lead on unseen words comes from. Pasad et al. (*What Do
+Self-Supervised Speech Models Know About Words?*, Fig. 4, §5.1.2) find
+that frames near the centre of a word segment are the most informative of
+word identity, in wav2vec 2.0 base and every other model they test. If
+the score is a lexical shortcut, it should come mostly from flaps inside a
+word. If it is phonetic, position should matter little. *Lexical* here
+includes parts of words: word-medial sites include flaps at a morpheme's
+edge (*started*, *getting*, *thirty*), and the inventory has no morpheme
+segmentation, so the re-score cannot tell a word-level shortcut from a
+morpheme-level one.
+
+**Groups**, from the inventory's `phone_idx_in_word` against the length of
+the citation form:
+
+- **word-final**: the flap is the citation form's last phone (*that, but,
+  lot, it*)
+- **word-medial**: neither first nor last (*little, better, city*)
+- **word-initial**: the first phone, after a vowel-final word (*to, do*)
+
+Counted 2026-11-21 from the inventory and the grid's site mask alone, with
+no prediction loaded (`run_probes.SpanData`):
+
+| Group | Sites | /d/ | Word types | Top 10 types' share of sites |
+|---|---|---|---|---|
+| word-final | 6,428 | 1,462 (22.7%) | 387 | 58.2% |
+| word-medial | 2,987 | 867 (29.0%) | 610 | 29.3% |
+| word-initial | 919 | 184 (20.0%) | 31 | 97.1% (*to* alone 722) |
+
+37 types have sites in both word-final and word-medial: two-flap words such as
+*dated*.
+
+**Layers are fixed, not re-selected.** Each block is read at its best layer in
+the span grid's summary (`20261029`): wav2vec2-base layer 9 on every span,
+WavJEPA layers 3, 4, 4 and 6 (ɾ, Vɾ, ɾV, VɾV), and MFCC's single
+representation. Position plays no part in choosing a layer.
+
+**Registered comparisons**, each called by §6's rule made two-sided: a gap of
+at least 0.05 in absolute value **and** a paired word-type bootstrap 95%
+interval that excludes zero. The C7 entry above shows why the rule has to be
+two-sided here. The bootstrap is the pilot's 991-type index and weights
+(seed 20260928), with both groups scored on the same resampled types.
+
+- **P1.** wav2vec2-base, ɾ span, layer 9: word-medial minus word-final
+  balanced accuracy.
+- **P2.** P1's gap minus MFCC's ɾ gap (word-medial minus word-final).
+  Position also changes the phonetics: a word-final flap sits across a word
+  boundary, before a different mix of vowels. MFCC picks up that part with
+  no knowledge of words, so P2 asks whether the encoder's position difference
+  goes beyond the acoustic features'.
+
+**Confounds, and how each is handled:**
+
+- **Class balance moves with position** (22.7% /d/ word-final, 29.0%
+  word-medial). Balanced accuracy is computed within each group, and /t/
+  and /d/ recall are reported per group.
+- **Frequency moves with position.** Word-final sites concentrate in a few
+  function words (the top ten types hold 58% of them). Reported, not called:
+  each group's balanced accuracy with every word type weighted equally, each
+  site weighted by one over its type's site count in the group.
+- **Type counts** per group and class are reported with every score.
+
+**Reported, not called:** P1 and P2 for WavJEPA and for the other three spans;
+the word-initial group's score, whose 31 types, mostly *to*, are too few for
+an interval to mean much; per-layer curves for each group.
+
+**What each reading predicts.** A lexical shortcut predicts P1 and P2 both
+positive. A phonetic cue predicts P1 near zero, or a P1 that MFCC shares
+(P2 near zero).
+
+**The author's prediction:** I predict a lexical shortcut.
+
+The scoring script is `scripts/score_position.py`. It writes aggregates only,
+to `results/span-grid/position-<date>.*`.
+
 ---
 
