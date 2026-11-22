@@ -573,5 +573,15 @@ isn't that much better than chance to begin with).
 The scoring script is `scripts/score_frequency.py`. It writes aggregates only,
 to `results/span-grid/frequency-<date>.*`.
 
+*Correction, 2026-11-21, before any score was read.* The claim above that
+every word type falls in exactly one band is wrong. Frequency is counted per
+word string, and the split's type key merges clitic and possessive forms
+(*that* with *that's*, *it* with *it's*), so 15 type keys have sites in two
+bands: 1,964 sites, of which 63 sit outside their key's main band. Nothing in
+the method changes. The bootstrap does not need the claim: a resampled type
+brings each of its sites into that site's own band. Frequency stays per word
+string, as counted for the table. The scoring script stopped on its own check
+of the claim before loading any prediction.
+
 ---
 
