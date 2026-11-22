@@ -583,5 +583,129 @@ brings each of its sites into that site's own band. Frequency stays per word
 string, as counted for the table. The scoring script stopped on its own check
 of the claim before loading any prediction.
 
+**2026-11-21 — A transfer probe: trained on unflapped stops, tested on
+flaps, registered before any stop is extracted (§6, §7).** Every probe so
+far has trained on flaps. This one trains /t/ against /d/ on stops that
+were pronounced as stops, [t] and [d], where the flaps occur. It is then
+scored on the flaps of word types and speakers it never trained on. If the
+direction that separates a clear [t] from a clear [d] also separates the
+flaps, the flap carries a residual of *that* contrast. That claim is
+stronger than "something in the flap's frames predicts the label". A probe
+that only learned which words go with which label has nothing to transfer.
+
+**Training sites** (`scripts/count_transfer_candidates.py`, `6e5d077`;
+counted 2026-11-21, with no representation loaded).
+
+- **Each token** is a canonical /t/ or /d/ surfacing as the same stop,
+  under `count_flap_sites`' token rules.
+- **Its neighbours on the phone tier** must fall in §2's classes. Before
+  it: a vowel, a sonorant coda or a syllabic consonant. After it: a vowel,
+  a syllabic consonant or `hh`.
+- **Its position must be attested:** the same word type at the same
+  position in its citation form must be among the grid's 10,334 flap
+  sites, and must flap in at least 40% of its tokens in this context.
+- **Word-initial positions are out.**
+
+Buckeye marks no stress, so the corpus supplies it. A position Buckeye
+doesn't flap (*attack*) is out, which a phone-context rule alone would let
+in (Bauer 2005, p. 31).
+
+| Set | Stops | /d/ | Word types | Speakers with a /d/ | Grid flaps at a covered position |
+|---|---|---|---|---|---|
+| ≥ 0.40 (registered) | 2,247 | 1,011 (45.0%) | 252 | 40 | 8,916 (23.1% /d/) |
+| ≥ 0.25 (sensitivity) | 2,433 | 1,162 (47.8%) | 303 | 40 | 9,030 |
+| ≥ 0.50 (sensitivity) | 1,749 | 746 (42.7%) | 220 | 40 | 8,198 |
+
+The threshold was chosen from the counts as the point where the set
+stops being cheap to shrink. No threshold brings the set's /d/ share near
+the flaps' (about 23%). The probe's balanced class weights absorb the
+difference in training, and balanced accuracy on the flaps doesn't depend
+on their class balance.
+
+**Extraction:** the same as the pooled design's (§3, §4). Each stop is
+encoded inside its own excerpt, the stop ± 200 ms. The same encoders
+(wav2vec2-base, WavJEPA, MFCC), revisions and frame mapping are used. §2's
+spans are defined with the stop in the flap's place:
+
+- **stop** — the stop alone, closure and release as transcribed (the
+  flap span's counterpart);
+- **V+stop**, **stop+V** and **V+stop+V** — the same stretches as Vɾ, ɾV
+  and VɾV.
+
+**Split:** the joint split's 5 × 5 grid, unchanged. Every training
+stop's word type is a flap type by construction, so it already has a type
+group. Every stop's speaker has a speaker group. For each of the 25 test
+cells, the probe trains on the stops sharing neither the cell's speakers
+nor its word types, and is scored on the cell's flaps. Every grid flap is
+scored once. Each fit trains on about 64% of the stops, roughly 1,440.
+
+**Probe:** §5's probe, unchanged (L2 logistic regression, C = 1, balanced
+class weights, standardized on each fit's training sites).
+
+**Layers are fixed**, as in the two re-scores above: each representation at
+its span-grid best layer for the matching flap span (wav2vec2-base 9;
+WavJEPA 3, 4, 4, 6; MFCC its one). No layer is chosen on transfer scores.
+
+**Registered comparisons**, by §6's rule (a gap of at least 0.05 and a
+paired word-type bootstrap 95% interval excluding zero; the pilot's
+991-type index and weights, seed 20260928), over all 10,334 grid flaps:
+
+- **X1.** wav2vec2-base, stop → ɾ at layer 9: transfer balanced accuracy
+  minus chance (0.5).
+- **X2.** wav2vec2-base, V+stop → Vɾ at layer 9: the same. The asymmetry
+  below makes this the span where a shared cue can exist.
+
+**Reported, not called:**
+
+- X1 and X2 for WavJEPA and MFCC, and for the stop+V and V+stop+V spans.
+- Every layer's transfer curve.
+- The sensitivity sets at 0.25 and 0.50, with the same calls' numbers.
+- Transfer scored only on flaps at a covered position (8,916).
+- The flap-trained probe's score beside each transfer score: the span
+  grid's, from its cached predictions.
+- The frequency re-score's stratified score, applied to the transfer
+  predictions.
+- /t/ and /d/ recall on the flaps.
+- Each speaker group's and each word-type group's score.
+
+**The asymmetry, stated in advance.** A clear stop's strongest cues are
+closure voicing and the release burst. A flap has neither, so a probe
+trained on stops may lean on cues the flap lacks, and fail to transfer
+even if the flap keeps a trace. **A failed transfer is weak evidence
+against a trace.** A successful one is strong evidence for one. The cue
+the two do share is the length of the preceding vowel or sonorant
+stretch, which is why X2 is called alongside X1.
+
+**What the readings predict:**
+
+- **Plain lexical shortcut** (the probe learns which words carry which
+  label): no transfer. Stops and flaps in held-out words share no labels
+  through memory.
+- **A phonetic residual of the contrast** (incomplete neutralization):
+  transfer, mainly in X2, where the stretch's length is shared.
+- **Top-down** (the model recognizes the word, and its lexical knowledge
+  pulls the flap toward where its stop lands, as listeners' lexical bias
+  does): transfer, on X1 as well as X2.
+
+So transfer separates a shortcut from the other two readings. It doesn't
+separate those two from each other.
+
+**Frequency.** The training stops' words and the flaps' words differ in
+frequency the way the position groups did. The decided set drops the
+word-initial *to*s, and the covered flap positions include the common
+function words. The frequency re-score found frequency doesn't explain the
+flap-trained score. The reported stratified score checks the same for
+transfer.
+
+**HuBERT and WavLM**, if they are extracted with these sites, get a dated
+entry of their own before any of their scores is read.
+
+**The author's prediction:** I think it'll do better than chance this
+time. The vowel lengthening before voiced consonants (/d/) might be the
+clue that transfers, rather than the stop's other markers.
+
+The scoring script will be `scripts/score_transfer.py`, writing
+aggregates only to `results/span-grid/transfer-<date>.*`.
+
 ---
 
