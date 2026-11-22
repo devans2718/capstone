@@ -1,0 +1,21 @@
+comparison,representation,span,gap,ci_lo,ci_hi,call
+F1,wav2vec2,r,0.115234,0.086016,0.140095,effect
+F2,wav2vec2,r,0.095199,0.054017,0.135391,effect
+F1,wav2vec2,vr,0.127542,0.091421,0.162080,"reported, not called"
+F2,wav2vec2,vr,0.103574,0.075649,0.133883,"reported, not called"
+F1,wav2vec2,rv,0.129652,0.095584,0.158859,"reported, not called"
+F2,wav2vec2,rv,0.109933,0.069423,0.147560,"reported, not called"
+F1,wav2vec2,vrv,0.137120,0.100157,0.170725,"reported, not called"
+F2,wav2vec2,vrv,0.107930,0.077723,0.138077,"reported, not called"
+F1,wavjepa,r,0.047681,0.016657,0.074055,"reported, not called"
+F2,wavjepa,r,0.027646,-0.014632,0.066356,"reported, not called"
+F1,wavjepa,vr,0.062947,0.029717,0.093629,"reported, not called"
+F2,wavjepa,vr,0.038979,0.006735,0.071828,"reported, not called"
+F1,wavjepa,rv,0.069211,0.042818,0.095066,"reported, not called"
+F2,wavjepa,rv,0.049492,0.006552,0.092435,"reported, not called"
+F1,wavjepa,vrv,0.063888,0.031316,0.095170,"reported, not called"
+F2,wavjepa,vrv,0.034698,0.000524,0.067615,"reported, not called"
+F1,mfcc,r,0.020035,-0.027385,0.067812,"reported, not called"
+F1,mfcc,vr,0.023968,-0.021688,0.066950,"reported, not called"
+F1,mfcc,rv,0.019719,-0.027537,0.066405,"reported, not called"
+F1,mfcc,vrv,0.029190,-0.015648,0.070829,"reported, not called"

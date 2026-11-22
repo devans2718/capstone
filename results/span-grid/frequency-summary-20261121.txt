@@ -1,0 +1,210 @@
+Span grid, frequency re-score (§8, 2026-11-21) — scores with word frequency held roughly fixed
+Run 20261121, registered at 9464163 (corrected 7842a84); run on top of 7842a84, this script committed with these results.
+`joint` out-of-fold predictions from the span grid's run 20261029; nothing refit.
+Bootstrap: 10,000 resamples of the pilot's 991-type index, seed 20260928.
+Frequency: the word's token count over all Buckeye .words files. Bands: decades; the 1000+ band is left out of the stratified scores.
+Type keys spanning two bands (clitic forms; §8 correction): 15, 1,964 sites.
+
+Calls (F1: stratified BA minus 0.5; F2: stratified BA minus MFCC's). Called: wav2vec2_r only
+  F1  wav2vec2_r    +0.1152  [+0.0860, +0.1401]  effect
+  F2  wav2vec2_r    +0.0952  [+0.0540, +0.1354]  effect
+  F1  wav2vec2_vr   +0.1275  [+0.0914, +0.1621]  reported, not called
+  F2  wav2vec2_vr   +0.1036  [+0.0756, +0.1339]  reported, not called
+  F1  wav2vec2_rv   +0.1297  [+0.0956, +0.1589]  reported, not called
+  F2  wav2vec2_rv   +0.1099  [+0.0694, +0.1476]  reported, not called
+  F1  wav2vec2_vrv  +0.1371  [+0.1002, +0.1707]  reported, not called
+  F2  wav2vec2_vrv  +0.1079  [+0.0777, +0.1381]  reported, not called
+  F1  wavjepa_r     +0.0477  [+0.0167, +0.0741]  reported, not called
+  F2  wavjepa_r     +0.0276  [-0.0146, +0.0664]  reported, not called
+  F1  wavjepa_vr    +0.0629  [+0.0297, +0.0936]  reported, not called
+  F2  wavjepa_vr    +0.0390  [+0.0067, +0.0718]  reported, not called
+  F1  wavjepa_rv    +0.0692  [+0.0428, +0.0951]  reported, not called
+  F2  wavjepa_rv    +0.0495  [+0.0066, +0.0924]  reported, not called
+  F1  wavjepa_vrv   +0.0639  [+0.0313, +0.0952]  reported, not called
+  F2  wavjepa_vrv   +0.0347  [+0.0005, +0.0676]  reported, not called
+  F1  mfcc_r        +0.0200  [-0.0274, +0.0678]  reported, not called
+  F1  mfcc_vr       +0.0240  [-0.0217, +0.0670]  reported, not called
+  F1  mfcc_rv       +0.0197  [-0.0275, +0.0664]  reported, not called
+  F1  mfcc_vrv      +0.0292  [-0.0156, +0.0708]  reported, not called
+
+At the registered layer: balanced accuracy [95% CI]; sites, /d/; recall /t/, /d/; /t/ and /d/ types
+  wav2vec2_r (layer 9)
+    band under 10                  0.5810 [0.5501, 0.6122]  1,094   433  t 0.587 d 0.575  types 384/287
+    band 10-99                     0.6022 [0.5693, 0.6343]  2,126   828  t 0.591 d 0.614  types 147/136
+    band 100-999                   0.6369 [0.5829, 0.6822]  3,007 1,141  t 0.718 d 0.556  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.660 d 0.523  types 10/1
+    lower bands pooled             0.6157 [0.5833, 0.6456]  6,227 2,402  t 0.652 d 0.579  types 553/446
+    word-final, band under 10      0.6082 [0.5432, 0.6729]    247   157  t 0.522 d 0.694  types 68/119
+    word-final, band 10-99         0.5877 [0.5451, 0.6293]    754   359  t 0.557 d 0.618  types 76/75
+    word-final, band 100-999       0.6434 [0.5776, 0.6919]  2,155   946  t 0.748 d 0.539  types 16/24
+    word-medial, band under 10     0.5515 [0.5145, 0.5897]    841   272  t 0.599 d 0.504  types 315/176
+    word-medial, band 10-99        0.6128 [0.5658, 0.6571]  1,334   440  t 0.605 d 0.620  types 69/52
+    word-medial, band 100-999      0.6668 [0.5879, 0.7676]    810   155  t 0.663 d 0.671  types 9/6  (22 resamples skipped)
+    stratified                     0.6152 [0.5860, 0.6401]  6,227 2,402
+    word-final, stratified         0.6273 [0.5810, 0.6622]  3,156 1,462
+    word-medial, stratified        0.6102 [0.5783, 0.6476]  2,985   867  (22 resamples skipped)
+  wav2vec2_vr (layer 9)
+    band under 10                  0.6054 [0.5739, 0.6367]  1,094   433  t 0.613 d 0.598  types 384/287
+    band 10-99                     0.6328 [0.5960, 0.6676]  2,126   828  t 0.636 d 0.629  types 147/136
+    band 100-999                   0.6319 [0.5640, 0.6985]  3,007 1,141  t 0.735 d 0.528  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.648 d 0.432  types 10/1
+    lower bands pooled             0.6281 [0.5895, 0.6651]  6,227 2,402  t 0.681 d 0.576  types 553/446
+    word-final, band under 10      0.6177 [0.5479, 0.6846]    247   157  t 0.567 d 0.669  types 68/119
+    word-final, band 10-99         0.5937 [0.5401, 0.6444]    754   359  t 0.575 d 0.613  types 76/75
+    word-final, band 100-999       0.6216 [0.5482, 0.6915]  2,155   946  t 0.749 d 0.495  types 16/24
+    word-medial, band under 10     0.5886 [0.5490, 0.6273]    841   272  t 0.622 d 0.555  types 315/176
+    word-medial, band 10-99        0.6601 [0.6106, 0.7071]  1,334   440  t 0.663 d 0.657  types 69/52
+    word-medial, band 100-999      0.7098 [0.6051, 0.8302]    810   155  t 0.710 d 0.710  types 9/6  (22 resamples skipped)
+    stratified                     0.6275 [0.5914, 0.6621]  6,227 2,402
+    word-final, stratified         0.6147 [0.5613, 0.6638]  3,156 1,462
+    word-medial, stratified        0.6534 [0.6148, 0.6952]  2,985   867  (22 resamples skipped)
+  wav2vec2_rv (layer 9)
+    band under 10                  0.5907 [0.5596, 0.6220]  1,094   433  t 0.581 d 0.600  types 384/287
+    band 10-99                     0.6215 [0.5832, 0.6580]  2,126   828  t 0.619 d 0.624  types 147/136
+    band 100-999                   0.6496 [0.5859, 0.7025]  3,007 1,141  t 0.735 d 0.564  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.647 d 0.468  types 10/1
+    lower bands pooled             0.6302 [0.5929, 0.6652]  6,227 2,402  t 0.669 d 0.592  types 553/446
+    word-final, band under 10      0.6344 [0.5701, 0.6982]    247   157  t 0.600 d 0.669  types 68/119
+    word-final, band 10-99         0.5984 [0.5534, 0.6421]    754   359  t 0.565 d 0.632  types 76/75
+    word-final, band 100-999       0.6671 [0.5796, 0.7241]  2,155   946  t 0.779 d 0.555  types 16/24
+    word-medial, band under 10     0.5676 [0.5305, 0.6052]    841   272  t 0.576 d 0.559  types 315/176
+    word-medial, band 10-99        0.6330 [0.5783, 0.6852]  1,334   440  t 0.643 d 0.623  types 69/52
+    word-medial, band 100-999      0.6332 [0.5674, 0.7677]    810   155  t 0.653 d 0.613  types 9/6  (22 resamples skipped)
+    stratified                     0.6297 [0.5956, 0.6589]  6,227 2,402
+    word-final, stratified         0.6481 [0.5864, 0.6891]  3,156 1,462
+    word-medial, stratified        0.6146 [0.5815, 0.6631]  2,985   867  (22 resamples skipped)
+  wav2vec2_vrv (layer 9)
+    band under 10                  0.6065 [0.5745, 0.6378]  1,094   433  t 0.622 d 0.591  types 384/287
+    band 10-99                     0.6330 [0.5965, 0.6663]  2,126   828  t 0.629 d 0.636  types 147/136
+    band 100-999                   0.6512 [0.5800, 0.7165]  3,007 1,141  t 0.741 d 0.562  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.643 d 0.495  types 10/1
+    lower bands pooled             0.6376 [0.5980, 0.6752]  6,227 2,402  t 0.682 d 0.593  types 553/446
+    word-final, band under 10      0.5406 [0.4762, 0.6035]    247   157  t 0.489 d 0.592  types 68/119
+    word-final, band 10-99         0.5831 [0.5306, 0.6313]    754   359  t 0.537 d 0.630  types 76/75
+    word-final, band 100-999       0.6445 [0.5574, 0.7137]  2,155   946  t 0.763 d 0.526  types 16/24
+    word-medial, band under 10     0.6166 [0.5766, 0.6564]    841   272  t 0.645 d 0.588  types 315/176
+    word-medial, band 10-99        0.6611 [0.6119, 0.7069]  1,334   440  t 0.670 d 0.652  types 69/52
+    word-medial, band 100-999      0.7206 [0.6228, 0.7993]    810   155  t 0.699 d 0.742  types 9/6  (22 resamples skipped)
+    stratified                     0.6371 [0.6002, 0.6707]  6,227 2,402
+    word-final, stratified         0.6217 [0.5600, 0.6709]  3,156 1,462
+    word-medial, stratified        0.6647 [0.6276, 0.6975]  2,985   867  (22 resamples skipped)
+  wavjepa_r (layer 3)
+    band under 10                  0.5041 [0.4715, 0.5352]  1,094   433  t 0.489 d 0.520  types 384/287
+    band 10-99                     0.5375 [0.4972, 0.5772]  2,126   828  t 0.534 d 0.541  types 147/136
+    band 100-999                   0.5707 [0.5155, 0.6135]  3,007 1,141  t 0.702 d 0.440  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.601 d 0.324  types 10/1
+    lower bands pooled             0.5485 [0.5100, 0.5838]  6,227 2,402  t 0.608 d 0.489  types 553/446
+    word-final, band under 10      0.5509 [0.4876, 0.6141]    247   157  t 0.522 d 0.580  types 68/119
+    word-final, band 10-99         0.5565 [0.5089, 0.6040]    754   359  t 0.539 d 0.574  types 76/75
+    word-final, band 100-999       0.5872 [0.4935, 0.6380]  2,155   946  t 0.730 d 0.444  types 16/24
+    word-medial, band under 10     0.4870 [0.4479, 0.5237]    841   272  t 0.485 d 0.489  types 315/176
+    word-medial, band 10-99        0.5219 [0.4647, 0.5764]  1,334   440  t 0.532 d 0.511  types 69/52
+    word-medial, band 100-999      0.5051 [0.4349, 0.6062]    810   155  t 0.649 d 0.361  types 9/6  (22 resamples skipped)
+    stratified                     0.5477 [0.5167, 0.5741]  6,227 2,402
+    word-final, stratified         0.5770 [0.5125, 0.6140]  3,156 1,462
+    word-medial, stratified        0.5075 [0.4742, 0.5458]  2,985   867  (22 resamples skipped)
+  wavjepa_vr (layer 4)
+    band under 10                  0.5266 [0.4930, 0.5594]  1,094   433  t 0.513 d 0.540  types 384/287
+    band 10-99                     0.5665 [0.5268, 0.6045]  2,126   828  t 0.570 d 0.563  types 147/136
+    band 100-999                   0.5737 [0.5144, 0.6275]  3,007 1,141  t 0.698 d 0.450  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.604 d 0.324  types 10/1
+    lower bands pooled             0.5637 [0.5260, 0.6000]  6,227 2,402  t 0.622 d 0.505  types 553/446
+    word-final, band under 10      0.5152 [0.4509, 0.5796]    247   157  t 0.444 d 0.586  types 68/119
+    word-final, band 10-99         0.5731 [0.5238, 0.6195]    754   359  t 0.542 d 0.604  types 76/75
+    word-final, band 100-999       0.5994 [0.5318, 0.6560]  2,155   946  t 0.741 d 0.458  types 16/24
+    word-medial, band under 10     0.5147 [0.4734, 0.5550]    841   272  t 0.522 d 0.507  types 315/176
+    word-medial, band 10-99        0.5585 [0.5006, 0.6129]  1,334   440  t 0.581 d 0.536  types 69/52
+    word-medial, band 100-999      0.4858 [0.4136, 0.6384]    810   155  t 0.617 d 0.355  types 9/6  (22 resamples skipped)
+    stratified                     0.5629 [0.5297, 0.5936]  6,227 2,402
+    word-final, stratified         0.5865 [0.5387, 0.6262]  3,156 1,462
+    word-medial, stratified        0.5264 [0.4921, 0.5767]  2,985   867  (22 resamples skipped)
+  wavjepa_rv (layer 4)
+    band under 10                  0.5273 [0.4932, 0.5598]  1,094   433  t 0.528 d 0.527  types 384/287
+    band 10-99                     0.5787 [0.5417, 0.6139]  2,126   828  t 0.599 d 0.558  types 147/136
+    band 100-999                   0.5778 [0.5322, 0.6224]  3,007 1,141  t 0.723 d 0.432  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.589 d 0.369  types 10/1
+    lower bands pooled             0.5700 [0.5364, 0.6028]  6,227 2,402  t 0.648 d 0.493  types 553/446
+    word-final, band under 10      0.5136 [0.4416, 0.5831]    247   157  t 0.467 d 0.561  types 68/119
+    word-final, band 10-99         0.5784 [0.5287, 0.6249]    754   359  t 0.575 d 0.582  types 76/75
+    word-final, band 100-999       0.5804 [0.5107, 0.6338]  2,155   946  t 0.734 d 0.427  types 16/24
+    word-medial, band under 10     0.5226 [0.4808, 0.5626]    841   272  t 0.538 d 0.507  types 315/176
+    word-medial, band 10-99        0.5809 [0.5294, 0.6303]  1,334   440  t 0.610 d 0.552  types 69/52
+    word-medial, band 100-999      0.5623 [0.5153, 0.6429]    810   155  t 0.705 d 0.419  types 9/6  (22 resamples skipped)
+    stratified                     0.5692 [0.5428, 0.5951]  6,227 2,402
+    word-final, stratified         0.5747 [0.5256, 0.6137]  3,156 1,462
+    word-medial, stratified        0.5595 [0.5296, 0.5937]  2,985   867  (22 resamples skipped)
+  wavjepa_vrv (layer 6)
+    band under 10                  0.5464 [0.5135, 0.5787]  1,094   433  t 0.539 d 0.554  types 384/287
+    band 10-99                     0.5641 [0.5261, 0.6000]  2,126   828  t 0.585 d 0.543  types 147/136
+    band 100-999                   0.5701 [0.5102, 0.6263]  3,007 1,141  t 0.726 d 0.415  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.602 d 0.351  types 10/1
+    lower bands pooled             0.5648 [0.5255, 0.6043]  6,227 2,402  t 0.645 d 0.484  types 553/446
+    word-final, band under 10      0.5406 [0.4744, 0.6045]    247   157  t 0.489 d 0.592  types 68/119
+    word-final, band 10-99         0.5653 [0.5133, 0.6141]    754   359  t 0.559 d 0.571  types 76/75
+    word-final, band 100-999       0.5915 [0.5104, 0.6534]  2,155   946  t 0.768 d 0.415  types 16/24
+    word-medial, band under 10     0.5389 [0.4982, 0.5779]    841   272  t 0.548 d 0.529  types 315/176
+    word-medial, band 10-99        0.5651 [0.5140, 0.6158]  1,334   440  t 0.596 d 0.534  types 69/52
+    word-medial, band 100-999      0.5148 [0.4585, 0.6362]    810   155  t 0.649 d 0.381  types 9/6  (22 resamples skipped)
+    stratified                     0.5639 [0.5313, 0.5952]  6,227 2,402
+    word-final, stratified         0.5813 [0.5245, 0.6250]  3,156 1,462
+    word-medial, stratified        0.5441 [0.5147, 0.5858]  2,985   867  (22 resamples skipped)
+  mfcc_r (layer 0)
+    band under 10                  0.4948 [0.4600, 0.5296]  1,094   433  t 0.419 d 0.570  types 384/287
+    band 10-99                     0.5173 [0.4603, 0.5743]  2,126   828  t 0.431 d 0.604  types 147/136
+    band 100-999                   0.5312 [0.4427, 0.6182]  3,007 1,141  t 0.607 d 0.456  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.554 d 0.441  types 10/1
+    lower bands pooled             0.5210 [0.4663, 0.5736]  6,227 2,402  t 0.515 d 0.527  types 553/446
+    word-final, band under 10      0.5542 [0.4885, 0.6197]    247   157  t 0.433 d 0.675  types 68/119
+    word-final, band 10-99         0.5459 [0.4797, 0.6079]    754   359  t 0.473 d 0.618  types 76/75
+    word-final, band 100-999       0.5717 [0.4852, 0.6639]  2,155   946  t 0.678 d 0.465  types 16/24
+    word-medial, band under 10     0.4610 [0.4159, 0.5056]    841   272  t 0.418 d 0.504  types 315/176
+    word-medial, band 10-99        0.4967 [0.4133, 0.5821]  1,334   440  t 0.414 d 0.580  types 69/52
+    word-medial, band 100-999      0.4019 [0.2737, 0.6229]    810   155  t 0.475 d 0.329  types 9/6  (22 resamples skipped)
+    stratified                     0.5200 [0.4726, 0.5678]  6,227 2,402
+    word-final, stratified         0.5642 [0.5023, 0.6297]  3,156 1,462
+    word-medial, stratified        0.4609 [0.4076, 0.5322]  2,985   867  (22 resamples skipped)
+  mfcc_vr (layer 0)
+    band under 10                  0.4725 [0.4371, 0.5076]  1,094   433  t 0.363 d 0.582  types 384/287
+    band 10-99                     0.5144 [0.4549, 0.5726]  2,126   828  t 0.443 d 0.586  types 147/136
+    band 100-999                   0.5495 [0.4669, 0.6244]  3,007 1,141  t 0.658 d 0.441  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.567 d 0.333  types 10/1
+    lower bands pooled             0.5252 [0.4696, 0.5775]  6,227 2,402  t 0.534 d 0.516  types 553/446
+    word-final, band under 10      0.5145 [0.4370, 0.5922]    247   157  t 0.367 d 0.662  types 68/119
+    word-final, band 10-99         0.5286 [0.4634, 0.5902]    754   359  t 0.486 d 0.571  types 76/75
+    word-final, band 100-999       0.5837 [0.5028, 0.6632]  2,155   946  t 0.725 d 0.443  types 16/24
+    word-medial, band under 10     0.4466 [0.4038, 0.4882]    841   272  t 0.364 d 0.529  types 315/176
+    word-medial, band 10-99        0.5068 [0.4187, 0.5938]  1,334   440  t 0.425 d 0.589  types 69/52
+    word-medial, band 100-999      0.4493 [0.2867, 0.5663]    810   155  t 0.537 d 0.361  types 9/6  (22 resamples skipped)
+    stratified                     0.5240 [0.4783, 0.5670]  6,227 2,402
+    word-final, stratified         0.5651 [0.5073, 0.6211]  3,156 1,462
+    word-medial, stratified        0.4743 [0.4149, 0.5265]  2,985   867  (22 resamples skipped)
+  mfcc_rv (layer 0)
+    band under 10                  0.4938 [0.4579, 0.5306]  1,094   433  t 0.440 d 0.547  types 384/287
+    band 10-99                     0.5099 [0.4541, 0.5658]  2,126   828  t 0.410 d 0.610  types 147/136
+    band 100-999                   0.5361 [0.4468, 0.6212]  3,007 1,141  t 0.588 d 0.484  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.549 d 0.423  types 10/1
+    lower bands pooled             0.5205 [0.4662, 0.5711]  6,227 2,402  t 0.502 d 0.539  types 553/446
+    word-final, band under 10      0.5573 [0.4907, 0.6245]    247   157  t 0.522 d 0.592  types 68/119
+    word-final, band 10-99         0.5487 [0.4865, 0.6056]    754   359  t 0.501 d 0.596  types 76/75
+    word-final, band 100-999       0.5680 [0.4867, 0.6559]  2,155   946  t 0.678 d 0.458  types 16/24
+    word-medial, band under 10     0.4718 [0.4258, 0.5165]    841   272  t 0.429 d 0.515  types 315/176
+    word-medial, band 10-99        0.4891 [0.4090, 0.5728]  1,334   440  t 0.371 d 0.607  types 69/52
+    word-medial, band 100-999      0.5010 [0.4010, 0.6206]    810   155  t 0.421 d 0.581  types 9/6  (22 resamples skipped)
+    stratified                     0.5197 [0.4725, 0.5664]  6,227 2,402
+    word-final, stratified         0.5625 [0.5044, 0.6252]  3,156 1,462
+    word-medial, stratified        0.4874 [0.4413, 0.5391]  2,985   867  (22 resamples skipped)
+  mfcc_vrv (layer 0)
+    band under 10                  0.4909 [0.4567, 0.5246]  1,094   433  t 0.381 d 0.600  types 384/287
+    band 10-99                     0.5126 [0.4587, 0.5667]  2,126   828  t 0.432 d 0.593  types 147/136
+    band 100-999                   0.5549 [0.4706, 0.6299]  3,007 1,141  t 0.645 d 0.465  types 26/32
+    band 1000+                        n/a (one class)        4,107   111  t 0.596 d 0.369  types 10/1
+    lower bands pooled             0.5303 [0.4765, 0.5807]  6,227 2,402  t 0.527 d 0.533  types 553/446
+    word-final, band under 10      0.5565 [0.4857, 0.6262]    247   157  t 0.489 d 0.624  types 68/119
+    word-final, band 10-99         0.5350 [0.4740, 0.5918]    754   359  t 0.524 d 0.546  types 76/75
+    word-final, band 100-999       0.5838 [0.5026, 0.6585]  2,155   946  t 0.720 d 0.447  types 16/24
+    word-medial, band under 10     0.4760 [0.4350, 0.5154]    841   272  t 0.364 d 0.588  types 315/176
+    word-medial, band 10-99        0.5065 [0.4256, 0.5867]  1,334   440  t 0.393 d 0.620  types 69/52
+    word-medial, band 100-999      0.5172 [0.3843, 0.6026]    810   155  t 0.505 d 0.529  types 9/6  (22 resamples skipped)
+    stratified                     0.5292 [0.4844, 0.5708]  6,227 2,402
+    word-final, stratified         0.5700 [0.5125, 0.6234]  3,156 1,462
+    word-medial, stratified        0.5008 [0.4487, 0.5450]  2,985   867  (22 resamples skipped)
