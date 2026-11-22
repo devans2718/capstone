@@ -478,5 +478,100 @@ positive. A phonetic cue predicts P1 near zero, or a P1 that MFCC shares
 The scoring script is `scripts/score_position.py`. It writes aggregates only,
 to `results/span-grid/position-<date>.*`.
 
+**2026-11-21 — A re-score by the frequency of the flap's word, registered
+before any frequency split is read (§6, §7).** Like the position re-score
+above, a new analysis of the pooled design's existing out-of-fold predictions
+(`grid/predictions.parquet`, from `004ea19`): no probe is fit and nothing is
+re-extracted. The position re-score named frequency as a confound and did
+not measure it. Measured afterwards (`scripts/count_position_frequency.py`,
+`63fa6d6`), the words behind word-final flaps are far more frequent than the
+words behind word-medial ones, and within word-final flaps frequency follows
+the label: /t/ words are common function words, /d/ words mostly are not.
+Frequent words are reduced more in conversation. A probe could therefore
+separate /t/ from /d/ by how reduced the flap is, a property of the sound
+that follows the word rather than the contrast, and it would need no
+knowledge of words to do it: MFCC also does better word-final. This
+re-score asks how much of each representation's score survives when
+frequency is held roughly constant.
+
+**Frequency** is the word's token count over every Buckeye `.words` file,
+any pronunciation, so it is measured on the same corpus. **Bands** are
+decades of that count, fixed at round numbers: under 10, 10–99, 100–999,
+and 1,000 or more. Counted 2026-11-21 from the inventory, the corpus's word
+tier and the grid's site mask, with no prediction loaded:
+
+| Band | Sites | /d/ | Word types | /t/ types | /d/ types |
+|---|---|---|---|---|---|
+| under 10 | 1,094 | 433 (39.6%) | 655 | 384 | 287 |
+| 10–99 | 2,126 | 828 (38.9%) | 276 | 147 | 136 |
+| 100–999 | 3,007 | 1,141 (37.9%) | 57 | 26 | 32 |
+| 1,000 or more | 4,107 | 111 (2.7%) | 11 | 10 | 1 |
+
+The top band is almost all /t/: its word-final sites (3,272) are all /t/,
+and its 111 /d/ sites are one word-initial type. Balanced accuracy needs
+both classes, so **the top band is left out of the called scores**. Below
+it, each band's /d/ share is 38–40%, close to even.
+
+**The frequency-stratified score:** balanced accuracy computed within each
+of the three lower bands, then averaged with each band weighted by its site
+count. Within a band, word frequency varies by at most a factor of ten and
+no longer predicts the label much, so a probe that reads only reduction
+loses most of its advantage there.
+
+**Layers are fixed**, as in the position re-score: each block at its best
+layer in the span grid's summary (`20261029`). Frequency plays no part in
+choosing a layer.
+
+**Registered comparisons**, by §6's rule (a gap of at least 0.05 and a
+paired word-type bootstrap 95% interval excluding zero; the pilot's 991-type
+index and weights, seed 20260928). Every word type falls in exactly one band,
+so the type bootstrap is unchanged. Band weights stay at the observed site
+counts in every resample.
+
+- **F1.** wav2vec2-base, ɾ span, layer 9: frequency-stratified balanced
+  accuracy minus chance (0.5). Does the encoder's signal survive the
+  frequency control?
+- **F2.** wav2vec2-base's frequency-stratified balanced accuracy minus
+  MFCC's, on the ɾ span. This is C5 under the frequency control: does the
+  encoder still beat the representation that knows no words?
+
+**Reported, not called:**
+
+- F1 and F2 for WavJEPA and the other three spans; MFCC's stratified score
+  against chance.
+- Each band's own balanced accuracy, with /t/ and /d/ recall and type counts.
+- The unstratified balanced accuracy on the same sites (all three lower
+  bands pooled), so the stratification's effect can be seen.
+- The stratified score within word-final and within word-medial flaps
+  separately.
+- /t/ recall in the top band.
+
+**Already seen, so stated here:** the frequency counts above and in
+`count_position_frequency.py`'s output (frequencies only, no scores). The
+position re-score's reported type-weighted scores, which count every word
+type once and so damp the most frequent types, were read: wav2vec2-base ɾ
+drops from 0.607 to 0.572 word-medially and from 0.641 to 0.610
+word-finally. No score by frequency band has been computed.
+
+**Limits.** Bands are a decade wide, so some frequency remains within each;
+the stratification reduces the confound and does not remove it. The top
+band, where the confound is strongest, cannot be scored at all. The bands
+also move with position (word-final sites sit mostly in the upper bands), so
+the per-position scores below the top band rest on fewer sites.
+
+**What each reading predicts.** If the encoder's signal is frequency-driven
+reduction, F1 falls toward chance and F2 toward zero: under the control,
+wav2vec2-base does no better than MFCC. If it is a trace of the contrast, F1
+stays near the unstratified score and F2 stays positive.
+
+**The author's prediction:** controlling for frequency will bring their
+performances closer to chance. F1: I think it will land either closer to
+chance or no longer reliably beat chance; I do think its score will drop
+measurably. F2: I'm not sure it'll clearly beat MFCC because of that (MFCC
+isn't that much better than chance to begin with).
+
+The scoring script is `scripts/score_frequency.py`. It writes aggregates only,
+to `results/span-grid/frequency-<date>.*`.
+
 ---
 
