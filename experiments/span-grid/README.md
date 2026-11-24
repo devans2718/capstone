@@ -815,3 +815,92 @@ only to `results/span-grid/context-<date>.*`.
 
 ---
 
+**2026-11-24 — HuBERT and WavLM, registered before any of their scores is
+read (§4, §6, §7).** Two more encoders for the pooled design:
+`facebook/hubert-base-ls960` at `dba3bb0` and `microsoft/wavlm-base` at
+`efa81aa`. Like wav2vec2-base, both are self-supervised on LibriSpeech's
+960 h without transcripts. Their objectives differ: wav2vec 2.0 recovers
+its own quantized local features, HuBERT predicts cluster IDs taken from an
+intermediate layer of an earlier HuBERT, and WavLM predicts HuBERT's cluster
+IDs from input augmented with noise and overlapping speech. WavJEPA differs
+in both data (AudioSet) and objective. If HuBERT and WavLM land near
+wav2vec2-base, WavJEPA is the outlier among these encoders. If they spread
+out, C7's gap belongs to checkpoints, not to JEPA against the rest.
+
+Their features were extracted before this entry was written, as the entries
+of 2026-11-21 and 2026-11-23 allow, by `scripts/extract_conv_encoders.py`
+(`e40c225`). No score has been computed.
+
+**Frames:** wav2vec 2.0's rule (§4), by centre with the nearest-frame
+fallback. Both checkpoints have wav2vec2-base's conv stack and 13 × 768
+states (configs compared; `tests/test_conv_encoders_model.py`), so the
+geometry is the same. The extraction re-pooled wav2vec2-base through the same
+loader, and every span matched the stored features bit for bit.
+
+**Input normalization: all three normalized per excerpt, as the registered
+wav2vec2 run is.** The checkpoints' own feature extractors disagree:
+wav2vec2's and HuBERT's normalize, WavLM's does not. fairseq pretrained
+wav2vec2-base and HuBERT-base on raw waveforms (`normalize: false` in both
+pretraining configs). The choice is not small on quiet input: conv layer 0's
+GroupNorm absorbs gain only while the variance is well above its eps term. On
+noise at gain 0.01, normalizing moved the layer-12 states of all three
+encoders by a relative difference of 0.2 to 1.0. Normalizing all three keeps
+their input identical, so a gap between them belongs to the checkpoint.
+**A raw-input variant of all three, wav2vec2-base included, was extracted
+beside it. It is reported, not called.**
+
+**Spans:** §2's four; the context-only span and the preceding stretch without
+the flap (§8, 2026-11-23); the transfer probe's stops (§8, 2026-11-21).
+
+**Probe, split, checks:** §5's, unchanged.
+
+**Registered comparisons**, by §6's rule (a best-layer gap of at least 0.05
+and a paired word-type bootstrap 95% lower bound above zero, the best layer
+re-selected in every resample):
+
+- **E1.** Each span, HuBERT − WavJEPA and WavLM − WavJEPA. Is WavJEPA behind
+  every LibriSpeech encoder, not only wav2vec2-base? This direction is
+  called because C7's reported gap (§8, 2026-10-29) put wav2vec2-base ahead,
+  and that result was read before this entry.
+- **E2.** Each span, HuBERT − MFCC and WavLM − MFCC: C5's first half for the
+  new encoders.
+- **C6 for HuBERT and WavLM.** The best layer per span, with its interval, as
+  §6 has it for the first two encoders: no threshold. For comparison, the
+  grid's curves: wav2vec2-base is flat to layer 5, peaks at 9 on every span
+  and falls back by 11–12. WavJEPA steps up by layers 3–4 and stays on a
+  plateau, its best layer between 3 and 6 with wide intervals (`20261029`).
+
+**Reported, not called:**
+
+- The three LibriSpeech encoders against each other, per span, with paired
+  intervals in both directions. Their spread is the size of a checkpoint
+  effect.
+- C1's gaps, C4 and C5's second half for HuBERT and WavLM.
+- K1 to K3's numbers for HuBERT and WavLM, and the transfer probe's.
+- The raw-input variant of all three, and its gap to the normalized
+  features.
+- §5's checks per span.
+
+**The author's predictions:**
+
+- **E1.** I think WavJEPA's performance will be worse than the librispeech
+  ones.
+- **E2.** I think they will beat mfcc like wav2vec2-base did.
+- **C6.** I think there will be a similar pattern between hubert and wavlm,
+  but that shared pattern will be different from both wavjepa and
+  wav2vec2-base (based on similarities observed in Pasad et al. 2023, *What
+  Do Self-Supervised Speech Models Know About Words?*). The pattern meant is
+  the layer pattern.
+- **Score level among the three LibriSpeech encoders:** no prediction.
+
+The paper's finding behind the C6 prediction (§5.2.1): models trained to
+recover local features (wav2vec 2.0) correlate best with word-level
+properties at central layers, 5–7 for Base, and models trained on discrete
+units from an intermediate layer (HuBERT, WavLM) at much higher layers. Its
+probe is word-level; this one is a phone-level contrast.
+
+The scores join `scripts/score_span_grid.py`'s output, written to
+`results/span-grid/` as aggregates only.
+
+---
+
