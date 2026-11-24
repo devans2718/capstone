@@ -103,6 +103,24 @@ W2V2_MODEL_ID = "facebook/wav2vec2-base"
 # tests/test_wav2vec2_model.py is the tripwire.
 W2V2_REVISION = "0b5b8e8"
 
+# HuBERT and WavLM base: the same conv stack and 12 x 768 transformer as
+# wav2vec2-base (configs compared 2026-11-24), so Wav2Vec2Extractor serves all
+# three. Pinned for the same reason. All three were pretrained on LibriSpeech
+# 960 h. Their feature extractors disagree on do_normalize (WavLM's is False),
+# and fairseq pretrained wav2vec2-base and HuBERT-base on raw waveforms; the
+# span grid normalizes all three (§8, 2026-11-24), so callers pass normalize.
+HUBERT_MODEL_ID = "facebook/hubert-base-ls960"
+HUBERT_REVISION = "dba3bb0"
+WAVLM_MODEL_ID = "microsoft/wavlm-base"
+WAVLM_REVISION = "efa81aa"
+
+# name -> (model id, revision): every encoder Wav2Vec2Extractor can load.
+CONV_ENCODERS = {
+    "wav2vec2": (W2V2_MODEL_ID, W2V2_REVISION),
+    "hubert": (HUBERT_MODEL_ID, HUBERT_REVISION),
+    "wavlm": (WAVLM_MODEL_ID, WAVLM_REVISION),
+}
+
 
 class LayerwiseExtractor(Protocol):
     """What probing code may rely on, whichever encoder is behind it.
@@ -349,6 +367,11 @@ class WavJEPAExtractor:
 class Wav2Vec2Extractor:
     """Frozen wav2vec 2.0 base, all 13 hidden states. One utterance per call.
 
+    Also HuBERT and WavLM base (CONV_ENCODERS): same conv stack, same 13
+    states, index 0 the normed transformer input and index 12 the output, with
+    no final norm (checked 2026-11-24, tests/test_wav2vec2_model.py). The
+    model class follows the checkpoint's model_type.
+
     Frozen as WavJEPAExtractor is: eval(), requires_grad cleared, every forward
     under inference_mode. eval() also matters for a second reason here: the
     config enables SpecAugment time masking (mask_time_prob 0.05), which the
@@ -372,16 +395,26 @@ class Wav2Vec2Extractor:
         model_id: str = W2V2_MODEL_ID,
         revision: str | None = W2V2_REVISION,
         device: str | None = None,
+        normalize: bool | None = None,
     ) -> "Wav2Vec2Extractor":
+        """Load a checkpoint; `normalize` overrides its feature extractor's
+        do_normalize (None keeps the checkpoint's own setting)."""
         import torch
-        from transformers import AutoFeatureExtractor, Wav2Vec2Model
+        from transformers import (AutoConfig, AutoFeatureExtractor, HubertModel,
+                                  Wav2Vec2Model, WavLMModel)
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Wav2Vec2Model, not AutoModel: the checkpoint is a pretraining one, and
-        # this loads the encoder without the quantizer and projection heads.
-        model = Wav2Vec2Model.from_pretrained(model_id, revision=revision)
+        # The bare encoder class, not AutoModel: wav2vec2-base is a pretraining
+        # checkpoint, and this loads it without the quantizer and projection heads.
+        model_type = AutoConfig.from_pretrained(model_id, revision=revision).model_type
+        model_cls = {"wav2vec2": Wav2Vec2Model, "hubert": HubertModel,
+                     "wavlm": WavLMModel}.get(model_type)
+        if model_cls is None:
+            raise ValueError(f"{model_id} is a {model_type!r} checkpoint; "
+                             "Wav2Vec2Extractor loads wav2vec2, hubert or wavlm")
+        model = model_cls.from_pretrained(model_id, revision=revision)
         model.eval()
         model.requires_grad_(False)
         model.to(device)
@@ -389,8 +422,17 @@ class Wav2Vec2Extractor:
         feature_extractor = AutoFeatureExtractor.from_pretrained(
             model_id, revision=revision
         )
+        if normalize is not None:
+            feature_extractor.do_normalize = normalize
         geometry = ConvGeometry.from_config(model.config, feature_extractor.sampling_rate)
         return cls(model, feature_extractor, geometry, device)
+
+    @classmethod
+    def load_named(cls, name: str, normalize: bool | None = None,
+                   device: str | None = None) -> "Wav2Vec2Extractor":
+        """Load one of CONV_ENCODERS by name at its pinned revision."""
+        model_id, revision = CONV_ENCODERS[name]
+        return cls.load(model_id, revision, device=device, normalize=normalize)
 
     # ----------------------------------------------------------------- encoding
 
@@ -399,9 +441,9 @@ class Wav2Vec2Extractor:
 
         Args:
             waveform: 1-D float samples at 16 kHz, or a (1, n) tensor/array.
-                One utterance: the feature extractor's do_normalize standardizes
-                each waveform by its own mean and variance, so batching changes
-                the numbers.
+                One utterance: with do_normalize set, the feature extractor
+                standardizes each waveform by its own mean and variance, so
+                batching changes the numbers.
             dtype: storage dtype for the returned tensor, as WavJEPAExtractor.
 
         Returns:
