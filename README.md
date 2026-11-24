@@ -265,12 +265,12 @@ report under `results/flapping/`.
 
 ```bash
 docker compose run --rm dev                          # shell, GPU attached
-docker compose run --rm dev python -m pytest --ignore=tests/test_ablation.py           # fast tests
-docker compose run --rm dev python -m pytest -m model --ignore=tests/test_ablation.py  # checkpoint-dependent
+docker compose run --rm dev python -m pytest              # fast tests
+docker compose run --rm dev python -m pytest -m model     # checkpoint-dependent
 ```
 
 `tests/test_ablation.py` imports `anthropic`, which only the app environment
-installs, so it runs there and is excluded here.
+installs, so it runs there and skips itself here (`importorskip`).
 
 Tests marked `model` need the encoder checkpoints and a GPU, so they are deselected
 by default (`pyproject.toml`). Run them after any bump to `transformers` or a pinned

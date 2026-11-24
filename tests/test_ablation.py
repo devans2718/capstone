@@ -3,6 +3,12 @@
 import sys
 from pathlib import Path
 
+import pytest
+
+# graphrag imports anthropic at module level, which only the app environment
+# (.venv-app) installs; the encoder container skips this file.
+pytest.importorskip("anthropic")
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "kg"))
 import graphrag  # noqa: E402
 import run_ablation as ab  # noqa: E402

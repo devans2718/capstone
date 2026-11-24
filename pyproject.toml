@@ -13,10 +13,10 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Model-dependent tests are opt-in: they need the 785 MB checkpoint and a GPU,
+# Model-dependent tests are opt-in: they need the encoder checkpoints and a GPU,
 # so a bare `pytest` stays fast and runnable anywhere, CI included. A -m on the
 # command line overrides this one, so `-m model` runs them in the container.
 addopts = "-m 'not model'"
 markers = [
-    "model: requires an encoder checkpoint (WavJEPA or wav2vec2-base); not runnable in CI",
+    "model: requires an encoder checkpoint (WavJEPA, wav2vec2-base, HuBERT or WavLM); not runnable in CI",
 ]
