@@ -80,7 +80,9 @@ def next_ok(p: str) -> bool:
 def collect(grid_key):
     """Every usable canonical /t/ or /d/ token, with its phone-tier neighbours.
 
-    Returns tuples (speaker, word, idx, canon, surface, prev, next, is_grid_flap).
+    Returns tuples (speaker, word, idx, canon, surface, prev, next, is_grid_flap,
+    track, phone_k): the last two locate the token in its .phones tier, for
+    export_transfer_stops.py; nothing here reads them.
     """
     tokens = []
     for wf in sorted(DEFAULT_ROOT.rglob("*.words")):
@@ -105,8 +107,51 @@ def collect(grid_key):
                 prev = phones[k - 1].label if k > 0 else ""
                 nxt = phones[k + 1].label if k + 1 < len(phones) else ""
                 is_flap = (wf.stem, round(float(ph.start), 4)) in grid_key
-                tokens.append((wf.parent.name, word, idx, c, a, prev, nxt, is_flap))
+                tokens.append((wf.parent.name, word, idx, c, a, prev, nxt, is_flap,
+                               wf.stem, k))
     return tokens
+
+
+def load_context():
+    """The grid's flaps and every in-context token, as main() and the export use them.
+
+    Returns (n_grid, attested, ctx, share, n_flap): attested is the set of
+    (word, position) pairs among the grid's flap sites; ctx the tokens inside
+    the §2 class context; share and n_flap the flap share and flap count of
+    each (word, position) in that context.
+    """
+    import numpy as np
+
+    d = rp.SpanData()
+    inv = d.inv
+    g = np.flatnonzero(d.in_grid)
+    grid_key = {(inv.track[i], round(float(inv.start[i]), 4)) for i in g}
+    assert len(grid_key) == len(g)
+    attested = {(inv.word[i], int(inv.phone_idx_in_word[i])) for i in g}
+
+    tokens = collect(grid_key)
+    if sum(t[7] for t in tokens) != len(g):
+        raise SystemExit("not every grid flap site was found on the phone tier")
+    ctx = [t for t in tokens if prev_ok(t[5]) and next_ok(t[6])]
+
+    n_pos, n_flap = Counter(), Counter()
+    for t in ctx:
+        n_pos[t[1], t[2]] += 1
+        n_flap[t[1], t[2]] += t[4] == "dx"
+    share = {k: n_flap[k] / n_pos[k] for k in n_pos}
+    return len(g), attested, ctx, share, n_flap
+
+
+def kept_positions(share, n_flap, attested, thr):
+    """The definition's positions at a minimum flap share: attested, not
+    word-initial, flapped at least once, flapping in >= thr of their tokens."""
+    return {k for k, s in share.items()
+            if k in attested and k[1] != 0 and n_flap[k] > 0 and s >= thr}
+
+
+def stops_at(ctx, keep):
+    """Unflapped tokens, surfacing as their canonical stop, at the kept positions."""
+    return [t for t in ctx if not t[7] and t[4] == t[3] and (t[1], t[2]) in keep]
 
 
 def summarize(stops):
@@ -122,32 +167,11 @@ def summarize(stops):
 
 
 def main() -> int:
-    import numpy as np
-
-    d = rp.SpanData()
-    inv = d.inv
-    g = np.flatnonzero(d.in_grid)
-    grid_key = {(inv.track[i], round(float(inv.start[i]), 4)) for i in g}
-    assert len(grid_key) == len(g)
-    attested = {(inv.word[i], int(inv.phone_idx_in_word[i])) for i in g}
-
-    tokens = collect(grid_key)
-    if sum(t[7] for t in tokens) != len(g):
-        raise SystemExit("not every grid flap site was found on the phone tier")
-    ctx = [t for t in tokens if prev_ok(t[5]) and next_ok(t[6])]
+    n_grid, attested, ctx, share, n_flap = load_context()
     flaps = [t for t in ctx if t[7]]
 
-    n_pos, n_flap = Counter(), Counter()
-    for t in ctx:
-        n_pos[t[1], t[2]] += 1
-        n_flap[t[1], t[2]] += t[4] == "dx"
-    share = {k: n_flap[k] / n_pos[k] for k in n_pos}
-
-    def stops_at(keep):
-        return [t for t in ctx if not t[7] and t[4] == t[3] and (t[1], t[2]) in keep]
-
     print("Transfer-probe candidates: unflapped /t/ and /d/ at attested flap positions")
-    print(f"corpus {DEFAULT_ROOT}; {len(g):,} span-grid flap sites, "
+    print(f"corpus {DEFAULT_ROOT}; {n_grid:,} span-grid flap sites, "
           f"{len(flaps):,} of them inside the class context")
     print()
 
@@ -161,9 +185,8 @@ def main() -> int:
     print(f"{'min share':>9}  {'stops':>6}  {'/d/':>5}  {'/d/ %':>5}  {'types':>5}  "
           f"{'d types':>7}  {'spk d':>5}  {'top10':>5}  {'flaps covered':>13}  {'their /d/':>9}")
     for thr in THRESHOLDS:
-        keep = {k for k, s in share.items()
-                if k in attested and k[1] != 0 and n_flap[k] > 0 and s >= thr}
-        s = summarize(stops_at(keep))
+        keep = kept_positions(share, n_flap, attested, thr)
+        s = summarize(stops_at(ctx, keep))
         cov = [t for t in flaps if (t[1], t[2]) in keep]
         cd = sum(t[3] == "d" for t in cov) / max(len(cov), 1)
         mark = "  <- decided" if thr == MIN_FLAP_SHARE else ""
@@ -172,9 +195,8 @@ def main() -> int:
               f"{cd:>9.1%}{mark}")
     print()
 
-    keep = {k for k, s in share.items()
-            if k in attested and k[1] != 0 and n_flap[k] > 0 and s >= MIN_FLAP_SHARE}
-    s = summarize(stops_at(keep))
+    keep = kept_positions(share, n_flap, attested, MIN_FLAP_SHARE)
+    s = summarize(stops_at(ctx, keep))
     print(f"Decided set (>= {MIN_FLAP_SHARE:.2f}, word-initial out): {s['n']:,} stops, "
           f"{s['n_d']:,} /d/ ({s['d_share']:.1%}), {s['types']} types, "
           f"{s['speakers_d']}/40 speakers with a /d/")
