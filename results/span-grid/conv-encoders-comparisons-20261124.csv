@@ -1,0 +1,75 @@
+comparison,per,a,b,gap,ci_lo,ci_hi,call
+E1,hubert,hubert_r,wavjepa_r,0.074238,0.054225,0.093534,effect
+E1,hubert,hubert_vr,wavjepa_vr,0.055767,0.033665,0.082430,effect
+E1,hubert,hubert_rv,wavjepa_rv,0.059028,0.039524,0.081042,effect
+E1,hubert,hubert_vrv,wavjepa_vrv,0.065766,0.040167,0.091578,effect
+E1,wavlm,wavlm_r,wavjepa_r,0.108620,0.086868,0.131749,effect
+E1,wavlm,wavlm_vr,wavjepa_vr,0.083048,0.051838,0.119681,effect
+E1,wavlm,wavlm_rv,wavjepa_rv,0.106672,0.081324,0.129554,effect
+E1,wavlm,wavlm_vrv,wavjepa_vrv,0.093231,0.060200,0.128985,effect
+E2,hubert,hubert_r,mfcc_r,0.088380,0.049367,0.133156,effect
+E2,hubert,hubert_vr,mfcc_vr,0.081139,0.054002,0.119068,effect
+E2,hubert,hubert_rv,mfcc_rv,0.081588,0.041634,0.132408,effect
+E2,hubert,hubert_vrv,mfcc_vrv,0.072321,0.038364,0.114113,effect
+E2,wavlm,wavlm_r,mfcc_r,0.122763,0.082886,0.170739,effect
+E2,wavlm,wavlm_vr,mfcc_vr,0.108419,0.077702,0.152857,effect
+E2,wavlm,wavlm_rv,mfcc_rv,0.129231,0.086847,0.177256,effect
+E2,wavlm,wavlm_vrv,mfcc_vrv,0.099786,0.069654,0.140185,effect
+C6,hubert,hubert_r,,11.000000,9.000000,12.000000,best layer; no threshold
+C6,hubert,hubert_vr,,8.000000,7.000000,10.000000,best layer; no threshold
+C6,hubert,hubert_rv,,11.000000,9.000000,12.000000,best layer; no threshold
+C6,hubert,hubert_vrv,,10.000000,9.000000,11.000000,best layer; no threshold
+C6,wavlm,wavlm_r,,12.000000,11.000000,12.000000,best layer; no threshold
+C6,wavlm,wavlm_vr,,10.000000,9.000000,11.000000,best layer; no threshold
+C6,wavlm,wavlm_rv,,11.000000,11.000000,12.000000,best layer; no threshold
+C6,wavlm,wavlm_vrv,,10.000000,9.000000,12.000000,best layer; no threshold
+LS,r,hubert_r,wav2vec2_r,0.001120,-0.013317,0.017930,reported
+LS,vr,hubert_vr,wav2vec2_vr,-0.006081,-0.022842,0.017840,reported
+LS,rv,hubert_rv,wav2vec2_rv,-0.010332,-0.023905,0.010737,reported
+LS,vrv,hubert_vrv,wav2vec2_vrv,-0.008783,-0.032486,0.017204,reported
+LS,r,wavlm_r,wav2vec2_r,0.035503,0.021387,0.052860,reported
+LS,vr,wavlm_vr,wav2vec2_vr,0.021200,0.005980,0.045552,reported
+LS,rv,wavlm_rv,wav2vec2_rv,0.037311,0.020743,0.057258,reported
+LS,vrv,wavlm_vrv,wav2vec2_vrv,0.018683,0.000750,0.042226,reported
+LS,r,hubert_r,wavlm_r,-0.034383,-0.051290,-0.018342,reported
+LS,vr,hubert_vr,wavlm_vr,-0.027281,-0.048782,-0.006559,reported
+LS,rv,hubert_rv,wavlm_rv,-0.047644,-0.062283,-0.029427,reported
+LS,vrv,hubert_vrv,wavlm_vrv,-0.027465,-0.054429,-0.003995,reported
+C1,hubert,hubert_vr,hubert_r,-0.006754,-0.021685,0.014467,reported
+C1,hubert,hubert_rv,hubert_r,-0.005974,-0.020429,0.011100,reported
+C1,hubert,hubert_vrv,hubert_r,-0.000865,-0.018848,0.016452,reported
+C4,hubert,hubert_vr,duration_clipped,0.083278,0.026279,0.156598,reported
+C5b,hubert,hubert_vr,mfcc_duration_vr,0.063418,0.031137,0.106583,reported
+C4,hubert,hubert_vrv,duration_clipped,0.089167,0.029083,0.157900,reported
+C5b,hubert,hubert_vrv,mfcc_duration_vrv,0.069826,0.029565,0.116498,reported
+C1,wavlm,wavlm_vr,wavlm_r,-0.013856,-0.033175,0.010980,reported
+C1,wavlm,wavlm_rv,wavlm_r,0.007287,-0.009819,0.021943,reported
+C1,wavlm,wavlm_vrv,wavlm_r,-0.007782,-0.029240,0.014045,reported
+C4,wavlm,wavlm_vr,duration_clipped,0.110559,0.049041,0.190497,reported
+C5b,wavlm,wavlm_vr,mfcc_duration_vr,0.090699,0.053436,0.140469,reported
+C4,wavlm,wavlm_vrv,duration_clipped,0.116633,0.056555,0.191537,reported
+C5b,wavlm,wavlm_vrv,mfcc_duration_vrv,0.097291,0.058338,0.144468,reported
+RAW,wav2vec2,wav2vec2_raw_r,wav2vec2_r,-0.012735,-0.023885,0.000536,reported
+RAW,wav2vec2,wav2vec2_raw_vr,wav2vec2_vr,0.004731,-0.007491,0.023587,reported
+RAW,wav2vec2,wav2vec2_raw_rv,wav2vec2_rv,-0.003923,-0.019287,0.011534,reported
+RAW,wav2vec2,wav2vec2_raw_vrv,wav2vec2_vrv,-0.002062,-0.019097,0.016917,reported
+C6-raw,wav2vec2_raw,wav2vec2_raw_r,,10.000000,7.000000,10.000000,best layer; no threshold
+C6-raw,wav2vec2_raw,wav2vec2_raw_vr,,7.000000,6.000000,9.000000,best layer; no threshold
+C6-raw,wav2vec2_raw,wav2vec2_raw_rv,,9.000000,9.000000,10.000000,best layer; no threshold
+C6-raw,wav2vec2_raw,wav2vec2_raw_vrv,,9.000000,7.000000,9.000000,best layer; no threshold
+RAW,hubert,hubert_raw_r,hubert_r,-0.001806,-0.008854,0.010768,reported
+RAW,hubert,hubert_raw_vr,hubert_vr,-0.002204,-0.016542,0.008642,reported
+RAW,hubert,hubert_raw_rv,hubert_rv,0.008172,-0.006870,0.016158,reported
+RAW,hubert,hubert_raw_vrv,hubert_vrv,0.001379,-0.009353,0.010764,reported
+C6-raw,hubert_raw,hubert_raw_r,,11.000000,9.000000,12.000000,best layer; no threshold
+C6-raw,hubert_raw,hubert_raw_vr,,10.000000,8.000000,11.000000,best layer; no threshold
+C6-raw,hubert_raw,hubert_raw_rv,,11.000000,9.000000,11.000000,best layer; no threshold
+C6-raw,hubert_raw,hubert_raw_vrv,,10.000000,9.000000,10.000000,best layer; no threshold
+RAW,wavlm,wavlm_raw_r,wavlm_r,0.007565,-0.007122,0.017626,reported
+RAW,wavlm,wavlm_raw_vr,wavlm_vr,-0.002369,-0.015366,0.011675,reported
+RAW,wavlm,wavlm_raw_rv,wavlm_rv,0.000974,-0.008816,0.011586,reported
+RAW,wavlm,wavlm_raw_vrv,wavlm_vrv,-0.000908,-0.012568,0.012366,reported
+C6-raw,wavlm_raw,wavlm_raw_r,,11.000000,11.000000,12.000000,best layer; no threshold
+C6-raw,wavlm_raw,wavlm_raw_vr,,11.000000,9.000000,11.000000,best layer; no threshold
+C6-raw,wavlm_raw,wavlm_raw_rv,,11.000000,11.000000,12.000000,best layer; no threshold
+C6-raw,wavlm_raw,wavlm_raw_vrv,,10.000000,8.000000,11.000000,best layer; no threshold
