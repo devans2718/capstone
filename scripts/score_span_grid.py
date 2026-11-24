@@ -164,23 +164,15 @@ def trimmed_breakdown(d):
 # ------------------------------------------------------------------ scoring
 
 
-def main() -> int:
+def setup(d):
+    """Everything a block is scored against: the grid's sites and labels, the
+    bootstrap weights, the control nulls, the lemma-unseen and unclipped
+    subsets. Shared with score_conv_encoders.py."""
     import numpy as np
     import pandas as pd
 
-    from capstone.predictions import build_manifest, write_prediction_columns
-    from capstone.probes import criteria as C
     from capstone.probes.controls import null_mappings, type_index
-    from capstone.probes.scoring import (balanced_accuracy, boot_balanced_accuracy,
-                                         interval, resample_weights)
-
-    check_against_criterion_1()
-    d = rp.SpanData()
-    # Built first: it records the commit, and this script writes into the tree.
-    manifest = build_manifest(
-        rp.INVENTORY, split_scheme=SPLIT_SCHEME, seeds=seeds.REGISTERED,
-        n_sites_scored=int(d.in_grid.sum()), synthetic=False,
-        encoders=tuple(f"{r}_{s}" for r, s in BLOCKS), run_id=f"span-grid-{DATE}")
+    from capstone.probes.scoring import resample_weights
 
     g = np.flatnonzero(d.in_grid)
     y = d.is_d[g]
@@ -205,65 +197,104 @@ def main() -> int:
     unclipped = ~d.clipped[g]
     assert unclipped.sum() == 9_657, "§8's unclipped count moved"
     assert len(set(tix)) == 983 and int(y.sum()) == 2_513
+    return {"d": d, "g": g, "y": y, "tix": tix, "W": W, "nulls": nulls, "cy": cy,
+            "lsub": lsub, "sub_type_of": sub_type_of, "W_sub": W_sub,
+            "unclipped": unclipped}
+
+
+def score_block(ctx, rep, span):
+    """One cached block, scored. Returns (layer rows, cell rows, summary,
+    correct (L, n_grid) bool, prediction column)."""
+    import numpy as np
+
+    from capstone.probes import criteria as C
+    from capstone.probes.scoring import balanced_accuracy, boot_balanced_accuracy, interval
+
+    d, g, y, tix, W = ctx["d"], ctx["g"], ctx["y"], ctx["tix"], ctx["W"]
+    lsub, sub_type_of, unclipped = ctx["lsub"], ctx["sub_type_of"], ctx["unclipped"]
+    rows, cell_rows = [], []
+    z = np.load(rp.GRID_DIR / rp.block_name("probe", rep, span, "joint", False))
+    if not ((z["fold"] >= 0) == d.in_grid).all():
+        raise SystemExit(f"{rep}_{span}: scored sites are not the grid's")
+    real, ctrl = z["real"][:, g], z["control"][:, g]
+    if np.isnan(real).any() or np.isnan(ctrl).any():
+        raise SystemExit(f"{rep}_{span}: a grid site has no prediction")
+    pred = real > 0.5
+    cor = pred == y
+    ba = np.array([balanced_accuracy(y, p) for p in pred])
+    boot = boot_balanced_accuracy(W, tix, y, cor)
+    lo, hi = interval(boot)
+    best = int(np.argmax(ba))
+    best_idx = np.nanargmax(boot, axis=1)
+    b_lo, b_hi = np.percentile(best_idx, [2.5, 97.5])
+    _, c2 = C.criterion_2(ctrl > 0.5, tix, d.control_mapping, ctx["nulls"])
+    lem_ba = np.array([balanced_accuracy(y[lsub], p[lsub]) for p in pred])
+    lem_boot = boot_balanced_accuracy(ctx["W_sub"], sub_type_of[g][lsub], y[lsub],
+                                      cor[:, lsub])
+    lem_lo, lem_hi = interval(lem_boot)
+    unc_ba = np.array([balanced_accuracy(y[unclipped], p[unclipped]) for p in pred])
+    cba = np.array([balanced_accuracy(ctx["cy"], p) for p in ctrl > 0.5])
+    for L in range(len(ba)):
+        rows.append({
+            "representation": rep, "span": span, "layer": L,
+            "n": len(g), "n_d": int(y.sum()),
+            "balanced_acc": ba[L], "ci_lo": lo[L], "ci_hi": hi[L],
+            "control_balanced_acc": cba[L],
+            "lemma_unseen_balanced_acc": lem_ba[L],
+            "lemma_unseen_ci_lo": lem_lo[L], "lemma_unseen_ci_hi": lem_hi[L],
+            "unclipped_balanced_acc": unc_ba[L],
+            "n_nonconverged": int((~z["real_converged"][L]).sum()),
+            "n_nonconverged_control": int((~z["control_converged"][L]).sum()),
+        })
+    fold = z["fold"][g]
+    cells = []
+    for k in np.unique(fold):
+        m = fold == k
+        b = balanced_accuracy(y[m], pred[best][m]) if 0 < y[m].sum() < m.sum() else np.nan
+        cells.append(b)
+        cell_rows.append({"representation": rep, "span": span, "layer": best,
+                          "cell": int(k), "n": int(m.sum()), "n_d": int(y[m].sum()),
+                          "balanced_acc": b})
+    summary = {
+        "best_layer": best, "ba": float(ba[best]), "lo": float(lo[best]),
+        "hi": float(hi[best]), "best_lo": float(b_lo), "best_hi": float(b_hi),
+        "control_max": c2["control_max"], "control_p": c2["p_value"],
+        "control_q95": c2["null_q95"],
+        "lemma_ba": float(lem_ba[best]), "lemma_best": float(lem_ba.max()),
+        "unclipped_ba": float(unc_ba[best]),
+        "cells": (float(np.nanmin(cells)), float(np.nanmedian(cells)),
+                  float(np.nanmax(cells))),
+        "nonconverged": int((~z["real_converged"]).sum()),
+        "nonconverged_control": int((~z["control_converged"]).sum()),
+        "fits": int(z["real_converged"].size + z["control_converged"].size),
+    }
+    return rows, cell_rows, summary, cor, (rep, span, "joint", False, z["fold"], z["real"])
+
+
+def main() -> int:
+    import pandas as pd
+
+    from capstone.predictions import build_manifest, write_prediction_columns
+
+    check_against_criterion_1()
+    d = rp.SpanData()
+    # Built first: it records the commit, and this script writes into the tree.
+    manifest = build_manifest(
+        rp.INVENTORY, split_scheme=SPLIT_SCHEME, seeds=seeds.REGISTERED,
+        n_sites_scored=int(d.in_grid.sum()), synthetic=False,
+        encoders=tuple(f"{r}_{s}" for r, s in BLOCKS), run_id=f"span-grid-{DATE}")
+    ctx = setup(d)
+    g, y, tix, W = ctx["g"], ctx["y"], ctx["tix"], ctx["W"]
+    lsub, unclipped = ctx["lsub"], ctx["unclipped"]
 
     rows, cell_rows, summary, correct, pred_cols = [], [], {}, {}, []
     for rep, span in BLOCKS:
-        z = np.load(rp.GRID_DIR / rp.block_name("probe", rep, span, "joint", False))
-        if not ((z["fold"] >= 0) == d.in_grid).all():
-            raise SystemExit(f"{rep}_{span}: scored sites are not the grid's")
-        real, ctrl = z["real"][:, g], z["control"][:, g]
-        if np.isnan(real).any() or np.isnan(ctrl).any():
-            raise SystemExit(f"{rep}_{span}: a grid site has no prediction")
-        pred = real > 0.5
-        cor = pred == y
+        r, c, s, cor, col = score_block(ctx, rep, span)
+        rows += r
+        cell_rows += c
+        summary[rep, span] = s
         correct[rep, span] = cor
-        ba = np.array([balanced_accuracy(y, p) for p in pred])
-        boot = boot_balanced_accuracy(W, tix, y, cor)
-        lo, hi = interval(boot)
-        best = int(np.argmax(ba))
-        best_idx = np.nanargmax(boot, axis=1)
-        b_lo, b_hi = np.percentile(best_idx, [2.5, 97.5])
-        _, c2 = C.criterion_2(ctrl > 0.5, tix, d.control_mapping, nulls)
-        lem_ba = np.array([balanced_accuracy(y[lsub], p[lsub]) for p in pred])
-        lem_boot = boot_balanced_accuracy(W_sub, sub_type_of[g][lsub], y[lsub], cor[:, lsub])
-        lem_lo, lem_hi = interval(lem_boot)
-        unc_ba = np.array([balanced_accuracy(y[unclipped], p[unclipped]) for p in pred])
-        cba = np.array([balanced_accuracy(cy, p) for p in ctrl > 0.5])
-        for L in range(len(ba)):
-            rows.append({
-                "representation": rep, "span": span, "layer": L,
-                "n": len(g), "n_d": int(y.sum()),
-                "balanced_acc": ba[L], "ci_lo": lo[L], "ci_hi": hi[L],
-                "control_balanced_acc": cba[L],
-                "lemma_unseen_balanced_acc": lem_ba[L],
-                "lemma_unseen_ci_lo": lem_lo[L], "lemma_unseen_ci_hi": lem_hi[L],
-                "unclipped_balanced_acc": unc_ba[L],
-                "n_nonconverged": int((~z["real_converged"][L]).sum()),
-                "n_nonconverged_control": int((~z["control_converged"][L]).sum()),
-            })
-        fold = z["fold"][g]
-        cells = []
-        for k in np.unique(fold):
-            m = fold == k
-            b = balanced_accuracy(y[m], pred[best][m]) if 0 < y[m].sum() < m.sum() else np.nan
-            cells.append(b)
-            cell_rows.append({"representation": rep, "span": span, "layer": best,
-                              "cell": int(k), "n": int(m.sum()), "n_d": int(y[m].sum()),
-                              "balanced_acc": b})
-        summary[rep, span] = {
-            "best_layer": best, "ba": float(ba[best]), "lo": float(lo[best]),
-            "hi": float(hi[best]), "best_lo": float(b_lo), "best_hi": float(b_hi),
-            "control_max": c2["control_max"], "control_p": c2["p_value"],
-            "control_q95": c2["null_q95"],
-            "lemma_ba": float(lem_ba[best]), "lemma_best": float(lem_ba.max()),
-            "unclipped_ba": float(unc_ba[best]),
-            "cells": (float(np.nanmin(cells)), float(np.nanmedian(cells)),
-                      float(np.nanmax(cells))),
-            "nonconverged": int((~z["real_converged"]).sum()),
-            "nonconverged_control": int((~z["control_converged"]).sum()),
-            "fits": int(z["real_converged"].size + z["control_converged"].size),
-        }
-        pred_cols.append((rep, span, "joint", False, z["fold"], z["real"]))
+        pred_cols.append(col)
 
     # ---------------------------------------------------------- comparisons
     comps = []

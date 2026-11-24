@@ -11,6 +11,10 @@ HOW TO RUN (in .venv-app, after scripts/extract_site_features.py)
     .venv-app/bin/python scripts/run_probes.py span-grid   # the 10,334; then
     .venv-app/bin/python scripts/score_span_grid.py        # scores and C1-C7
 
+    HuBERT, WavLM and the raw-input variants (span grid §8, 2026-11-24):
+    .venv-app/bin/python scripts/run_probes.py span-grid-conv
+    .venv-app/bin/python scripts/score_conv_encoders.py    # E1, E2, C6
+
     gate fits only what the criteria read: mean pooling, `joint`, WavJEPA and
     MFCC, real and control probes, and the lookup. It then writes
     results/flapping/criteria-20260926.txt. The result being waited on is not
@@ -78,6 +82,12 @@ GRID_FEATURES = GRID_DIR / "features"
 # duration appended to the span's MFCC for Vɾ and VɾV (§8, 2026-10-29).
 DURATIONS = {"clipped": "stretch_clipped_ms", "full": "stretch_ms", "vowel": "vowel_ms"}
 MFCC_DURATION_SPANS = ("vr", "vrv")
+# HuBERT and WavLM, normalized, and the raw-input variant of all three
+# (§8, 2026-11-24): scripts/extract_conv_encoders.py. Their blocks join the
+# grid's in GRID_DIR, under names of their own.
+CONV_SPANS_DIR = Path("/data/embeddings/conv-spans-b378c303ca90")
+CONV_REPRESENTATIONS = ("hubert", "wavlm", "wav2vec2_raw", "hubert_raw", "wavlm_raw")
+CONV_REVISIONS = {"hubert": "dba3bb0", "wavlm": "efa81aa", "wav2vec2": "0b5b8e8"}
 
 assert seeds.FOLDS == seeds.SUBSAMPLE  # iter_splits takes one seed for both
 
@@ -519,6 +529,67 @@ def span_grid(n_jobs) -> int:
     return 0
 
 
+def check_conv_features(d: SpanData):
+    """The conv-encoder features are a full extraction on the grid's own rows.
+
+    Their extraction's wav2vec2 check must have matched the stored span grid on
+    every row, and each file must be NaN exactly where SpanData's are.
+    """
+    import numpy as np
+
+    from measure_span_grid import EXPECTED_SHA256
+
+    if (CONV_SPANS_DIR / "site_ids.txt").read_text().split() != list(d.inv.site_id):
+        raise SystemExit(f"{CONV_SPANS_DIR}/site_ids.txt is not in inventory order")
+    m = json.loads((CONV_SPANS_DIR / "extract-manifest.json").read_text())
+    problems = []
+    if m.get("limit"):
+        problems.append("a --limit smoke test, not a full extraction")
+    if m["inventory_sha256"] != d.spans_manifest["inventory_sha256"]:
+        problems.append("a different inventory from the span grid's")
+    if m["exclusion_sha256"] != EXPECTED_SHA256:
+        problems.append("an exclusion list other than the registered one (§1)")
+    if m["checkpoint_revisions"] != CONV_REVISIONS:
+        problems.append(f"revisions {m['checkpoint_revisions']}, §8 pins {CONV_REVISIONS}")
+    for span, r in m["check_vs_stored"].items():
+        if r["rows_identical"] != r["rows"]:
+            problems.append(f"the wav2vec2 check failed on {span}")
+    if problems:
+        raise SystemExit(f"{CONV_SPANS_DIR}: " + "; ".join(problems))
+    for span in SPANS:
+        scored = d.eligible if span == "r" else d.in_grid
+        for rep in CONV_REPRESENTATIONS:
+            X = np.load(features_path(rep, span, CONV_SPANS_DIR), mmap_mode="r")
+            if X.shape[0] != d.n or (np.isnan(X[:, 0, 0]) != ~scored).any():
+                raise SystemExit(f"{rep}_{span}.npy: NaN rows are not the unscored sites")
+    return m
+
+
+def span_grid_conv(n_jobs) -> int:
+    """HuBERT, WavLM and the raw-input variants on the grid's four spans (§8,
+    2026-11-24): the same sites, folds and probes as span_grid, cached beside
+    its blocks in GRID_DIR. Scoring is scripts/score_conv_encoders.py."""
+    import time
+
+    d = SpanData()
+    check_conv_features(d)
+    blocks = [(rep, span) for rep in CONV_REPRESENTATIONS for span in SPANS]
+    print(f"span-grid-conv: {len(blocks)} blocks on {int(d.in_grid.sum()):,} sites -> "
+          f"{GRID_DIR}", flush=True)
+    t0 = time.perf_counter()
+    timing = {}
+    for rep, span in blocks:
+        t = time.perf_counter()
+        run_block(d, "probe", rep, span, "joint", False, n_jobs,
+                  features=CONV_SPANS_DIR, run_dir=GRID_DIR, sites=d.in_grid)
+        timing[f"{rep}_{span}"] = time.perf_counter() - t
+        print(f"    {timing[f'{rep}_{span}']:.0f} s; {(time.perf_counter() - t0) / 60:.1f} min "
+              "so far", flush=True)
+    (GRID_DIR / "timing-conv.json").write_text(json.dumps(
+        {"blocks_seconds": timing, "total_seconds": time.perf_counter() - t0}, indent=2))
+    return 0
+
+
 # ------------------------------------------------------------------------ rest
 
 
@@ -680,7 +751,7 @@ def _write_control(cols, site_ids, d, path):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro",
-                                          "span-grid"))
+                                          "span-grid", "span-grid-conv"))
     ap.add_argument("--jobs", type=int, default=-1, help="parallel fits (default: all cores)")
     args = ap.parse_args()
     if args.stage == "gate":
@@ -691,6 +762,8 @@ def main() -> int:
         return span_repro(args.jobs)
     if args.stage == "span-grid":
         return span_grid(args.jobs)
+    if args.stage == "span-grid-conv":
+        return span_grid_conv(args.jobs)
     return assemble()
 
 
