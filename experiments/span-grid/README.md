@@ -709,3 +709,109 @@ aggregates only to `results/span-grid/transfer-<date>.*`.
 
 ---
 
+**2026-11-23 — A context-only span, registered before any of its features is
+extracted (§2, §6, §7).** A new span for the pooled design: the excerpt's
+frames *outside* the flap. It was not in the original grid; the idea came
+after the grid's results were read, from the leak-or-shortcut question
+(2026-11-08): the labels are fully lexical, and every encoder hears the
+neighbouring words. If the frames around the flap predict /t/ against /d/ as
+well as the flap's own frames do, the flap's frames are not where the label
+is read.
+
+**What it can and cannot show.** In the pooled design the encoder hears
+the whole excerpt (§3), so wav2vec 2.0's and WavJEPA's frames outside the
+flap have attended to the flap. For them, the span says whether the label
+can be read *away from the flap's frames*, not whether the context's own
+audio carries it. MFCC frames do not attend: outside the flap they contain
+only the flap's edges, through their 25 ms windows and ±40 ms deltas. MFCC
+is therefore the representation in which this span answers whether the
+context's audio carries the label (K3).
+
+**Sites:** the grid's 10,334.
+
+**Spans**, in each encoder's frames:
+
+- **context** — every frame of the excerpt (the flap ± 200 ms) that is not
+  in that encoder's ɾ span, by that encoder's own rule (§4): WavJEPA by
+  onset, wav2vec 2.0 and MFCC by centre. The complement is exact, with no
+  margin: a margin would remove frames whose windows overlap the flap
+  slightly, while in wav2vec 2.0 and WavJEPA every frame has heard the flap
+  anyway. Where wav2vec 2.0's ɾ span is the nearest-frame fallback (§4), that
+  frame is the one left out. WavJEPA keeps only frames that read wholly real
+  audio (§8, 2026-10-18).
+- **preceding stretch, flap excluded** — Vɾ (§2) without the flap's frames:
+  the vowel and any coda before it, clipped to the excerpt as Vɾ is.
+  Reported, not called. It asks whether the stretch's own frames carry what
+  Vɾ carries. Mean pooling discards duration (§4), so this span cannot see
+  the stretch's length.
+
+**Extraction:** the pooled design's (§3, §4), unchanged: the same excerpts,
+revisions, float16 frames and mean pooling. Only the pooled spans were
+stored, so the sites are re-encoded. The ɾ span is re-pooled in the same pass
+and has to equal the stored ɾ span bit for bit, as the grid's extraction
+checked against the pilot's.
+
+**Probe, split, checks:** §5's, unchanged (joint split, the pilot's folds,
+L2 logistic regression with balanced class weights). The best layer is
+re-selected in every bootstrap resample, as for the grid's own spans (§6).
+
+**Registered comparisons**, by §6's rule (a best-layer gap of at least 0.05
+and a paired word-type bootstrap 95% lower bound above zero; the pilot's
+991-type index and weights, seed 20260928):
+
+- **K1.** wav2vec2-base, context: balanced accuracy minus chance (0.5). Is
+  the label readable away from the flap's frames?
+- **K2.** wav2vec2-base, ɾ minus context, paired. Do the flap's own frames
+  carry more than the frames around them? §6's rule is one-sided (§8,
+  2026-10-29), so only this direction is called. The gap's sign and interval
+  are reported either way: context ahead of ɾ is a possible outcome (in the
+  grid, every wider span's point value sits slightly above ɾ's, VɾV by
+  +0.009, none an effect; C1, `20261029`).
+- **K3.** MFCC, context: balanced accuracy minus chance. Does the context's
+  own audio carry the label?
+
+**How they read together.** No effect on K2 is not equality: it says only
+that a gap of 0.05 was not shown.
+
+| K1 | K2 | Reading |
+|---|---|---|
+| effect | effect | Readable around the flap, more so at it: concentrated at the flap |
+| effect | no effect | The flap's frames add nothing measurable over the frames around them |
+| no effect | effect | Only the flap's frames carry it |
+| no effect | no effect | Unsettled |
+
+K3 is read separately: an effect says the neighbouring audio itself carries
+the label, which the K1–K2 table cannot say.
+
+**Reported, not called:**
+
+- K1 and K3's numbers for WavJEPA; K2 for WavJEPA and MFCC.
+- The preceding stretch, flap excluded, for all three representations, and
+  its gap to Vɾ.
+- Every layer's curve.
+- §5's checks per span: the control task and the lemma-unseen re-score.
+- Each span on unclipped sites only (§7).
+- The frequency re-score's stratified score, applied to the context
+  predictions.
+
+**A flap-masked variant, planned, not registered here.** The clean test of
+whether the context alone carries the label is to encode the excerpt with
+the flap replaced by noise, so that no frame hears it. It needs §3's padding
+machinery (pause-matched noise, ramps, normalization on the full excerpt),
+which the cropped design builds. It runs with the cropped design and gets a
+dated entry of its own before it is extracted.
+
+**HuBERT and WavLM**, if they are extracted with these sites, get a dated
+entry of their own before any of their scores is read.
+
+**The author's prediction:** I do overall think that the context carries
+the label. I would expect the flap frames to carry some of the context,
+since their head and tail ends aren't a clean dissection of the flap, and
+from the context mixing after attention. So realistically I expect similar
+performance (K2 no effect). With the cropped design it might be a cleaner difference.
+
+The scoring script will be `scripts/score_context.py`, writing aggregates
+only to `results/span-grid/context-<date>.*`.
+
+---
+
