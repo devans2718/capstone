@@ -904,3 +904,30 @@ The scores join `scripts/score_span_grid.py`'s output, written to
 
 ---
 
+**2026-11-25 — HuBERT and WavLM in the transfer probe, before any transfer
+score is computed (§8, 2026-11-21 and 2026-11-24).** The 2026-11-24 entry
+lists HuBERT's and WavLM's transfer numbers as reported, not called. This
+entry keeps that and fixes what it left open.
+
+- **Sites, split, probe, spans:** the 2026-11-21 entry's, unchanged.
+  Features from `scripts/extract_conv_encoders.py` (`e40c225`), normalized
+  per excerpt; the raw-input variant reported beside them.
+- **Layers, by the 2026-11-21 rule:** each encoder at its span-grid best
+  layer for the matching flap span (`20261124`): HuBERT 11, 8, 11, 10 and
+  WavLM 12, 10, 11, 10 (ɾ, Vɾ, ɾV, VɾV). These were read from span-grid
+  scores before this entry; no transfer score was. Every layer's curve is
+  reported.
+- **No new calls.** X1 and X2 stay wav2vec2-base's.
+- **Reported, not called:** X1, X2 and the stop+V and V+stop+V spans for
+  HuBERT and WavLM, with the 2026-11-21 entry's reported list applied to
+  them.
+
+**The author's expectation:** I think the preceding vowel might help in
+some cases, maybe noisy environments or unclear speech, but I wouldn't
+expect the preceding vowels to actually give more info on top of the flap,
+and I'm not sure the numbers will make it detectable. So more neutral for
+me there. No prediction on the transfer level itself: I have even less
+exposure to these models than to WavJEPA and wav2vec2-base.
+
+---
+
