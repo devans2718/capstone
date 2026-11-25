@@ -20,6 +20,11 @@ HOW TO RUN (in .venv-app, after scripts/extract_site_features.py)
     .venv-app/bin/python scripts/run_probes.py span-grid-context
     .venv-app/bin/python scripts/score_context.py          # K1-K3
 
+    The transfer probe, trained on unflapped stops and scored on the flaps
+    (span grid §8, 2026-11-21; HuBERT and WavLM's, 2026-11-25):
+    .venv-app/bin/python scripts/run_probes.py span-grid-transfer
+    .venv-app/bin/python scripts/score_transfer.py         # X1, X2
+
     gate fits only what the criteria read: mean pooling, `joint`, WavJEPA and
     MFCC, real and control probes, and the lookup. It then writes
     results/flapping/criteria-20260926.txt. The result being waited on is not
@@ -99,6 +104,22 @@ CONV_REVISIONS = {"hubert": "dba3bb0", "wavlm": "efa81aa", "wav2vec2": "0b5b8e8"
 # CONV_SPANS_DIR (§8, 2026-11-24). Blocks join the grid's in GRID_DIR.
 CONTEXT_DIR = Path("/data/embeddings/context-b378c303ca90")
 CONTEXT_SPANS = ("ctx", "v")
+# The transfer probe (§8, 2026-11-21; HuBERT and WavLM, 2026-11-24 and
+# 2026-11-25): /t/ vs /d/ trained on unflapped stops, scored on the grid's flaps.
+# scripts/export_transfer_stops.py wrote the stops (the 0.25 set, each row
+# flagged for 0.25/0.40/0.50); extract_transfer_context.py encoded them for the
+# grid's three representations, extract_conv_encoders.py for the rest.
+TRANSFER_STOPS_TSV = Path("/data/span-grid/transfer-stops.tsv")
+TRANSFER_STOPS_DIR = Path("/data/embeddings/transfer-stops-f81597b4ced8")
+CONV_STOPS_DIR = Path("/data/embeddings/conv-stops-f81597b4ced8")
+TRANSFER_SPANS = {"s": "r", "vs": "vr", "sv": "rv", "vsv": "vrv"}   # stop span -> flap span
+# The registration's table: set -> (stops, /d/, word types). 040 is registered,
+# 025 and 050 are the sensitivity sets.
+TRANSFER_SETS = {"040": (2_247, 1_011, 252), "025": (2_433, 1_162, 303),
+                 "050": (1_749, 746, 220)}
+# The sensitivity sets are fit on the spans X1 and X2 are called on.
+TRANSFER_SENSITIVITY_SPANS = ("s", "vs")
+TRANSFER_RUN_DIR = GRID_DIR / "transfer"
 
 assert seeds.FOLDS == seeds.SUBSAMPLE  # iter_splits takes one seed for both
 
@@ -681,6 +702,230 @@ def span_grid_context(n_jobs) -> int:
     return 0
 
 
+# ------------------------------------------------------------- transfer probe
+
+
+def transfer_dirs(rep):
+    """(stop features, flap features) for a representation."""
+    if rep in SPAN_REPRESENTATIONS:
+        return TRANSFER_STOPS_DIR, SPANS_DIR
+    return CONV_STOPS_DIR, CONV_SPANS_DIR
+
+
+class TransferStops:
+    """The transfer probe's training stops (§8, 2026-11-21), checked before any is read.
+
+    The stops TSV must be the file both extractions encoded (its sha256) and in
+    their row order; each set must have the registration's counts and the
+    extraction's ID digest; both extractions must be full ones on the grid's
+    inventory at the pinned revisions, NaN exactly at the clamped stop.
+
+    Each stop gets the joint split's speaker fold and type fold, from the same
+    assignment over the pilot's 10,389 eligible sites that gives the flaps
+    theirs (capstone.splits). That assignment is re-derived here and checked
+    against the flaps' own folds before it is used for a stop.
+    """
+
+    def __init__(self, d: SpanData):
+        import csv
+        import hashlib
+
+        import numpy as np
+
+        from capstone.splits import N_FOLDS, speaker_folds, type_folds, type_key
+
+        raw = TRANSFER_STOPS_TSV.read_bytes()
+        tsv_hash = hashlib.sha256(raw).hexdigest()
+        body = [ln for ln in raw.decode().splitlines() if not ln.startswith("#")]
+        rows = list(csv.DictReader(body, delimiter="\t"))
+        ids = [r["site_id"] for r in rows]
+        problems = []
+
+        for stops_dir, revisions in ((TRANSFER_STOPS_DIR, SPAN_REVISIONS),
+                                     (CONV_STOPS_DIR, CONV_REVISIONS)):
+            m = json.loads((stops_dir / "extract-manifest.json").read_text())
+            if (stops_dir / "site_ids.txt").read_text().split() != ids:
+                problems.append(f"{stops_dir}/site_ids.txt is not the stops TSV's order")
+            if m.get("limit"):
+                problems.append(f"{stops_dir}: a --limit smoke test, not a full extraction")
+            if m.get("part") != "stops" or m["stops_tsv_sha256"] != tsv_hash:
+                problems.append(f"{stops_dir}: encoded from another stops TSV")
+            if m["inventory_sha256"] != d.spans_manifest["inventory_sha256"]:
+                problems.append(f"{stops_dir}: a different inventory from the span grid's")
+            if m["checkpoint_revisions"] != revisions:
+                problems.append(f"{stops_dir}: revisions {m['checkpoint_revisions']}, "
+                                f"pinned {revisions}")
+            if m["frame_dtype"] != "float16" or m["pooling"] != "mean":
+                problems.append(f"{stops_dir}: not float16 frames mean-pooled")
+            for span, r in m.get("check_vs_stored", {}).items():
+                if r["rows_identical"] != r["rows"]:
+                    problems.append(f"{stops_dir}: the wav2vec2 check failed on {span}")
+            for tset in TRANSFER_SETS:
+                col = [r["site_id"] for r in rows if r[f"in_{tset}"] == "1"]
+                got = hashlib.sha256("".join(f"{s}\n" for s in sorted(col)).encode()).hexdigest()
+                if got != m["site_id_sha256"][f"{int(tset) / 100:.2f}"]:
+                    problems.append(f"{stops_dir}: the {tset} set's IDs differ from the extraction's")
+        for tset, want in TRANSFER_SETS.items():
+            sub = [r for r in rows if r[f"in_{tset}"] == "1"]
+            got = (len(sub), sum(r["label"] == "d" for r in sub), len({r["word"] for r in sub}))
+            if got != want:
+                problems.append(f"the {tset} set has {got} (stops, /d/, types), registered {want}")
+        if problems:
+            raise SystemExit("transfer stops: " + "; ".join(problems))
+
+        self.rows = rows
+        self.n = len(rows)
+        self.is_d = np.array([r["label"] == "d" for r in rows])
+        self.clamped = np.array([r["excerpt_clamped"] == "1" for r in rows])
+        self.sets = {t: np.array([r[f"in_{t}"] == "1" for r in rows]) & ~self.clamped
+                     for t in TRANSFER_SETS}
+        self.tsv_sha256 = tsv_hash
+
+        # The joint split's two axes, assigned over the eligible sites as
+        # iter_splits assigns them, checked against the flaps' folds.
+        e = d.elig_idx
+        spk = speaker_folds(d.inv.speaker.to_numpy()[e])
+        typ = type_folds(d.inv.word.to_numpy()[e])
+        a = np.array([spk[s] for s in d.inv.speaker.to_numpy()[e]])
+        b = np.array([typ[type_key(w)] for w in d.inv.word.to_numpy()[e]])
+        self.flap_fold = np.full(d.n, -1, dtype=np.int64)
+        self.flap_fold[e] = N_FOLDS * a + b
+        for s in d.splits("joint", False):
+            if not (self.flap_fold[s.test] == s.fold).all():
+                raise SystemExit("the re-derived joint folds differ from iter_splits'")
+        missing = sorted({r["speaker"] for r in rows if r["speaker"] not in spk} |
+                         {r["word"] for r in rows if type_key(r["word"]) not in typ})
+        if missing:
+            raise SystemExit(f"stops outside the flaps' speakers or word types: {missing[:10]}")
+        self.a = np.array([spk[r["speaker"]] for r in rows])
+        self.b = np.array([typ[type_key(r["word"])] for r in rows])
+
+        # NaN exactly at the clamped stop, in every file the stage reads.
+        for rep in (*SPAN_REPRESENTATIONS, *CONV_REPRESENTATIONS):
+            stops_dir, _ = transfer_dirs(rep)
+            for span in TRANSFER_SPANS:
+                X = np.load(features_path(rep, span, stops_dir), mmap_mode="r")
+                if X.shape[0] != self.n or (np.isnan(X[:, 0, 0]) != self.clamped).any():
+                    raise SystemExit(f"{stops_dir}/{rep}_{span}.npy: NaN rows are not the "
+                                     "clamped stops")
+
+    def cells(self, d: SpanData, tset):
+        """(cell, train stops, test flaps) for the 25 cells of the joint grid: the
+        set's stops sharing neither the cell's speaker fold nor its type fold, and
+        the cell's grid flaps."""
+        import numpy as np
+
+        from capstone.splits import N_FOLDS
+
+        out = []
+        for i in range(N_FOLDS):
+            for j in range(N_FOLDS):
+                k = N_FOLDS * i + j
+                train = np.flatnonzero(self.sets[tset] & (self.a != i) & (self.b != j))
+                test = np.flatnonzero(d.in_grid & (self.flap_fold == k))
+                y = self.is_d[train]
+                if not (0 < y.sum() < len(y)):
+                    raise SystemExit(f"cell {k}: the {tset} set's training stops are one class")
+                out.append((k, train, test))
+        assert sum(len(t) for _, _, t in out) == int(d.in_grid.sum())
+        return out
+
+
+def transfer_block_name(rep, span, tset):
+    return f"transfer_{rep}_{span}_{tset}_joint.npz"
+
+
+def _fit_transfer(stop_path, flap_path, layer, train, test, y_train):
+    import numpy as np
+
+    from capstone.probes.linear import fit_predict
+
+    X = np.load(stop_path, mmap_mode="r")
+    F = np.load(flap_path, mmap_mode="r")
+    return fit_predict(np.asarray(X[train, layer]), y_train, np.asarray(F[test, layer]))
+
+
+def run_transfer_block(d: SpanData, st: TransferStops, rep, span, tset, n_jobs,
+                       run_dir=TRANSFER_RUN_DIR):
+    """Fit one transfer block and cache it: §5's probe, every layer, trained on
+    the stops' span and scored on the flaps' matching span. A real probe only;
+    the registration asks for no control task here."""
+    import numpy as np
+    from joblib import Parallel, delayed
+
+    out = run_dir / transfer_block_name(rep, span, tset)
+    if out.exists():
+        return out
+    stops_dir, flaps_dir = transfer_dirs(rep)
+    stop_path = features_path(rep, span, stops_dir)
+    flap_path = features_path(rep, TRANSFER_SPANS[span], flaps_dir)
+    n_layers = np.load(stop_path, mmap_mode="r").shape[1]
+    if np.load(flap_path, mmap_mode="r").shape[1:] != np.load(stop_path, mmap_mode="r").shape[1:]:
+        raise SystemExit(f"{rep}: stop and flap features differ in shape")
+    cells = st.cells(d, tset)
+    jobs = [(L, c) for L in range(n_layers) for c in range(len(cells))]
+    results = Parallel(n_jobs=n_jobs, verbose=0)(
+        delayed(_fit_transfer)(stop_path, flap_path, L, cells[c][1], cells[c][2],
+                               st.is_d[cells[c][1]])
+        for L, c in jobs)
+
+    fold = np.full(d.n, -1, dtype=np.int32)
+    for k, _, test in cells:
+        fold[test] = k
+    real = np.full((n_layers, d.n), np.nan)
+    converged = np.zeros((n_layers, len(cells)), dtype=bool)
+    for (L, c), (pred, conv) in zip(jobs, results):
+        real[L, cells[c][2]] = pred
+        converged[L, c] = conv
+    run_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(out, fold=fold, real=real, real_converged=converged,
+             n_train=np.array([len(t) for _, t, _ in cells]),
+             n_train_d=np.array([int(st.is_d[t].sum()) for _, t, _ in cells]))
+    print(f"  {out.name}: {len(jobs)} fits, {int((~converged).sum())} did not converge",
+          flush=True)
+    return out
+
+
+def transfer_blocks():
+    """Every transfer block, the two called ones first: the 0.40 set on every span
+    for every representation; the sensitivity sets on the stop and V+stop spans,
+    for every representation but the raw-input variants."""
+    blocks = [("wav2vec2", "s", "040"), ("wav2vec2", "vs", "040")]   # X1, X2
+    for tset in TRANSFER_SETS:
+        for rep in (*SPAN_REPRESENTATIONS, *CONV_REPRESENTATIONS):
+            if tset != "040" and rep.endswith("_raw"):
+                continue
+            for span in (TRANSFER_SPANS if tset == "040" else TRANSFER_SENSITIVITY_SPANS):
+                if (rep, span, tset) not in blocks:
+                    blocks.append((rep, span, tset))
+    return blocks
+
+
+def span_grid_transfer(n_jobs) -> int:
+    """The transfer probe (§8, 2026-11-21 and 2026-11-25): trained on the stops,
+    scored on the grid's flaps in the joint split's cells, cached in
+    TRANSFER_RUN_DIR. Scoring is scripts/score_transfer.py."""
+    import time
+
+    d = SpanData()
+    check_conv_features(d)
+    st = TransferStops(d)
+    blocks = transfer_blocks()
+    print(f"span-grid-transfer: {len(blocks)} blocks, {st.n:,} stops -> "
+          f"{int(d.in_grid.sum()):,} flaps -> {TRANSFER_RUN_DIR}", flush=True)
+    t0 = time.perf_counter()
+    timing = {}
+    for rep, span, tset in blocks:
+        t = time.perf_counter()
+        run_transfer_block(d, st, rep, span, tset, n_jobs)
+        timing[f"{rep}_{span}_{tset}"] = time.perf_counter() - t
+        print(f"    {timing[f'{rep}_{span}_{tset}']:.0f} s; "
+              f"{(time.perf_counter() - t0) / 60:.1f} min so far", flush=True)
+    (TRANSFER_RUN_DIR / "timing-transfer.json").write_text(json.dumps(
+        {"blocks_seconds": timing, "total_seconds": time.perf_counter() - t0}, indent=2))
+    return 0
+
+
 # ------------------------------------------------------------------------ rest
 
 
@@ -843,7 +1088,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro",
                                           "span-grid", "span-grid-conv",
-                                          "span-grid-context"))
+                                          "span-grid-context", "span-grid-transfer"))
     ap.add_argument("--jobs", type=int, default=-1, help="parallel fits (default: all cores)")
     args = ap.parse_args()
     if args.stage == "gate":
@@ -858,6 +1103,8 @@ def main() -> int:
         return span_grid_conv(args.jobs)
     if args.stage == "span-grid-context":
         return span_grid_context(args.jobs)
+    if args.stage == "span-grid-transfer":
+        return span_grid_transfer(args.jobs)
     return assemble()
 
 
