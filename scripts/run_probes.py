@@ -15,6 +15,11 @@ HOW TO RUN (in .venv-app, after scripts/extract_site_features.py)
     .venv-app/bin/python scripts/run_probes.py span-grid-conv
     .venv-app/bin/python scripts/score_conv_encoders.py    # E1, E2, C6
 
+    The context-only span and the preceding stretch without the flap (span grid
+    §8, 2026-11-23; HuBERT and WavLM's, 2026-11-24):
+    .venv-app/bin/python scripts/run_probes.py span-grid-context
+    .venv-app/bin/python scripts/score_context.py          # K1-K3
+
     gate fits only what the criteria read: mean pooling, `joint`, WavJEPA and
     MFCC, real and control probes, and the lookup. It then writes
     results/flapping/criteria-20260926.txt. The result being waited on is not
@@ -88,6 +93,12 @@ MFCC_DURATION_SPANS = ("vr", "vrv")
 CONV_SPANS_DIR = Path("/data/embeddings/conv-spans-b378c303ca90")
 CONV_REPRESENTATIONS = ("hubert", "wavlm", "wav2vec2_raw", "hubert_raw", "wavlm_raw")
 CONV_REVISIONS = {"hubert": "dba3bb0", "wavlm": "efa81aa", "wav2vec2": "0b5b8e8"}
+# The context-only span (ctx) and the preceding stretch without the flap (v)
+# (§8, 2026-11-23): scripts/extract_transfer_context.py, for the grid's three
+# representations. HuBERT, WavLM and the raw variants have theirs in
+# CONV_SPANS_DIR (§8, 2026-11-24). Blocks join the grid's in GRID_DIR.
+CONTEXT_DIR = Path("/data/embeddings/context-b378c303ca90")
+CONTEXT_SPANS = ("ctx", "v")
 
 assert seeds.FOLDS == seeds.SUBSAMPLE  # iter_splits takes one seed for both
 
@@ -590,6 +601,86 @@ def span_grid_conv(n_jobs) -> int:
     return 0
 
 
+def check_context_features(d: SpanData):
+    """The context extraction is a full one on the grid's rows: the registered
+    inventory, exclusions and revisions, its re-pooled ɾ equal to the stored span
+    grid on every row, and NaN on every row the grid does not score.
+
+    Returns, per (rep, span), the sites to fit: the grid's, less any row whose
+    span is empty. Only WavJEPA's preceding stretch has such rows (the
+    extraction's v_empty: 6 sites, §8 2026-11-23's manifest); they are left out of
+    that block alone and reported by the scorer.
+    """
+    import numpy as np
+
+    from measure_span_grid import EXPECTED_SHA256
+
+    if (CONTEXT_DIR / "site_ids.txt").read_text().split() != list(d.inv.site_id):
+        raise SystemExit(f"{CONTEXT_DIR}/site_ids.txt is not in inventory order")
+    m = json.loads((CONTEXT_DIR / "extract-manifest.json").read_text())
+    problems = []
+    if m.get("limit"):
+        problems.append("a --limit smoke test, not a full extraction")
+    if m["inventory_sha256"] != d.spans_manifest["inventory_sha256"]:
+        problems.append("a different inventory from the span grid's")
+    if m["exclusion_sha256"] != EXPECTED_SHA256:
+        problems.append("an exclusion list other than the registered one (§1)")
+    if m["checkpoint_revisions"] != SPAN_REVISIONS:
+        problems.append(f"revisions {m['checkpoint_revisions']}, §4 pins {SPAN_REVISIONS}")
+    if m["frame_dtype"] != "float16" or m["pooling"] != "mean":
+        problems.append("not float16 frames mean-pooled (§4, §8)")
+    for rep, r in m["r_vs_stored"].items():
+        if r["rows_identical"] != r["rows"] or r["max_abs_diff"] != 0:
+            problems.append(f"the re-pooled ɾ for {rep} differs from the stored span grid")
+    if problems:
+        raise SystemExit(f"{CONTEXT_DIR}: " + "; ".join(problems))
+
+    sites = {}
+    for features, reps in ((CONTEXT_DIR, SPAN_REPRESENTATIONS), (CONV_SPANS_DIR, CONV_REPRESENTATIONS)):
+        for rep in reps:
+            for span in CONTEXT_SPANS:
+                X = np.load(features_path(rep, span, features), mmap_mode="r")
+                if X.shape[0] != d.n:
+                    raise SystemExit(f"{rep}_{span}.npy has {X.shape[0]} rows, not {d.n}")
+                nan = np.isnan(X[:, 0, 0])
+                if nan[~d.in_grid].sum() != (~d.in_grid).sum():
+                    raise SystemExit(f"{rep}_{span}.npy has values on rows the grid does not score")
+                empty = int((nan & d.in_grid).sum())
+                expected = m["v_empty"].get(rep, 0) if (span == "v" and features == CONTEXT_DIR) else 0
+                if empty != expected:
+                    raise SystemExit(f"{rep}_{span}.npy: {empty} empty grid rows, expected {expected}")
+                sites[(rep, span)] = d.in_grid & ~nan
+    return sites
+
+
+def span_grid_context(n_jobs) -> int:
+    """The context-only span and the preceding stretch without the flap, for
+    every representation (§8, 2026-11-23 and 2026-11-24): the grid's sites, folds
+    and probes, cached beside its blocks in GRID_DIR. Scoring is
+    scripts/score_context.py."""
+    import time
+
+    d = SpanData()
+    check_conv_features(d)
+    sites = check_context_features(d)
+    blocks = [(rep, span, CONTEXT_DIR) for rep in SPAN_REPRESENTATIONS for span in CONTEXT_SPANS]
+    blocks += [(rep, span, CONV_SPANS_DIR) for rep in CONV_REPRESENTATIONS for span in CONTEXT_SPANS]
+    print(f"span-grid-context: {len(blocks)} blocks on {int(d.in_grid.sum()):,} sites -> "
+          f"{GRID_DIR}", flush=True)
+    t0 = time.perf_counter()
+    timing = {}
+    for rep, span, features in blocks:
+        t = time.perf_counter()
+        run_block(d, "probe", rep, span, "joint", False, n_jobs,
+                  features=features, run_dir=GRID_DIR, sites=sites[(rep, span)])
+        timing[f"{rep}_{span}"] = time.perf_counter() - t
+        print(f"    {timing[f'{rep}_{span}']:.0f} s; {(time.perf_counter() - t0) / 60:.1f} min "
+              "so far", flush=True)
+    (GRID_DIR / "timing-context.json").write_text(json.dumps(
+        {"blocks_seconds": timing, "total_seconds": time.perf_counter() - t0}, indent=2))
+    return 0
+
+
 # ------------------------------------------------------------------------ rest
 
 
@@ -751,7 +842,8 @@ def _write_control(cols, site_ids, d, path):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro",
-                                          "span-grid", "span-grid-conv"))
+                                          "span-grid", "span-grid-conv",
+                                          "span-grid-context"))
     ap.add_argument("--jobs", type=int, default=-1, help="parallel fits (default: all cores)")
     args = ap.parse_args()
     if args.stage == "gate":
@@ -764,6 +856,8 @@ def main() -> int:
         return span_grid(args.jobs)
     if args.stage == "span-grid-conv":
         return span_grid_conv(args.jobs)
+    if args.stage == "span-grid-context":
+        return span_grid_context(args.jobs)
     return assemble()
 
 
