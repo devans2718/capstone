@@ -1,0 +1,21 @@
+comparison,representation,a,b,n,gap,ci_lo,ci_hi,call,span,layer,stratified_balanced_acc
+K1,wav2vec2,wav2vec2_ctx,0.5,10334.000000,0.098572,0.069172,0.134296,effect,,,
+K2,wav2vec2,wav2vec2_r,wav2vec2_ctx,10334.000000,0.017756,-0.002267,0.034984,no effect,,,
+K3,mfcc,mfcc_ctx,0.5,10334.000000,0.032645,0.000518,0.066853,no effect,,,
+K1,wavjepa,wavjepa_ctx,0.5,10334.000000,0.047721,0.016001,0.082314,"reported, not called",,,
+K1,hubert,hubert_ctx,0.5,10334.000000,0.093286,0.065558,0.127313,"reported, not called",,,
+K1,wavlm,wavlm_ctx,0.5,10334.000000,0.127992,0.090158,0.167319,"reported, not called",,,
+K2,wavjepa,wavjepa_r,wavjepa_ctx,10334.000000,-0.004510,-0.018950,0.013660,"reported, not called",,,
+K2,mfcc,mfcc_r,mfcc_ctx,10334.000000,-0.003578,-0.033753,0.027768,"reported, not called",,,
+K2,hubert,hubert_r,hubert_ctx,10334.000000,0.024162,0.004546,0.042661,"reported, not called",,,
+K2,wavlm,wavlm_r,wavlm_ctx,10334.000000,0.023839,0.005615,0.047351,"reported, not called",,,
+V,wavjepa,wavjepa_v,wavjepa_vr,10328.000000,-0.006461,-0.014932,0.004775,"reported, not called",,,
+V,wav2vec2,wav2vec2_v,wav2vec2_vr,10334.000000,-0.001216,-0.011103,0.009245,"reported, not called",,,
+V,mfcc,mfcc_v,mfcc_vr,10334.000000,0.007884,-0.002624,0.018112,"reported, not called",,,
+V,hubert,hubert_v,hubert_vr,10334.000000,0.005017,-0.005708,0.013946,"reported, not called",,,
+V,wavlm,wavlm_v,wavlm_vr,10334.000000,-0.000305,-0.010647,0.006622,"reported, not called",,,
+stratified,wavjepa,,,,,0.524961,0.588398,"reported, not called",ctx,4.000000,0.558364
+stratified,wav2vec2,,,,,0.584314,0.644123,"reported, not called",ctx,8.000000,0.615000
+stratified,mfcc,,,,,0.509495,0.573050,"reported, not called",ctx,0.000000,0.541281
+stratified,hubert,,,,,0.574625,0.630286,"reported, not called",ctx,10.000000,0.603837
+stratified,wavlm,,,,,0.600504,0.669343,"reported, not called",ctx,10.000000,0.636924

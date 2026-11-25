@@ -1,0 +1,35 @@
+{
+  "checkpoint_revision": "6be4a50",
+  "code_commit": "94c10d203bec83b0486c454d2a183cf191ed529d",
+  "context_ms": 200.0,
+  "encoders": [
+    "wavjepa_ctx",
+    "wavjepa_v",
+    "wav2vec2_ctx",
+    "wav2vec2_v",
+    "mfcc_ctx",
+    "mfcc_v",
+    "hubert_ctx",
+    "hubert_v",
+    "wavlm_ctx",
+    "wavlm_v",
+    "wav2vec2_raw_ctx",
+    "wav2vec2_raw_v",
+    "hubert_raw_ctx",
+    "hubert_raw_v",
+    "wavlm_raw_ctx",
+    "wavlm_raw_v"
+  ],
+  "inventory_hash": "b378c303ca908f291da1720ec2ba11fa9a7dd1b07f8c63e6451de1d835e51162",
+  "n_sites_scored": 10334,
+  "run_id": "context-20261124",
+  "seeds": {
+    "bootstrap": 20260928,
+    "control": 20260927,
+    "control_null": 20260929,
+    "folds": 20260926,
+    "subsample": 20260926
+  },
+  "split_scheme": "capstone.splits, `joint` only (span grid \u00a75): the pilot's 5x5 grid, folds assigned over its 10,389 eligible sites keyed by type_key; the 55 \u00a71 exclusions then leave every cell's train and test sets (\u00a78, 2026-10-29). Out-of-fold predictions pooled over the 25 cells, 10,334 sites.",
+  "synthetic": false
+}

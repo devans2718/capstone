@@ -1,0 +1,76 @@
+Span grid, pooled design — the context-only span and the preceding stretch without the flap (§8, 2026-11-23; HuBERT and WavLM, 2026-11-24)
+Run 20261124. `joint`, out-of-fold over 25 cells, 10,334 sites (2,513 /d/), the grid's sites, folds and probes. Chance is 0.50.
+
+code commit       94c10d203bec83b0486c454d2a183cf191ed529d
+features          /data/embeddings/context-b378c303ca90 (extracted at e232c66955441a856fcfff392d1d67537517eb88); /data/embeddings/conv-spans-b378c303ca90 for HuBERT, WavLM and the raw variants
+seeds             folds 20260926, subsample 20260926, control 20260927, bootstrap 20260928, control_null 20260929
+new fits          9,200, 0 did not converge (none refit)
+tripwire          every representation's ɾ re-scored: 92 rows equal the committed results
+WavJEPA's v       10,328 sites; 6 have no preceding-stretch frames
+
+Per span x representation, at the best layer (95% word-type bootstrap interval)
+-------------------------------------------------------------------------------
+block                best  bal. acc.             95% CI  best-layer CI  ctrl p   lemma  unclip  cells min/med/max
+wavjepa_r               3     0.5432  [0.5092, 0.5768]         [3, 8]  0.1614  0.5359  0.5419  0.476/0.541/0.661   (committed, for comparison)
+wavjepa_vr              4     0.5549  [0.5174, 0.5924]         [2, 6]  0.1170  0.5522  0.5500  0.445/0.576/0.602   (committed, for comparison)
+wavjepa_ctx             4     0.5477  [0.5148, 0.5819]        [3, 11]  0.0785  0.5430  0.5455  0.426/0.568/0.639
+wavjepa_v               4     0.5484  [0.5108, 0.5880]         [0, 9]  0.0697  0.5461  0.5433  0.429/0.564/0.631
+wav2vec2_r              9     0.6163  [0.5820, 0.6483]        [9, 10]  0.1758  0.6144  0.6151  0.530/0.618/0.725   (committed, for comparison)
+wav2vec2_vr             9     0.6168  [0.5773, 0.6572]        [6, 10]  0.1589  0.5949  0.6150  0.559/0.617/0.721   (committed, for comparison)
+wav2vec2_ctx            8     0.5986  [0.5662, 0.6323]         [8, 9]  0.1021  0.5893  0.5990  0.483/0.600/0.691
+wav2vec2_v              9     0.6156  [0.5739, 0.6576]         [6, 9]  0.1475  0.5932  0.6140  0.529/0.618/0.717
+mfcc_r                  0     0.5291  [0.4769, 0.5818]         [0, 0]  0.2034  0.5131  0.5301  0.438/0.556/0.627   (committed, for comparison)
+mfcc_vr                 0     0.5296  [0.4803, 0.5790]         [0, 0]  0.2893  0.5151  0.5276  0.393/0.529/0.663   (committed, for comparison)
+mfcc_ctx                0     0.5326  [0.5005, 0.5669]         [0, 0]  0.5074  0.5303  0.5304  0.425/0.541/0.631
+mfcc_v                  0     0.5374  [0.4858, 0.5885]         [0, 0]  0.2161  0.5239  0.5351  0.403/0.564/0.652
+hubert_r               11     0.6174  [0.5776, 0.6559]        [9, 12]  0.2135  0.6010  0.6177  0.477/0.620/0.709   (committed, for comparison)
+hubert_vr               8     0.6107  [0.5694, 0.6524]        [7, 10]  0.1525  0.5941  0.6114  0.531/0.621/0.692   (committed, for comparison)
+hubert_ctx             10     0.5933  [0.5636, 0.6238]        [8, 11]  0.1365  0.5871  0.5911  0.528/0.611/0.659
+hubert_v                8     0.6157  [0.5739, 0.6567]        [7, 10]  0.2265  0.6008  0.6182  0.520/0.625/0.696
+wavlm_r                12     0.6518  [0.6167, 0.6862]       [11, 12]  0.2578  0.6385  0.6502  0.571/0.664/0.757   (committed, for comparison)
+wavlm_vr               10     0.6380  [0.5936, 0.6837]        [9, 11]  0.2836  0.6063  0.6365  0.513/0.649/0.766   (committed, for comparison)
+wavlm_ctx              10     0.6280  [0.5891, 0.6673]        [9, 10]  0.3660  0.6095  0.6254  0.532/0.633/0.782
+wavlm_v                10     0.6377  [0.5927, 0.6833]        [9, 12]  0.2717  0.6029  0.6352  0.521/0.655/0.760
+wav2vec2_raw_r         10     0.6036  [0.5691, 0.6359]        [7, 10]  0.2399  0.6043  0.6039  0.469/0.604/0.676   (committed, for comparison)
+wav2vec2_raw_vr         7     0.6215  [0.5821, 0.6612]         [6, 9]  0.1498  0.6050  0.6192  0.543/0.627/0.706   (committed, for comparison)
+wav2vec2_raw_ctx        9     0.6056  [0.5757, 0.6376]         [7, 9]  0.1357  0.5917  0.6044  0.516/0.633/0.690
+wav2vec2_raw_v          7     0.6230  [0.5827, 0.6649]         [6, 9]  0.2338  0.6037  0.6218  0.531/0.638/0.695
+hubert_raw_r           11     0.6156  [0.5742, 0.6544]        [9, 12]  0.1588  0.6022  0.6156  0.523/0.629/0.722   (committed, for comparison)
+hubert_raw_vr          10     0.6085  [0.5674, 0.6488]        [8, 11]  0.1445  0.5892  0.6066  0.535/0.620/0.675   (committed, for comparison)
+hubert_raw_ctx         10     0.5969  [0.5652, 0.6294]        [8, 10]  0.2734  0.5887  0.5968  0.500/0.601/0.701
+hubert_raw_v           10     0.6082  [0.5660, 0.6492]        [7, 11]  0.1006  0.5900  0.6055  0.532/0.612/0.692
+wavlm_raw_r            11     0.6594  [0.6207, 0.6961]       [11, 12]  0.3326  0.6487  0.6594  0.547/0.660/0.775   (committed, for comparison)
+wavlm_raw_vr           11     0.6356  [0.5963, 0.6776]        [9, 11]  0.2688  0.5997  0.6332  0.524/0.645/0.784   (committed, for comparison)
+wavlm_raw_ctx          10     0.6250  [0.5852, 0.6665]       [10, 11]  0.3195  0.6080  0.6249  0.535/0.627/0.777
+wavlm_raw_v             9     0.6315  [0.5848, 0.6832]        [9, 11]  0.2237  0.6023  0.6282  0.554/0.623/0.748
+
+Registered: K1, K2, K3 (§6: gap >= 0.05 and paired 95% lower bound > 0)
+-----------------------------------------------------------------------
+K1  wav2vec2_ctx     - 0.5            +0.0986  [+0.0692, +0.1343]  effect
+K2  wav2vec2_r       - wav2vec2_ctx   +0.0178  [-0.0023, +0.0350]  no effect
+K3  mfcc_ctx         - 0.5            +0.0326  [+0.0005, +0.0669]  no effect
+
+Reported, not called
+--------------------
+K1  wavjepa_ctx      - 0.5            +0.0477  [+0.0160, +0.0823]
+K1  hubert_ctx       - 0.5            +0.0933  [+0.0656, +0.1273]
+K1  wavlm_ctx        - 0.5            +0.1280  [+0.0902, +0.1673]
+K2  wavjepa_r        - wavjepa_ctx    -0.0045  [-0.0189, +0.0137]
+K2  mfcc_r           - mfcc_ctx       -0.0036  [-0.0338, +0.0278]
+K2  hubert_r         - hubert_ctx     +0.0242  [+0.0045, +0.0427]
+K2  wavlm_r          - wavlm_ctx      +0.0238  [+0.0056, +0.0474]
+V   wavjepa_v        - wavjepa_vr     -0.0065  [-0.0149, +0.0048]   (on 10,328 sites)
+V   wav2vec2_v       - wav2vec2_vr    -0.0012  [-0.0111, +0.0092]
+V   mfcc_v           - mfcc_vr        +0.0079  [-0.0026, +0.0181]
+V   hubert_v         - hubert_vr      +0.0050  [-0.0057, +0.0139]
+V   wavlm_v          - wavlm_vr       -0.0003  [-0.0106, +0.0066]
+
+Frequency-stratified context score (score_frequency.py's three lower bands, site-weighted), at each block's best layer; reported, not called
+    wavjepa_ctx      layer  4  0.5584  [0.5250, 0.5884]
+    wav2vec2_ctx     layer  8  0.6150  [0.5843, 0.6441]
+    mfcc_ctx         layer  0  0.5413  [0.5095, 0.5730]
+    hubert_ctx       layer 10  0.6038  [0.5746, 0.6303]
+    wavlm_ctx        layer 10  0.6369  [0.6005, 0.6693]
+
+K1-K2 reading (§8, 2026-11-23): effect/effect concentrated at the flap; effect/no effect the flap adds nothing measurable; no effect/effect only the flap; no effect/no effect unsettled. No effect on K2 is not equality. K3 is read separately.
+No multiple-comparison correction is registered; 3 gaps are called.
