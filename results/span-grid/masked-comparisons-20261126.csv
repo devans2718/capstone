@@ -1,0 +1,16 @@
+comparison,representation,a,b,n,gap,ci_lo,ci_hi,call
+M1,wav2vec2,wav2vec2_mask_ctx,0.5,10334,0.140328,0.105218,0.175727,effect
+M2,wav2vec2,wav2vec2_pad_ctx,wav2vec2_mask_ctx,10334,0.003090,-0.009367,0.015595,no effect
+M1,wavjepa,wavjepa_mask_ctx,0.5,10334,0.042570,0.015060,0.077689,"reported, not called"
+M1,hubert,hubert_mask_ctx,0.5,10334,0.119674,0.085702,0.154484,"reported, not called"
+M1,wavlm,wavlm_mask_ctx,0.5,10334,0.112610,0.072592,0.155552,"reported, not called"
+M1,mfcc,mfcc_mask_ctx,0.5,10334,0.043239,0.011835,0.077601,"reported, not called"
+M2,wavjepa,wavjepa_pad_ctx,wavjepa_mask_ctx,10334,-0.005002,-0.012685,0.005488,"reported, not called"
+M2,hubert,hubert_pad_ctx,hubert_mask_ctx,10334,-0.008237,-0.018695,0.008691,"reported, not called"
+M2,wavlm,wavlm_pad_ctx,wavlm_mask_ctx,10334,0.017833,0.002140,0.032695,"reported, not called"
+M2,mfcc,mfcc_pad_ctx,mfcc_mask_ctx,10334,-0.000170,-0.006677,0.006588,"reported, not called"
+vsK1,wavjepa,wavjepa_ctx,wavjepa_mask_ctx,10334,0.005150,-0.009260,0.015085,"reported, not called"
+vsK1,wav2vec2,wav2vec2_ctx,wav2vec2_mask_ctx,10334,-0.041756,-0.059710,-0.019888,"reported, not called"
+vsK1,hubert,hubert_ctx,hubert_mask_ctx,10334,-0.026388,-0.040115,-0.009432,"reported, not called"
+vsK1,wavlm,wavlm_ctx,wavlm_mask_ctx,10334,0.015382,-0.008068,0.036749,"reported, not called"
+vsK1,mfcc,mfcc_ctx,mfcc_mask_ctx,10334,-0.010593,-0.019415,-0.001384,"reported, not called"

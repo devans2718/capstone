@@ -1,0 +1,51 @@
+Span grid — the flap-masked variant: M1, M2 (§8, 2026-11-26)
+Run 20261126. `joint`, out-of-fold over 25 cells, 10,334 sites (2,513 /d/), the grid's sites, folds and probes. Chance is 0.50.
+
+code commit       3757eb1a1b4a0b361fbbfcd71217805ce8d540eb
+features          /data/embeddings/cropped-b378c303ca90 (extracted at bd33024a47d505cd2949cf9d7db6a8379adc5bd7)
+seeds             folds 20260926, subsample 20260926, control 20260927, bootstrap 20260928, control_null 20260929
+new fits          2,650, 0 did not converge (none refit)
+tripwire          every pooled ɾ re-scored: 92 rows equal the committed results
+
+Per block, at the best layer (95% word-type bootstrap interval)
+---------------------------------------------------------------
+block                best  bal. acc.             95% CI  best-layer CI  ctrl p   lemma  unclip  cells min/med/max
+wavjepa_mask_ctx        9     0.5426  [0.5114, 0.5742]        [1, 11]  0.1210  0.5437  0.5426  0.461/0.560/0.604
+wavjepa_pad_ctx        11     0.5376  [0.5077, 0.5692]        [1, 12]  0.1644  0.5351  0.5388  0.467/0.558/0.595   (padding-only control)
+wavjepa_ctx             4     0.5477  [0.5148, 0.5819]        [3, 11]  0.0785  0.5430  0.5455  0.426/0.568/0.639   (pooled design, K1's span)
+wav2vec2_mask_ctx       8     0.6403  [0.6042, 0.6757]         [7, 8]  0.1310  0.6271  0.6405  0.516/0.657/0.748
+wav2vec2_pad_ctx        8     0.6434  [0.6060, 0.6801]         [7, 9]  0.1470  0.6276  0.6444  0.481/0.667/0.740   (padding-only control)
+wav2vec2_ctx            8     0.5986  [0.5662, 0.6323]         [8, 9]  0.1021  0.5893  0.5990  0.483/0.600/0.691   (pooled design, K1's span)
+hubert_mask_ctx        10     0.6197  [0.5849, 0.6543]        [8, 10]  0.1997  0.6074  0.6203  0.499/0.625/0.719
+hubert_pad_ctx          9     0.6114  [0.5729, 0.6487]        [8, 10]  0.2414  0.5953  0.6042  0.506/0.617/0.703   (padding-only control)
+hubert_ctx             10     0.5933  [0.5636, 0.6238]        [8, 11]  0.1365  0.5871  0.5911  0.528/0.611/0.659   (pooled design, K1's span)
+wavlm_mask_ctx         10     0.6126  [0.5710, 0.6555]        [9, 10]  0.3130  0.5964  0.6098  0.522/0.614/0.724
+wavlm_pad_ctx          10     0.6304  [0.5905, 0.6691]        [9, 11]  0.4654  0.6126  0.6274  0.523/0.646/0.732   (padding-only control)
+wavlm_ctx              10     0.6280  [0.5891, 0.6673]        [9, 10]  0.3660  0.6095  0.6254  0.532/0.633/0.782   (pooled design, K1's span)
+mfcc_mask_ctx           0     0.5432  [0.5118, 0.5776]         [0, 0]  0.5174  0.5434  0.5415  0.459/0.541/0.620
+mfcc_pad_ctx            0     0.5431  [0.5097, 0.5787]         [0, 0]  0.4071  0.5434  0.5400  0.459/0.559/0.636   (padding-only control)
+mfcc_ctx                0     0.5326  [0.5005, 0.5669]         [0, 0]  0.5074  0.5303  0.5304  0.425/0.541/0.631   (pooled design, K1's span)
+
+Registered: M1, M2 (§6: gap >= 0.05 and paired 95% lower bound > 0)
+--------------------------------------------------------------------
+M1   wav2vec2_mask_ctx    - 0.5                  +0.1403  [+0.1052, +0.1757]  effect
+M2   wav2vec2_pad_ctx     - wav2vec2_mask_ctx    +0.0031  [-0.0094, +0.0156]  no effect
+
+Reported, not called (vsK1: the pooled design's context - the masked context, which mixes the padding with the masking)
+------------------------------------------------------------------------------
+M1   wavjepa_mask_ctx     - 0.5                  +0.0426  [+0.0151, +0.0777]
+M1   hubert_mask_ctx      - 0.5                  +0.1197  [+0.0857, +0.1545]
+M1   wavlm_mask_ctx       - 0.5                  +0.1126  [+0.0726, +0.1556]
+M1   mfcc_mask_ctx        - 0.5                  +0.0432  [+0.0118, +0.0776]
+M2   wavjepa_pad_ctx      - wavjepa_mask_ctx     -0.0050  [-0.0127, +0.0055]
+M2   hubert_pad_ctx       - hubert_mask_ctx      -0.0082  [-0.0187, +0.0087]
+M2   wavlm_pad_ctx        - wavlm_mask_ctx       +0.0178  [+0.0021, +0.0327]
+M2   mfcc_pad_ctx         - mfcc_mask_ctx        -0.0002  [-0.0067, +0.0066]
+vsK1 wavjepa_ctx          - wavjepa_mask_ctx     +0.0052  [-0.0093, +0.0151]
+vsK1 wav2vec2_ctx         - wav2vec2_mask_ctx    -0.0418  [-0.0597, -0.0199]
+vsK1 hubert_ctx           - hubert_mask_ctx      -0.0264  [-0.0401, -0.0094]
+vsK1 wavlm_ctx            - wavlm_mask_ctx       +0.0154  [-0.0081, +0.0367]
+vsK1 mfcc_ctx             - mfcc_mask_ctx        -0.0106  [-0.0194, -0.0014]
+
+M1-M2 reading (§8, 2026-11-26): effect/effect the context carries the label on its own and hearing the flap adds to it; effect/no effect the context carries it on its own, hearing the flap adds nothing measurable; no effect/effect K1's context score came from having heard the flap; no effect/no effect unsettled. No effect on M2 is not equality.
+No multiple-comparison correction is registered; 2 gaps are called.

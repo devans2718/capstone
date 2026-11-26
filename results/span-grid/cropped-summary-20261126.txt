@@ -1,0 +1,231 @@
+Span grid, cropped design — C2, C3, and C4-C7's cropped halves; the padding-only control (§3, §6, §7; §8, 2026-11-26)
+Run 20261126. `joint`, out-of-fold over 25 cells, 10,334 sites (2,513 /d/), the grid's sites, folds and probes. Chance is 0.50.
+
+code commit       3757eb1a1b4a0b361fbbfcd71217805ce8d540eb
+features          /data/embeddings/cropped-b378c303ca90 (extracted at bd33024a47d505cd2949cf9d7db6a8379adc5bd7)
+L                 8,542 samples, 533.875 ms; ramps 40 samples; seed base 20261126
+noise fallback    5 tracks from their speaker's tracks: s0201a, s0203b, s0704a, s2203a, s2203b
+full-excerpt check  every representation's ɾ equals the stored pooled design on every site
+seeds             folds 20260926, subsample 20260926, control 20260927, bootstrap 20260928, control_null 20260929
+new fits          23,950, 0 did not converge (none refit)
+tripwire          every pooled ɾ re-scored: 92 rows equal the committed results
+
+Per block, at the best layer (95% word-type bootstrap interval)
+---------------------------------------------------------------
+block                    best  bal. acc.             95% CI  best-layer CI  ctrl p   lemma  unclip  cells min/med/max
+wavjepa_crop_r             12     0.5318  [0.5103, 0.5530]        [0, 12]  0.1594  0.5222  0.5334  0.448/0.541/0.646
+wavjepa_crop_vr             4     0.5425  [0.5106, 0.5760]         [0, 8]  0.1300  0.5387  0.5383  0.445/0.553/0.678
+wavjepa_crop_rv             6     0.5325  [0.5051, 0.5609]        [2, 10]  0.0862  0.5234  0.5326  0.489/0.538/0.625
+wavjepa_crop_vrv            3     0.5480  [0.5125, 0.5835]        [3, 11]  0.0902  0.5378  0.5460  0.444/0.570/0.626
+wavjepa_pad_r               6     0.5491  [0.5141, 0.5834]         [3, 7]  0.0721  0.5453  0.5474  0.451/0.565/0.612
+wavjepa_pad_vr              3     0.5579  [0.5217, 0.5952]        [3, 11]  0.1630  0.5573  0.5546  0.459/0.570/0.646
+wavjepa_pad_rv              6     0.5560  [0.5228, 0.5888]        [5, 11]  0.1049  0.5496  0.5565  0.445/0.575/0.620
+wavjepa_pad_vrv             6     0.5545  [0.5155, 0.5943]        [1, 10]  0.1361  0.5504  0.5521  0.446/0.570/0.625
+wavjepa_pad_ctx            11     0.5376  [0.5077, 0.5692]        [1, 12]  0.1644  0.5351  0.5388  0.467/0.558/0.595
+wav2vec2_crop_r             0     0.5318  [0.5081, 0.5564]        [0, 12]  0.0804  0.5299  0.5317  0.477/0.533/0.619
+wav2vec2_crop_vr            5     0.5452  [0.5143, 0.5805]         [1, 9]  0.2201  0.5360  0.5379  0.479/0.554/0.631
+wav2vec2_crop_rv           11     0.5480  [0.5211, 0.5749]        [1, 12]  0.0629  0.5437  0.5455  0.469/0.563/0.637
+wav2vec2_crop_vrv           9     0.5604  [0.5224, 0.6002]        [1, 10]  0.1391  0.5467  0.5568  0.468/0.577/0.644
+wav2vec2_pad_r              9     0.6592  [0.6258, 0.6901]        [9, 10]  0.3445  0.6495  0.6596  0.562/0.663/0.749
+wav2vec2_pad_vr             8     0.6523  [0.6129, 0.6909]         [7, 9]  0.1467  0.6368  0.6557  0.562/0.659/0.752
+wav2vec2_pad_rv             9     0.6517  [0.6146, 0.6873]        [8, 10]  0.2796  0.6394  0.6534  0.535/0.663/0.760
+wav2vec2_pad_vrv            8     0.6644  [0.6233, 0.7052]         [8, 9]  0.1008  0.6478  0.6663  0.542/0.680/0.749
+wav2vec2_pad_ctx            8     0.6434  [0.6060, 0.6801]         [7, 9]  0.1470  0.6276  0.6444  0.481/0.667/0.740
+hubert_crop_r               7     0.5282  [0.5039, 0.5530]         [0, 9]  0.1415  0.5208  0.5285  0.469/0.539/0.631
+hubert_crop_vr             12     0.5477  [0.5165, 0.5801]        [1, 12]  0.3622  0.5243  0.5426  0.499/0.559/0.610
+hubert_crop_rv              5     0.5498  [0.5219, 0.5783]        [4, 12]  0.0487  0.5464  0.5520  0.509/0.556/0.621
+hubert_crop_vrv            10     0.5611  [0.5257, 0.5997]        [1, 12]  0.1109  0.5473  0.5584  0.513/0.559/0.725
+hubert_pad_r               11     0.6387  [0.5942, 0.6785]       [10, 12]  0.2480  0.6257  0.6401  0.545/0.643/0.719
+hubert_pad_vr              10     0.6253  [0.5842, 0.6670]        [8, 11]  0.2135  0.6058  0.6193  0.530/0.623/0.712
+hubert_pad_rv              10     0.6350  [0.5989, 0.6709]       [10, 11]  0.1080  0.6191  0.6335  0.555/0.644/0.760
+hubert_pad_vrv             10     0.6300  [0.5911, 0.6682]        [8, 11]  0.2021  0.6061  0.6279  0.521/0.644/0.721
+hubert_pad_ctx              9     0.6114  [0.5729, 0.6487]        [8, 10]  0.2414  0.5953  0.6042  0.506/0.617/0.703
+wavlm_crop_r                2     0.5314  [0.5090, 0.5544]        [0, 10]  0.1546  0.5192  0.5300  0.488/0.541/0.592
+wavlm_crop_vr               7     0.5501  [0.5192, 0.5848]         [0, 7]  0.0580  0.5317  0.5451  0.469/0.567/0.632
+wavlm_crop_rv               5     0.5492  [0.5208, 0.5774]         [2, 8]  0.0956  0.5415  0.5495  0.513/0.545/0.608
+wavlm_crop_vrv              8     0.5521  [0.5163, 0.5911]        [0, 12]  0.0464  0.5399  0.5478  0.478/0.560/0.674
+wavlm_pad_r                12     0.6734  [0.6296, 0.7130]       [11, 12]  0.4021  0.6536  0.6715  0.583/0.683/0.754
+wavlm_pad_vr               10     0.6500  [0.6039, 0.6976]       [10, 12]  0.3386  0.6243  0.6495  0.469/0.673/0.764
+wavlm_pad_rv               12     0.6667  [0.6233, 0.7065]       [11, 12]  0.2824  0.6408  0.6674  0.555/0.667/0.765
+wavlm_pad_vrv              10     0.6598  [0.6117, 0.7100]       [10, 12]  0.2598  0.6357  0.6572  0.530/0.686/0.779
+wavlm_pad_ctx              10     0.6304  [0.5905, 0.6691]        [9, 11]  0.4654  0.6126  0.6274  0.523/0.646/0.732
+mfcc_crop_r                 0     0.5423  [0.4994, 0.5841]         [0, 0]  0.2764  0.5361  0.5440  0.438/0.538/0.661
+mfcc_crop_vr                0     0.5420  [0.4933, 0.5922]         [0, 0]  0.1475  0.5300  0.5352  0.419/0.555/0.655
+mfcc_crop_rv                0     0.5390  [0.4954, 0.5825]         [0, 0]  0.1242  0.5287  0.5401  0.458/0.543/0.653
+mfcc_crop_vrv               0     0.5330  [0.4857, 0.5814]         [0, 0]  0.0600  0.5209  0.5252  0.423/0.534/0.624
+mfcc_pad_r                  0     0.5288  [0.4767, 0.5815]         [0, 0]  0.2034  0.5129  0.5299  0.438/0.555/0.627
+mfcc_pad_vr                 0     0.5296  [0.4803, 0.5790]         [0, 0]  0.2890  0.5151  0.5276  0.393/0.529/0.663
+mfcc_pad_rv                 0     0.5289  [0.4786, 0.5790]         [0, 0]  0.2788  0.5162  0.5280  0.446/0.536/0.639
+mfcc_pad_vrv                0     0.5418  [0.4931, 0.5900]         [0, 0]  0.2016  0.5357  0.5399  0.438/0.539/0.688
+mfcc_pad_ctx                0     0.5431  [0.5097, 0.5787]         [0, 0]  0.4071  0.5434  0.5400  0.459/0.559/0.636
+mfcc_duration_crop_vr       0     0.5473  [0.4967, 0.6003]         [0, 0]  0.1635  0.5348  0.5399  0.435/0.553/0.655
+mfcc_duration_crop_vrv      0     0.5300  [0.4796, 0.5828]         [0, 0]  0.0902  0.5189  0.5218  0.455/0.538/0.640
+
+Registered: C2, C3, C4, C5, C7 cropped (37 gaps; §6: gap >= 0.05 and paired 95% lower bound > 0)
+------------------------------------------------------------------------------
+C2  wavjepa_crop_vr        - wavjepa_crop_r           +0.0107  [-0.0124, +0.0319]  no effect
+C2  wavjepa_crop_rv        - wavjepa_crop_r           +0.0008  [-0.0151, +0.0133]  no effect
+C2  wavjepa_crop_vrv       - wavjepa_crop_r           +0.0162  [-0.0070, +0.0386]  no effect
+C2  wav2vec2_crop_vr       - wav2vec2_crop_r          +0.0134  [-0.0044, +0.0394]  no effect
+C2  wav2vec2_crop_rv       - wav2vec2_crop_r          +0.0163  [+0.0002, +0.0301]  no effect
+C2  wav2vec2_crop_vrv      - wav2vec2_crop_r          +0.0286  [+0.0058, +0.0550]  no effect
+C2  mfcc_crop_vr           - mfcc_crop_r              -0.0003  [-0.0226, +0.0264]  no effect
+C2  mfcc_crop_rv           - mfcc_crop_r              -0.0033  [-0.0149, +0.0095]  no effect
+C2  mfcc_crop_vrv          - mfcc_crop_r              -0.0094  [-0.0310, +0.0157]  no effect
+C3  wavjepa_r              - wavjepa_crop_r           +0.0115  [-0.0132, +0.0339]  no effect
+C3  wavjepa_vr             - wavjepa_crop_vr          +0.0124  [-0.0028, +0.0303]  no effect
+C3  wavjepa_rv             - wavjepa_crop_rv          +0.0199  [-0.0012, +0.0434]  no effect
+C3  wavjepa_vrv            - wavjepa_crop_vrv         +0.0029  [-0.0133, +0.0180]  no effect
+C3  wav2vec2_r             - wav2vec2_crop_r          +0.0846  [+0.0584, +0.1072]  effect
+C3  wav2vec2_vr            - wav2vec2_crop_vr         +0.0716  [+0.0439, +0.0914]  effect
+C3  wav2vec2_rv            - wav2vec2_crop_rv         +0.0738  [+0.0500, +0.0954]  effect
+C3  wav2vec2_vrv           - wav2vec2_crop_vrv        +0.0650  [+0.0391, +0.0845]  effect
+C4  wavjepa_crop_vr        - duration_clipped         +0.0151  [-0.0411, +0.0824]  no effect
+C4  wavjepa_crop_vrv       - duration_clipped         +0.0205  [-0.0348, +0.0891]  no effect
+C4  wav2vec2_crop_vr       - duration_clipped         +0.0177  [-0.0324, +0.0894]  no effect
+C4  wav2vec2_crop_vrv      - duration_clipped         +0.0329  [-0.0226, +0.1050]  no effect
+C5  wavjepa_crop_r         - mfcc_crop_r              -0.0106  [-0.0266, +0.0170]  no effect
+C5  wavjepa_crop_vr        - mfcc_crop_vr             +0.0005  [-0.0234, +0.0320]  no effect
+C5  wavjepa_crop_rv        - mfcc_crop_rv             -0.0065  [-0.0266, +0.0190]  no effect
+C5  wavjepa_crop_vrv       - mfcc_crop_vrv            +0.0150  [-0.0083, +0.0457]  no effect
+C5  wavjepa_crop_vr        - mfcc_duration_crop_vr    -0.0048  [-0.0297, +0.0285]  no effect
+C5  wavjepa_crop_vrv       - mfcc_duration_crop_vrv   +0.0179  [-0.0079, +0.0514]  no effect
+C5  wav2vec2_crop_r        - mfcc_crop_r              -0.0106  [-0.0305, +0.0156]  no effect
+C5  wav2vec2_crop_vr       - mfcc_crop_vr             +0.0031  [-0.0217, +0.0403]  no effect
+C5  wav2vec2_crop_rv       - mfcc_crop_rv             +0.0090  [-0.0150, +0.0355]  no effect
+C5  wav2vec2_crop_vrv      - mfcc_crop_vrv            +0.0274  [+0.0057, +0.0578]  no effect
+C5  wav2vec2_crop_vr       - mfcc_duration_crop_vr    -0.0022  [-0.0285, +0.0368]  no effect
+C5  wav2vec2_crop_vrv      - mfcc_duration_crop_vrv   +0.0303  [+0.0054, +0.0635]  no effect
+C7  wavjepa_crop_r         - wav2vec2_crop_r          +0.0000  [-0.0101, +0.0137]  no effect
+C7  wavjepa_crop_vr        - wav2vec2_crop_vr         -0.0027  [-0.0198, +0.0076]  no effect
+C7  wavjepa_crop_rv        - wav2vec2_crop_rv         -0.0155  [-0.0272, -0.0017]  no effect
+C7  wavjepa_crop_vrv       - wav2vec2_crop_vrv        -0.0124  [-0.0286, +0.0017]  no effect
+
+Reported, not called: HuBERT and WavLM; the padding-only control (padded - pooled)
+------------------------------------------------------------------------------
+C2  hubert_crop_vr         - hubert_crop_r            +0.0195  [-0.0051, +0.0426]
+C2  hubert_crop_rv         - hubert_crop_r            +0.0216  [+0.0073, +0.0364]
+C2  hubert_crop_vrv        - hubert_crop_r            +0.0330  [+0.0073, +0.0611]
+C3  hubert_r               - hubert_crop_r            +0.0893  [+0.0581, +0.1149]
+C3  hubert_vr              - hubert_crop_vr           +0.0630  [+0.0414, +0.0884]
+C3  hubert_rv              - hubert_crop_rv           +0.0617  [+0.0314, +0.0937]
+C3  hubert_vrv             - hubert_crop_vrv          +0.0554  [+0.0269, +0.0787]
+C4  hubert_crop_vr         - duration_clipped         +0.0203  [-0.0318, +0.0881]
+C4  hubert_crop_vrv        - duration_clipped         +0.0337  [-0.0206, +0.1078]
+C5  hubert_crop_r          - mfcc_crop_r              -0.0142  [-0.0325, +0.0140]
+C5  hubert_crop_vr         - mfcc_crop_vr             +0.0057  [-0.0221, +0.0419]
+C5  hubert_crop_rv         - mfcc_crop_rv             +0.0107  [-0.0082, +0.0376]
+C5  hubert_crop_vrv        - mfcc_crop_vrv            +0.0282  [+0.0045, +0.0624]
+C5  hubert_crop_vr         - mfcc_duration_crop_vr    +0.0004  [-0.0292, +0.0394]
+C5  hubert_crop_vrv        - mfcc_duration_crop_vrv   +0.0311  [+0.0036, +0.0683]
+C2  wavlm_crop_vr          - wavlm_crop_r             +0.0187  [+0.0001, +0.0424]
+C2  wavlm_crop_rv          - wavlm_crop_r             +0.0178  [+0.0048, +0.0314]
+C2  wavlm_crop_vrv         - wavlm_crop_r             +0.0207  [-0.0010, +0.0496]
+C3  wavlm_r                - wavlm_crop_r             +0.1204  [+0.0931, +0.1479]
+C3  wavlm_vr               - wavlm_crop_vr            +0.0879  [+0.0629, +0.1171]
+C3  wavlm_rv               - wavlm_crop_rv            +0.1099  [+0.0756, +0.1415]
+C3  wavlm_vrv              - wavlm_crop_vrv           +0.0919  [+0.0616, +0.1194]
+C4  wavlm_crop_vr          - duration_clipped         +0.0226  [-0.0309, +0.0917]
+C4  wavlm_crop_vrv         - duration_clipped         +0.0247  [-0.0308, +0.0985]
+C5  wavlm_crop_r           - mfcc_crop_r              -0.0110  [-0.0319, +0.0161]
+C5  wavlm_crop_vr          - mfcc_crop_vr             +0.0080  [-0.0165, +0.0407]
+C5  wavlm_crop_rv          - mfcc_crop_rv             +0.0101  [-0.0104, +0.0352]
+C5  wavlm_crop_vrv         - mfcc_crop_vrv            +0.0191  [-0.0016, +0.0496]
+C5  wavlm_crop_vr          - mfcc_duration_crop_vr    +0.0027  [-0.0228, +0.0358]
+C5  wavlm_crop_vrv         - mfcc_duration_crop_vrv   +0.0221  [-0.0016, +0.0556]
+pad wavjepa_pad_r          - wavjepa_r                +0.0059  [-0.0025, +0.0129]
+pad wavjepa_pad_vr         - wavjepa_vr               +0.0030  [-0.0055, +0.0090]
+pad wavjepa_pad_rv         - wavjepa_rv               +0.0035  [-0.0084, +0.0101]
+pad wavjepa_pad_vrv        - wavjepa_vrv              +0.0037  [-0.0068, +0.0116]
+pad wavjepa_pad_ctx        - wavjepa_ctx              -0.0102  [-0.0183, +0.0046]
+pad wav2vec2_pad_r         - wav2vec2_r               +0.0429  [+0.0295, +0.0555]
+pad wav2vec2_pad_vr        - wav2vec2_vr              +0.0355  [+0.0218, +0.0546]
+pad wav2vec2_pad_rv        - wav2vec2_rv              +0.0299  [+0.0167, +0.0455]
+pad wav2vec2_pad_vrv       - wav2vec2_vrv             +0.0390  [+0.0211, +0.0583]
+pad wav2vec2_pad_ctx       - wav2vec2_ctx             +0.0448  [+0.0240, +0.0618]
+pad hubert_pad_r           - hubert_r                 +0.0213  [+0.0065, +0.0333]
+pad hubert_pad_vr          - hubert_vr                +0.0146  [-0.0010, +0.0270]
+pad hubert_pad_rv          - hubert_rv                +0.0235  [+0.0116, +0.0363]
+pad hubert_pad_vrv         - hubert_vrv               +0.0134  [-0.0006, +0.0291]
+pad hubert_pad_ctx         - hubert_ctx               +0.0182  [+0.0043, +0.0343]
+pad wavlm_pad_r            - wavlm_r                  +0.0216  [+0.0043, +0.0361]
+pad wavlm_pad_vr           - wavlm_vr                 +0.0121  [-0.0020, +0.0291]
+pad wavlm_pad_rv           - wavlm_rv                 +0.0076  [-0.0067, +0.0265]
+pad wavlm_pad_vrv          - wavlm_vrv                +0.0157  [-0.0029, +0.0324]
+pad wavlm_pad_ctx          - wavlm_ctx                +0.0025  [-0.0170, +0.0236]
+pad mfcc_pad_r             - mfcc_r                   -0.0003  [-0.0005, -0.0001]
+pad mfcc_pad_vr            - mfcc_vr                  +0.0000  [+0.0000, +0.0000]
+pad mfcc_pad_rv            - mfcc_rv                  -0.0010  [-0.0048, +0.0027]
+pad mfcc_pad_vrv           - mfcc_vrv                 -0.0025  [-0.0065, +0.0017]
+pad mfcc_pad_ctx           - mfcc_ctx                 +0.0104  [+0.0006, +0.0197]
+
+C6, best layer (2.5-97.5 percentile of its index over the resamples)
+    wavjepa_crop_r     layer 12  [0, 12]
+    wavjepa_r          layer  3  [3, 8]   (pooled)
+    wavjepa_crop_vr    layer  4  [0, 8]
+    wavjepa_vr         layer  4  [2, 6]   (pooled)
+    wavjepa_crop_rv    layer  6  [2, 10]
+    wavjepa_rv         layer  4  [4, 9]   (pooled)
+    wavjepa_crop_vrv   layer  3  [3, 11]
+    wavjepa_vrv        layer  6  [1, 12]   (pooled)
+    wav2vec2_crop_r    layer  0  [0, 12]
+    wav2vec2_r         layer  9  [9, 10]   (pooled)
+    wav2vec2_crop_vr   layer  5  [1, 9]
+    wav2vec2_vr        layer  9  [6, 10]   (pooled)
+    wav2vec2_crop_rv   layer 11  [1, 12]
+    wav2vec2_rv        layer  9  [9, 9]   (pooled)
+    wav2vec2_crop_vrv  layer  9  [1, 10]
+    wav2vec2_vrv       layer  9  [8, 9]   (pooled)
+    hubert_crop_r      layer  7  [0, 9]
+    hubert_r           layer 11  [9, 12]   (pooled)
+    hubert_crop_vr     layer 12  [1, 12]
+    hubert_vr          layer  8  [7, 10]   (pooled)
+    hubert_crop_rv     layer  5  [4, 12]
+    hubert_rv          layer 11  [9, 12]   (pooled)
+    hubert_crop_vrv    layer 10  [1, 12]
+    hubert_vrv         layer 10  [9, 11]   (pooled)
+    wavlm_crop_r       layer  2  [0, 10]
+    wavlm_r            layer 12  [11, 12]   (pooled)
+    wavlm_crop_vr      layer  7  [0, 7]
+    wavlm_vr           layer 10  [9, 11]   (pooled)
+    wavlm_crop_rv      layer  5  [2, 8]
+    wavlm_rv           layer 11  [11, 12]   (pooled)
+    wavlm_crop_vrv     layer  8  [0, 12]
+    wavlm_vrv          layer 10  [9, 12]   (pooled)
+
+GroupNorm at conv layer 0, input against the full excerpt: median over sites (95th percentile) of the per-site median over channels (§8, 2026-10-18). WavJEPA's segment z-score likewise.
+    representation  input              |log σ ratio|              |Δμ| / σ
+    wavjepa         crop_r           0.255 (0.633)       0.003 (0.007)
+    wavjepa         crop_vr          0.098 (0.384)       0.002 (0.005)
+    wavjepa         crop_rv          0.136 (0.468)       0.002 (0.006)
+    wavjepa         crop_vrv         0.062 (0.334)       0.001 (0.004)
+    wavjepa         pad              0.001 (0.009)       0.000 (0.001)
+    wavjepa         mask             0.006 (0.025)       0.000 (0.001)
+    wav2vec2        crop_r           1.925 (2.802)       0.006 (0.021)
+    wav2vec2        crop_vr          0.550 (1.316)       0.005 (0.019)
+    wav2vec2        crop_rv          0.869 (1.609)       0.005 (0.019)
+    wav2vec2        crop_vrv         0.299 (0.868)       0.004 (0.016)
+    wav2vec2        pad              0.111 (0.126)       0.002 (0.005)
+    wav2vec2        mask             0.126 (0.163)       0.002 (0.007)
+    hubert          crop_r           1.969 (2.890)       0.006 (0.018)
+    hubert          crop_vr          0.543 (1.348)       0.005 (0.016)
+    hubert          crop_rv          0.888 (1.660)       0.005 (0.016)
+    hubert          crop_vrv         0.292 (0.884)       0.004 (0.014)
+    hubert          pad              0.111 (0.127)       0.001 (0.004)
+    hubert          mask             0.125 (0.163)       0.002 (0.005)
+    wavlm           crop_r           1.970 (2.889)       0.006 (0.018)
+    wavlm           crop_vr          0.543 (1.348)       0.005 (0.016)
+    wavlm           crop_rv          0.888 (1.661)       0.005 (0.016)
+    wavlm           crop_vrv         0.291 (0.885)       0.004 (0.014)
+    wavlm           pad              0.111 (0.127)       0.001 (0.004)
+    wavlm           mask             0.125 (0.163)       0.002 (0.006)
+    wavjepa (segment)crop_r           1.717 (2.553)       0.003 (0.014)
+    wavjepa (segment)crop_vr          0.441 (1.124)       0.002 (0.012)
+    wavjepa (segment)crop_rv          0.718 (1.377)       0.002 (0.012)
+    wavjepa (segment)crop_vrv         0.195 (0.708)       0.002 (0.010)
+    wavjepa (segment)pad              0.001 (0.010)       0.001 (0.003)
+    wavjepa (segment)mask             0.017 (0.060)       0.001 (0.004)
+
+No multiple-comparison correction is registered; 37 gaps are called.
+C2 is called for MFCC as well as the two encoders: §6 registers it for each representation, as C1 was called, and the 2026-11-26 entry changes nothing else (decided by the author 2026-11-26, before any cropped score).
+C3 pairs a span's pooled block with its crop; C2-C7's pooled halves are in span-grid-summary-20261029.txt.
