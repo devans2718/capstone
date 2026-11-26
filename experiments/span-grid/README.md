@@ -1030,3 +1030,38 @@ The scoring script will be `scripts/score_masked.py`, writing aggregates
 only to `results/span-grid/masked-<date>.*`.
 
 ---
+**2026-11-26 — The cropped build's details, fixed before the full run (§3;
+§8 of 2026-10-18 and of 2026-11-26).** Written after an 80-site smoke run of
+`scripts/extract_cropped.py`, which builds the inputs and checks them but
+fits no probe; no cropped or masked score has been computed.
+
+- **Noise source when a track has too little pause.** §3 shapes each track's
+  noise to its own `SIL` intervals of at least 200 ms. Three tracks have under
+  0.5 s of them (s2203a and s2203b none: their pauses are labelled
+  `VOCNOISE`). A track with under 2 s of qualifying pause takes its spectrum
+  and level from its speaker's tracks pooled, weighted by pause length:
+  Buckeye records each speaker in one interview, so the room and microphone
+  are shared. It applies to 5 tracks and 139 of the 10,334 sites, listed in
+  the build's `noise-sources.tsv`. `VOCNOISE` is not used, as it can hold
+  breaths; the sites are not dropped, which would be an exclusion unrelated
+  to the flap.
+- **Spectrum and seed.** The pause spectrum is the mean power of 1,024-sample
+  Hann frames (hop 512) inside each pause; the noise is scaled to the pauses'
+  RMS exactly. Each site's seed is derived from its ID and the base 20261126.
+- **Ramps sit only where kept speech meets noise.** An edge at the input's
+  first sample has no noise before it and gets none. So the padding-only
+  control has one ramp, inside the excerpt's last 2.5 ms, and its speech
+  differs from the excerpt there as well as in the padding; the masked input
+  has three, either side of the flap and at the excerpt's end.
+- **WavJEPA's segment normalization.** Besides conv layer 0's GroupNorm, the
+  WavJEPA model z-scores each 2.01 s segment, zero padding included
+  (`utils.normalize`). It is inside the model and is kept, by the reasoning
+  of 2026-10-18. Its mean and standard deviation are stored for the full
+  excerpt and each input, reported beside the GroupNorm measure.
+- **The check, on every site.** §3's verification runs on all 10,334 sites,
+  not once: the full excerpt through the cropped design's normalization path,
+  pooled over ɾ, has to equal the stored pooled design's ɾ bit for bit for
+  every encoder and MFCC. It held on all 80 smoke sites.
+- **L** came out at 8,542 samples, 533.875 ms, matching §3's 533.9.
+
+---
