@@ -931,3 +931,102 @@ exposure to these models than to WavJEPA and wav2vec2-base.
 
 ---
 
+**2026-11-26 — The cropped design resumes (§3, §6, §7; resumes the entry of
+2026-10-29).** Written before any cropped input has been built. §3's
+specification and §6's predictions stand as registered and are read as
+written. This entry fixes the three things §3 leaves open and adds two
+encoders.
+
+**Padding goes after the excerpt.** Every input starts with the excerpt's
+first sample, and noise fills from the excerpt's end to L. The flap's onset
+therefore sits at 200 ms in every input, where it sits in the pooled design,
+and a crop occupies the same samples as in its excerpt. §3's "the flap is
+centred in every input" is read as centred in its excerpt (± 200 ms), which
+it is. Centring the excerpt inside L instead would shift the flap's onset by
+half of L minus the excerpt's length. That shift is set by the flap's own
+duration, which may differ between /t/ and /d/, so the encoder's positional
+input would carry it; and the inputs' frames would no longer line up with
+the pooled design's.
+
+**L is recomputed by the build** from the grid's 10,334 sites and has to
+reproduce §3's 533.9 ms; the build stops if it does not. The grid's sites
+are unclamped, so every excerpt is 400 ms plus its flap.
+
+**Frames:** each span's frames by §4's rules, located in the padded input
+exactly as in the excerpt. WavJEPA keeps only frames whose receptive field
+ends inside the excerpt (§8, 2026-10-18), so no pooled WavJEPA frame reads
+the end padding.
+
+**HuBERT and WavLM are extracted too, reported and not called.** Both take
+wav2vec 2.0's normalization path (§3: zero mean and unit variance, computed
+on the full excerpt and applied before cropping), as the pooled design
+normalized all three per excerpt (§8, 2026-11-24). No raw-input variant: the
+cropped design's normalization is part of what it fixes. Their C2, C3 and
+cropped C4 and C5 numbers are reported beside the registered encoders', with
+their pooled-design best layers for comparison.
+
+**No other change.** C2 and C3, and C4, C5 and C7's cropped halves, are
+called for WavJEPA and wav2vec2-base by §6's rule (a best-layer gap of at
+least 0.05 and a paired word-type bootstrap 95% lower bound above zero, the
+best layer re-selected in every resample). §7's padding-only control and the
+GroupNorm measure (§8, 2026-10-18) are produced.
+
+**The author's expectation for HuBERT and WavLM:** I expect those two to be
+the same as wav2vec2-base or better.
+
+---
+
+**2026-11-26 — A flap-masked variant, registered before any of its inputs is
+built (§3, §8 of 2026-11-23).** The 2026-11-23 entry planned it as the clean
+test of the context-only span: in the pooled design every wav2vec 2.0 and
+WavJEPA frame has heard the flap, so K1 says where the label can be read,
+not where it comes from. Here no frame hears the flap.
+
+**Input:** the excerpt padded to L as above, with the flap's samples
+replaced by the site's pause-matched noise (§3), from the same seed as its
+crops. The 2.5 ms ramps run inside the kept speech, as §3 puts them inside
+the crop, so no flap sample survives. The vowel's transitions into and out
+of the flap stay: they are the context's own audio, and part of what is
+asked. Normalization is §3's, computed on the full excerpt with the flap in
+it: one gain and offset, the leak §8 (2026-10-18) accepts.
+
+**Sites, frames, probe, split, checks:** the grid's 10,334 sites. The
+context span by the 2026-11-23 entry's rule: every frame of the excerpt
+outside that encoder's ɾ frames, within the excerpt, never the end padding.
+§5's probe, split and checks, unchanged.
+
+**The unmasked counterpart** is the padding-only control (§7), pooled over
+the same context frames. It differs from the masked input only in the flap's
+samples: same padding, same noise, same normalization.
+
+**Registered comparisons**, by §6's rule:
+
+- **M1.** wav2vec2-base, masked context: balanced accuracy minus chance
+  (0.5). Does the context carry the label when no frame has heard the flap?
+- **M2.** wav2vec2-base, unmasked context minus masked context, paired. Does
+  hearing the flap add to what the context's frames carry? One-sided, as
+  §6's rule is (§8, 2026-10-29); the gap's sign and interval are reported
+  either way.
+
+**How they read together.** No effect on M2 is not equality.
+
+| M1 | M2 | Reading |
+|---|---|---|
+| effect | effect | The context carries the label on its own, and hearing the flap adds to it |
+| effect | no effect | The context carries it on its own; hearing the flap adds nothing measurable |
+| no effect | effect | K1's context score came from having heard the flap |
+| no effect | no effect | Unsettled |
+
+**Reported, not called:** M1 and M2 for WavJEPA, HuBERT, WavLM and MFCC
+(MFCC's context frames barely hear the flap, through 25 ms windows and ± 40
+ms deltas, so its M2 is close to a check of the masking itself); the masked
+context against the pooled design's context (K1's span), which mixes the
+padding with the masking; every layer's curve; §5's checks.
+
+**The author's prediction:** M1: yes, I think there should be signal in the
+context. M2: the flap adds something.
+
+The scoring script will be `scripts/score_masked.py`, writing aggregates
+only to `results/span-grid/masked-<date>.*`.
+
+---
