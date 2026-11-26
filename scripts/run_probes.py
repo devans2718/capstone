@@ -25,6 +25,12 @@ HOW TO RUN (in .venv-app, after scripts/extract_site_features.py)
     .venv-app/bin/python scripts/run_probes.py span-grid-transfer
     .venv-app/bin/python scripts/score_transfer.py         # X1, X2
 
+    The cropped design, the padding-only control and the flap-masked variant
+    (span grid §3; §8, 2026-11-26), after scripts/extract_cropped.py:
+    .venv-app/bin/python scripts/run_probes.py span-grid-cropped
+    .venv-app/bin/python scripts/score_cropped.py          # C2, C3; C4 C5 C7 cropped
+    .venv-app/bin/python scripts/score_masked.py           # M1, M2
+
     gate fits only what the criteria read: mean pooling, `joint`, WavJEPA and
     MFCC, real and control probes, and the lookup. It then writes
     results/flapping/criteria-20260926.txt. The result being waited on is not
@@ -104,6 +110,17 @@ CONV_REVISIONS = {"hubert": "dba3bb0", "wavlm": "efa81aa", "wav2vec2": "0b5b8e8"
 # CONV_SPANS_DIR (§8, 2026-11-24). Blocks join the grid's in GRID_DIR.
 CONTEXT_DIR = Path("/data/embeddings/context-b378c303ca90")
 CONTEXT_SPANS = ("ctx", "v")
+# The cropped design, the padding-only control and the flap-masked variant
+# (§3; §8, 2026-11-26): scripts/extract_cropped.py, all four encoders and MFCC.
+# A "pool" takes the place of the span: crop_<span>, pad_<span>, pad_ctx,
+# mask_ctx. Blocks join the grid's in GRID_DIR under those names.
+CROPPED_DIR = Path("/data/embeddings/cropped-b378c303ca90")
+CROPPED_REPRESENTATIONS = ("wavjepa", "wav2vec2", "hubert", "wavlm", "mfcc")
+CROPPED_POOLS = (*(f"crop_{s}" for s in SPANS), *(f"pad_{s}" for s in SPANS),
+                 "pad_ctx", "mask_ctx")
+CROPPED_REVISIONS = {"wavjepa": "6be4a50", "wav2vec2": "0b5b8e8", "hubert": "dba3bb0",
+                     "wavlm": "efa81aa"}
+CROPPED_L_MS = 533.875          # 8,542 samples; §3's 533.9
 # The transfer probe (§8, 2026-11-21; HuBERT and WavLM, 2026-11-24 and
 # 2026-11-25): /t/ vs /d/ trained on unflapped stops, scored on the grid's flaps.
 # scripts/export_transfer_stops.py wrote the stops (the 0.25 set, each row
@@ -702,6 +719,107 @@ def span_grid_context(n_jobs) -> int:
     return 0
 
 
+def check_cropped_features(d: SpanData, cropped_dir=CROPPED_DIR, allow_limit=False):
+    """The cropped extraction is a full one on the grid's rows (§8, 2026-11-26):
+    the registered inventory, exclusions and revisions, L as registered, its full
+    excerpt's ɾ equal to the stored pooled design on every row for every
+    representation, and a value on exactly the grid's rows of every file.
+
+    allow_limit admits a --limit smoke extraction, for testing the scorers
+    only; nothing fit on one is ever written under results/.
+    """
+    import numpy as np
+
+    from measure_span_grid import EXPECTED_SHA256
+
+    if (cropped_dir / "site_ids.txt").read_text().split() != list(d.inv.site_id):
+        raise SystemExit(f"{cropped_dir}/site_ids.txt is not in inventory order")
+    m = json.loads((cropped_dir / "extract-manifest.json").read_text())
+    problems = []
+    if m.get("limit") and not allow_limit:
+        problems.append("a --limit smoke test, not a full extraction")
+    if not m.get("limit") and m["n_encoded"] != int(d.in_grid.sum()):
+        problems.append(f"{m['n_encoded']:,} sites encoded, the grid has {int(d.in_grid.sum()):,}")
+    if m["inventory_sha256"] != d.spans_manifest["inventory_sha256"]:
+        problems.append("a different inventory from the span grid's")
+    if m["exclusion_sha256"] != EXPECTED_SHA256:
+        problems.append("an exclusion list other than the registered one (§1)")
+    if m["checkpoint_revisions"] != CROPPED_REVISIONS:
+        problems.append(f"revisions {m['checkpoint_revisions']}, §8 pins {CROPPED_REVISIONS}")
+    if m["frame_dtype"] != "float16" or m["pooling"] != "mean":
+        problems.append("not float16 frames mean-pooled (§4, §8)")
+    if m["L_ms"] != CROPPED_L_MS:
+        problems.append(f"L = {m['L_ms']} ms, not {CROPPED_L_MS}")
+    if m["code_commit"].endswith("-dirty") and not allow_limit:
+        problems.append("extracted from a dirty tree")
+    for rep, r in m["r_vs_stored"].items():
+        if r["rows_differing"] or r["max_abs_diff"] != 0:
+            problems.append(f"the full excerpt's ɾ for {rep} differs from the stored pooled design")
+    if problems:
+        raise SystemExit(f"{cropped_dir}: " + "; ".join(problems))
+
+    sites = d.in_grid.copy()
+    if m.get("limit"):
+        X = np.load(features_path("mfcc", "pad_ctx", cropped_dir), mmap_mode="r")
+        sites &= ~np.isnan(X[:, 0, 0])
+    for rep in CROPPED_REPRESENTATIONS:
+        for pool in CROPPED_POOLS:
+            X = np.load(features_path(rep, pool, cropped_dir), mmap_mode="r")
+            if X.shape[0] != d.n:
+                raise SystemExit(f"{rep}_{pool}.npy has {X.shape[0]} rows, not {d.n}")
+            if (np.isnan(X[:, 0, 0]) != ~sites).any():
+                raise SystemExit(f"{rep}_{pool}.npy: NaN rows are not the unscored sites")
+    return m, sites
+
+
+def build_cropped_baselines(d: SpanData, cropped_dir=CROPPED_DIR, features=GRID_FEATURES):
+    """MFCC + clipped duration for the cropped design's Vɾ and VɾV (C5's
+    cropped half): the crop's 39 MFCC dimensions and §5's clipped duration."""
+    import numpy as np
+
+    features.mkdir(parents=True, exist_ok=True)
+    clipped = d.durations["clipped"].astype(np.float32)[:, None, None]
+    for span in MFCC_DURATION_SPANS:
+        m = np.load(features_path("mfcc", f"crop_{span}", cropped_dir))
+        np.save(features_path("mfcc_duration", f"crop_{span}", features),
+                np.concatenate([m, clipped], axis=2))
+
+
+def cropped_blocks(cropped_dir=CROPPED_DIR, features=GRID_FEATURES):
+    """(rep, pool, features dir) for every block the cropped stage fits."""
+    blocks = [(rep, pool, cropped_dir) for rep in CROPPED_REPRESENTATIONS
+              for pool in CROPPED_POOLS]
+    blocks += [("mfcc_duration", f"crop_{span}", features) for span in MFCC_DURATION_SPANS]
+    return blocks
+
+
+def span_grid_cropped(n_jobs) -> int:
+    """The cropped design, the padding-only control and the flap-masked context
+    for every representation (§3; §8, 2026-11-26), plus MFCC + duration on the
+    crops: the grid's sites, folds and probes, cached beside its blocks in
+    GRID_DIR. Scoring is scripts/score_cropped.py and scripts/score_masked.py."""
+    import time
+
+    d = SpanData()
+    _, sites = check_cropped_features(d)
+    build_cropped_baselines(d)
+    blocks = cropped_blocks()
+    print(f"span-grid-cropped: {len(blocks)} blocks on {int(sites.sum()):,} sites -> "
+          f"{GRID_DIR}", flush=True)
+    t0 = time.perf_counter()
+    timing = {}
+    for rep, pool, features in blocks:
+        t = time.perf_counter()
+        run_block(d, "probe", rep, pool, "joint", False, n_jobs,
+                  features=features, run_dir=GRID_DIR, sites=sites)
+        timing[f"{rep}_{pool}"] = time.perf_counter() - t
+        print(f"    {timing[f'{rep}_{pool}']:.0f} s; {(time.perf_counter() - t0) / 60:.1f} min "
+              "so far", flush=True)
+    (GRID_DIR / "timing-cropped.json").write_text(json.dumps(
+        {"blocks_seconds": timing, "total_seconds": time.perf_counter() - t0}, indent=2))
+    return 0
+
+
 # ------------------------------------------------------------- transfer probe
 
 
@@ -1088,7 +1206,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("stage", choices=("gate", "rest", "assemble", "span-repro",
                                           "span-grid", "span-grid-conv",
-                                          "span-grid-context", "span-grid-transfer"))
+                                          "span-grid-context", "span-grid-transfer",
+                                          "span-grid-cropped"))
     ap.add_argument("--jobs", type=int, default=-1, help="parallel fits (default: all cores)")
     args = ap.parse_args()
     if args.stage == "gate":
@@ -1105,6 +1224,8 @@ def main() -> int:
         return span_grid_context(args.jobs)
     if args.stage == "span-grid-transfer":
         return span_grid_transfer(args.jobs)
+    if args.stage == "span-grid-cropped":
+        return span_grid_cropped(args.jobs)
     return assemble()
 
 
