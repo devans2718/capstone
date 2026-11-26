@@ -283,7 +283,35 @@ class WavJEPAExtractor:
 
     # ----------------------------------------------------------------- encoding
 
-    def encode(self, waveform, dtype: str = "float16"):
+    def input_norm(self, waveform):
+        """The feature extractor's normalization of `waveform`, as a function.
+
+        WavJEPAFeatureExtractor scales each waveform by one gain that brings its
+        RMS to -14 dBFS (no offset). The returned function applies the gain
+        computed on `waveform` to any other input, so the span grid's cropped
+        design can normalize once, on the full excerpt (§3). The arithmetic is
+        the extractor's own, op for op in float32 torch, so for `waveform`
+        itself encode(w, norm=input_norm(w)) equals encode(w).
+
+        The model also z-scores each 2.01 s segment internally
+        (utils.normalize). That is inside the model and is not touched here.
+        """
+        import torch
+
+        audio = _as_1d(waveform).unsqueeze(0)
+        rms = torch.sqrt(torch.mean(audio ** 2))
+        if rms == 0:
+            gain = torch.tensor(1.0)
+        else:
+            gain = 10 ** ((-14.0 - 20 * torch.log10(rms)) / 20)
+
+        def apply(x):
+            return _as_1d(x).unsqueeze(0) * gain
+
+        apply.gain = float(gain)
+        return apply
+
+    def encode(self, waveform, dtype: str = "float16", norm=None):
         """Encode ONE utterance and return (13, n_frames, 768).
 
         Args:
@@ -293,6 +321,10 @@ class WavJEPAExtractor:
             dtype: storage dtype for the returned tensor. float16 halves the
                 cache for a precision loss far below the between-layer
                 differences a probe reads.
+            norm: None runs the feature extractor as always. A function from
+                input_norm replaces it: the waveform is normalized by that
+                function and the extractor is skipped (the cropped design's
+                path, span-grid §3).
 
         Returns:
             (13, n_frames, 768), where n_frames == geometry.n_output_frames.
@@ -306,10 +338,14 @@ class WavJEPAExtractor:
         # checkpoint's own segment counts disagree.
         self.geometry.n_segments(n_samples)
 
-        batch = self.feature_extractor(
-            wav.unsqueeze(0) if wav.dim() == 1 else wav, return_tensors="pt"
-        )
-        inputs = batch["input_values"].to(self.device)
+        if norm is None:
+            batch = self.feature_extractor(
+                wav.unsqueeze(0) if wav.dim() == 1 else wav, return_tensors="pt"
+            )
+            inputs = batch["input_values"].to(self.device)
+        else:
+            # The extractor returns (batch, channel, samples); so does this.
+            inputs = norm(wav).unsqueeze(0).to(self.device)
 
         with _hooks(self._layers) as captured:
             with torch.inference_mode():
@@ -436,7 +472,33 @@ class Wav2Vec2Extractor:
 
     # ----------------------------------------------------------------- encoding
 
-    def encode(self, waveform, dtype: str = "float16"):
+    def input_norm(self, waveform):
+        """The feature extractor's normalization of `waveform`, as a function.
+
+        With do_normalize set, Wav2Vec2FeatureExtractor standardizes each
+        waveform by its own mean and variance: (x - mean) / sqrt(var + 1e-7),
+        in float32 numpy. The returned function applies the mean and variance
+        of `waveform` to any other input, so the span grid's cropped design can
+        normalize once, on the full excerpt (§3). Same arithmetic as the
+        extractor, so for `waveform` itself encode(w, norm=input_norm(w))
+        equals encode(w). Refuses if this extractor does not normalize.
+        """
+        import numpy as np
+        import torch
+
+        if not self.feature_extractor.do_normalize:
+            raise ValueError("this extractor does not normalize its input; "
+                             "load it with normalize=True for the cropped design")
+        x = _as_1d(waveform).numpy()
+        mean, denom = x.mean(), np.sqrt(x.var() + 1e-7)
+
+        def apply(y):
+            return torch.from_numpy((_as_1d(y).numpy() - mean) / denom)
+
+        apply.mean, apply.std = float(mean), float(denom)
+        return apply
+
+    def encode(self, waveform, dtype: str = "float16", norm=None):
         """Encode ONE utterance and return (13, n_frames, 768).
 
         Args:
@@ -445,6 +507,8 @@ class Wav2Vec2Extractor:
                 standardizes each waveform by its own mean and variance, so
                 batching changes the numbers.
             dtype: storage dtype for the returned tensor, as WavJEPAExtractor.
+            norm: None runs the feature extractor as always. A function from
+                input_norm replaces it (span-grid §3's cropped design).
 
         Returns:
             (13, n_frames, 768), where n_frames == geometry.n_output_frames.
@@ -455,12 +519,14 @@ class Wav2Vec2Extractor:
         # Raises before any GPU work on an input shorter than one frame.
         expected = self.geometry.n_output_frames(int(wav.shape[-1]))
 
-        batch = self.feature_extractor(
-            wav.numpy(), sampling_rate=self.geometry.sample_rate, return_tensors="pt"
-        )
+        if norm is None:
+            inputs = self.feature_extractor(
+                wav.numpy(), sampling_rate=self.geometry.sample_rate, return_tensors="pt"
+            )["input_values"]
+        else:
+            inputs = norm(wav).unsqueeze(0)
         with torch.inference_mode():
-            out = self.model(batch["input_values"].to(self.device),
-                             output_hidden_states=True)
+            out = self.model(inputs.to(self.device), output_hidden_states=True)
 
         states = out.hidden_states
         if len(states) != self.n_layers:
